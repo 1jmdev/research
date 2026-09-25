@@ -6,6 +6,77 @@ Sparse upcycling, MoE-fication of FFNs, expert construction from dense checkpoin
 
 📖 Written overview of this area: [../../../overviews/model-conversion.md](../../../overviews/model-conversion.md)
 
+## 🔬 Analyst notes: hand ranking and verdict
+
+_Written after reading the abstracts, and the full text where available, of this category's papers. The hand ranking weighs technical merit and usefulness for a runtime or model builder, not just citations. The automatic impact ranking follows below._
+
+**Verdict.** There are two different jobs under "dense → MoE", and they should not be confused.
+
+1. **Sparse upcycling for capacity** (copy the FFN into E experts, add a router, keep pretraining). This buys a
+   **head start**, but the advantage **shrinks as the budget grows**. [Scaling laws for upcycling](2502.03009-scaling-laws-for-upcycling-mixture-of-experts-language-models.md) (ICML'25)
+   finds an interaction term between dense and upcycled tokens that caps upcycling efficiency at large budgets.
+   [Drop-Upcycling](2502.19261-drop-upcycling-training-sparse-mixture-of-experts-with-partial-re-init.md) (ICLR'25) shows naive copies specialize slowly. **Partially re-initializing expert
+   weights** (drop ratio ~0.5) fixes long-run training: 5.9B active matches a 13B dense model at ~1/4 of the training
+   FLOPs. Newer ideas:
+   * [Expert Upcycling](2604.19835-expert-upcycling-shifting-the-compute-efficient-frontier-of-mixture-of.md): grow the expert count *during* training with utility-based duplication, saving
+     32% of GPU hours at 7→13B total;
+   * [FineRMoE](2603.13364-finermoe-dimension-expansion-for-finer-grained-expert-with-its-upcycli.md): finer-grained experts in two dimensions;
+   * [Symphony-MoE](2509.18542-symphony-moe-harmonizing-disparate-pre-trained-models-into-a-coherent.md): experts from *different* pretrained models;
+   * [Dirichlet-prior routing loss](2510.01185-dirichlet-prior-shaping-guiding-expert-specialization-in-upcycled-moes.md): fixes weak specialization.
+2. **MoEfication for inference speed** (partition an existing FFN into experts so each token activates fewer neurons).
+   This is closer to activation sparsity or structured pruning:
+   * [analytical FFN→MoE](2502.04416-analytical-ffn-to-moe-restructuring-via-activation-pattern-analysis.md) (ACL'26): 4.5 minutes of analysis + 2K-sample fine-tune;
+   * [ToMoE](2501.15316-tomoe-converting-dense-large-language-models-to-mixture-of-experts-thr.md): dynamic structural pruning;
+   * [DIVE](2506.09351-dive-into-moe-diversity-enhanced-reconstruction-of-large-language-mode.md) (ACL'25): diversity-aware reconstruction, 1–5B tokens;
+   * [ExpertWeaver](2602.15521-expertweaver-unlocking-the-inherent-moe-in-dense-llms-with-glu-activat.md): GLU activation patterns;
+   * [DOT-MoE](2606.01666-dot-moe-differentiable-optimal-transport-for-moefication.md) (ICML'26): optimal-transport partitioning.
+
+   Real speedups need a grouped-GEMM MoE kernel and moderate top-k.
+
+**Rule of thumb from the scaling-law work.** Upcycle when your remaining budget is **small relative to the dense
+model's pretraining tokens**. With a budget comparable to pretraining, a from-scratch MoE (or Drop-Upcycling) wins.
+
+### Cost table
+
+| Method | Job | Budget | H100-h | Basis |
+| --- | --- | --- | ---: | --- |
+| [Analytical FFN→MoE](2502.04416-analytical-ffn-to-moe-restructuring-via-activation-pattern-analysis.md) | MoEfication (Llama-2-7B) | 4M tokens; 46 min end-to-end | **~1** | reported |
+| [DIVE](2506.09351-dive-into-moe-diversity-enhanced-reconstruction-of-large-language-mode.md) | MoE reconstruction (Llama-2-7B-class) | 0.5B router + 1–5B sparse retraining | **~25–150** | estimate |
+| [Drop-Upcycling](2502.19261-drop-upcycling-training-sparse-mixture-of-experts-with-partial-re-init.md) | 8×3.7B MoE (5.9B active) from dense | 500B tokens | **~12–20K** per model (study total >200K) | estimate; paper reports >200K H100-h for all experiments |
+| [Expert Upcycling](2604.19835-expert-upcycling-shifting-the-compute-efficient-frontier-of-mixture-of.md) | Grow 7B → 13B-total MoE mid-training | CPT | **−32%** GPU-h vs fixed-size MoE | reported |
+| [Marco-MoE](2604.25578-marco-moe-open-multilingual-mixture-of-expert-language-models-with-eff.md) | Multilingual MoE (~5% active) upcycled from dense | 5.1T tokens | pretraining-scale | reported token count |
+
+### Hand ranking
+
+| # | Paper | Key idea | Result |
+| ---: | --- | --- | --- |
+| 1 | [Drop-Upcycling](2502.19261-drop-upcycling-training-sparse-mixture-of-experts-with-partial-re-init.md) (ICLR'25) | Copy FFN weights into experts, then **re-initialize a random subset of dimensions** per expert | Beats naive upcycling and from-scratch at hundreds of billions of tokens; 5.9B-active ≈ 13B dense at ~¼ FLOPs; fully open logs/checkpoints |
+| 2 | [Scaling laws for upcycling MoE](2502.03009-scaling-laws-for-upcycling-mixture-of-experts-language-models.md) (ICML'25) | Joint laws in dense tokens, upcycled tokens and configuration | Tells you **when** upcycling beats from-scratch; the benefit shrinks at large budgets |
+| 3 | [Expert Upcycling](2604.19835-expert-upcycling-shifting-the-compute-efficient-frontier-of-mixture-of.md) | Increase expert count mid-training with gradient-utility-based duplication | Matches fixed-size MoE loss at **32% fewer GPU-hours** |
+| 4 | [Analytical FFN-to-MoE restructuring](2502.04416-analytical-ffn-to-moe-restructuring-via-activation-pattern-analysis.md) (ACL'26) | Activation-frequency analysis → shared + routed experts + a router from neuron statistics | Minutes of compute; up to 1.17× speedup in compute-bound settings |
+| 5 | [DIVE](2506.09351-dive-into-moe-diversity-enhanced-reconstruction-of-large-language-mode.md) (ACL'25) | Domain-affinity mining → pruning-based expert reconstruction → efficient retraining | Beats LLaMA-MoE with 1–5B tokens |
+| 6 | [ToMoE](2501.15316-tomoe-converting-dense-large-language-models-to-mixture-of-experts-thr.md) (TMLR) | Dense → MoE via dynamic structural pruning (experts found without fine-tuning) | Beats structured pruning at equal active params |
+| 7 | [FineRMoE](2603.13364-finermoe-dimension-expansion-for-finer-grained-expert-with-its-upcycli.md) | Fine-grained experts along intermediate **and** output dims + bi-level sparse compute + upcycling path | Pushes past the fine-granularity ceiling |
+| 8 | [Symphony-MoE](2509.18542-symphony-moe-harmonizing-disparate-pre-trained-models-into-a-coherent.md) (AAAI'26) | Build an MoE from **disparate** pretrained models (align, then route) | More expert diversity than single-source upcycling |
+| 9 | [Dirichlet-Prior Shaping](2510.01185-dirichlet-prior-shaping-guiding-expert-specialization-in-upcycled-moes.md) | Router regularizer matching a Dirichlet prior on routing probabilities | Sharper routing and specialization in upcycled MoEs |
+| 10 | [Marco-MoE](2604.25578-marco-moe-open-multilingual-mixture-of-expert-language-models-with-eff.md) | Highly sparse (≈5% active) multilingual MoEs upcycled from dense, 5.1T tokens, open data | Best-in-class performance/compute in the class |
+
+**Also useful.**
+* MoEfication variants: [ExpertWeaver](2602.15521-expertweaver-unlocking-the-inherent-moe-in-dense-llms-with-glu-activat.md), [MLPMoE](2511.21089-mlpmoe-zero-shot-architectural-metamorphosis-of-dense-llm-mlps-into-st.md) (zero-shot), [DOT-MoE](2606.01666-dot-moe-differentiable-optimal-transport-for-moefication.md),
+  [L0-MoE](2609.21672-accelerating-dense-llms-via-l0-regularized-mixture-of-experts.md), [Dense2MoE](2605.26496-dense2moe-pushing-the-pareto-frontier-of-on-device-llms-via-unified-pr.md) (on-device), [DynaMoE](2502.12325-from-dense-to-dynamic-token-difficulty-driven-moefication-of-pre-train.md) (token-difficulty routing).
+* Fine-tuning-time upcycling: [MoLEx](2503.11144-molex-mixture-of-layer-experts-for-finetuning-with-sparse-upcycling.md), [SIMoE](2506.12597-automatic-expert-discovery-in-llm-upcycling-via-sparse-interpolated-mi.md), [Training-Free Dynamic Upcycling of Expert Language Models](2603.29765-training-free-dynamic-upcycling-of-expert-language-models.md) (training-free dynamic
+  upcycling of experts).
+* Other: [Router Upcycling](2509.00679-router-upcycling-leveraging-mixture-of-routers-in-mixture-of-experts-u.md), [Innovator](2507.18671-innovator-scientific-continued-pretraining-with-fine-grained-moe-upcyc.md) (science CPT without forgetting),
+  [SPRI](2606.16456-spri-svd-partitioned-residual-initialization-for-data-constrained-moe.md) (SVD-partitioned init for data-constrained upcycling).
+
+**Recommendation.**
+* *Model builders:* upcycle with Drop-Upcycling-style partial re-init, fine-grained experts and a shared expert. Budget
+  ≥100B tokens so the experts actually specialize. If your budget approaches the dense pretraining size, train the MoE
+  from scratch.
+* *Runtime builders:* MoEfied dense models help only with a fast grouped-GEMM or expert-parallel path and small
+  top-k. At batch size 1 they behave like activation sparsity, so see
+  [`compression/activation-sparsity`](../../compression/activation-sparsity/README.md).
+
 ## 🏆 Best of the best by impact score (top 10)
 
 1. **[Drop-Upcycling: Training Sparse Mixture of Experts with Partial Re-initialization](2502.19261-drop-upcycling-training-sparse-mixture-of-experts-with-partial-re-init.md)** (2025-03) — Drop-Upcycling combines two seemingly contradictory approaches: utilizing the knowledge of pre-trained dense models while statistically re-initializing some parts of the weights, significantly enhancing the MoE model's …  

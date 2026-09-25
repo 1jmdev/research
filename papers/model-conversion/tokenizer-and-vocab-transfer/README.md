@@ -6,6 +6,76 @@ Swapping or extending a pretrained model's tokenizer, cross-tokenizer distillati
 
 📖 Written overview of this area: [../../../overviews/model-conversion.md](../../../overviews/model-conversion.md)
 
+## 🔬 Analyst notes: hand ranking and verdict
+
+_Written after reading the abstracts, and the full text where available, of this category's papers. The hand ranking weighs technical merit and usefulness for a runtime or model builder, not just citations. The automatic impact ranking follows below._
+
+**Verdict.** Changing a pretrained model's tokenizer is now cheap. The work splits into four jobs:
+
+1. **Transplant a new vocabulary** (domain/language efficiency, or matching a teacher's vocabulary for KD). Initialize new
+   embeddings training-free, then heal briefly:
+   * [OMP](2506.06607-training-free-tokenizer-transplantation-via-orthogonal-matching-pursui.md): new tokens as sparse combinations of shared anchor tokens (in mergekit's tokensurgeon);
+   * [TokAlign](2506.03523-tokalign-efficient-vocabulary-adaptation-via-token-alignment.md): token co-occurrence alignment, <2 CPU-hours vs 661 GPU-h for ZeTT's hypernetwork;
+   * [MATT](2510.21954-model-aware-tokenizer-transfer.md): model-aware, uses attention dynamics;
+   * [Token Distillation](2505.20133-token-distillation-attention-aware-input-embeddings-for-new-tokens.md) (ICLR'26): new-token embeddings distilled from the attention behaviour of the
+     original multi-token sequence, 2,500 tokens in <10 minutes.
+2. **Domain vocabulary for speed.** [AdaptiVocab](2503.19693-adaptivocab-enhancing-llm-efficiency-in-focused-domains-through-lightw.md) cuts token usage >25% in focused domains with a
+   lightweight fine-tune. Language-specific retokenization cuts fertility ([Italian](2504.17025-optimizing-llms-for-italian-reducing-token-fertility-and-enhancing-eff.md),
+   [Bielik v3 Polish](2604.10799-advancing-polish-language-modeling-through-tokenizer-optimization-in-t.md)). Fewer tokens directly means fewer decode steps.
+3. **Byteification** (subword → byte-level). [Bolmo](2512.15586-bolmo-byteifying-the-next-generation-of-language-models.md) converts OLMo into a byte-level LM with local
+   mLSTM encoder/decoder layers using **39.3B tokens (<1% of pretraining)**, matching the subword source. Earlier,
+   [ALM](2503.20083-universal-cross-tokenizer-distillation-via-approximate-likelihood-matc.md) showed byte-level transfer by approximate likelihood matching.
+4. **Cross-tokenizer distillation** (teacher and student use different vocabularies):
+   * [ALM](2503.20083-universal-cross-tokenizer-distillation-via-approximate-likelihood-matc.md) (NeurIPS'25): the principled, general method;
+   * [byte-level distillation](2604.07466-cross-tokenizer-llm-distillation-through-a-byte-level-interface.md): a simple strong baseline;
+   * [byte-prefix marginalization](2607.22334-cross-tokenizer-on-policy-distillation-via-byte-prefix-marginalization.md): for **on-policy** distillation across families;
+   * [SRA](2605.01205-sra-span-representation-alignment-for-large-language-model-distillatio.md): span alignment.
+
+   This is what makes "distill Qwen into Llama-vocab" or "Gemma → my model" possible.
+
+### Cost table
+
+| Method | Job | Budget | H100-h | Basis |
+| --- | --- | --- | ---: | --- |
+| [OMP transplant](2506.06607-training-free-tokenizer-transplantation-via-orthogonal-matching-pursui.md) | Vocabulary swap | training-free | **~0** | reported |
+| [Token Distillation](2505.20133-token-distillation-attention-aware-input-embeddings-for-new-tokens.md) | Add new tokens | 2,500 tokens in <10 min on 1 GPU | **<0.2** | reported |
+| [TokAlign](2506.03523-tokalign-efficient-vocabulary-adaptation-via-token-alignment.md) (ACL'25) | Vocabulary replacement | <2 h CPU alignment + short fine-tune | **~1–20** | reported/estimate |
+| [MATT](2510.21954-model-aware-tokenizer-transfer.md) | Model-aware transfer | ~250M tokens | **~5–10** (7B) | estimate |
+| [AdaptiVocab](2503.19693-adaptivocab-enhancing-llm-efficiency-in-focused-domains-through-lightw.md) | Domain vocabulary | ~8M tokens, 3×A6000 | **~1** | estimate |
+| [ALM](2503.20083-universal-cross-tokenizer-distillation-via-approximate-likelihood-matc.md) (NeurIPS'25) | Llama-3-8B → byte-level / cross-tokenizer KD | 32×TPU-v4 × 24 h | **~200** | reported (v4 ≈ 0.28 H100) |
+| [Bolmo](2512.15586-bolmo-byteifying-the-next-generation-of-language-models.md) | OLMo-3 7B → byte-level | 39.3B tokens | **~1.2K** | estimate |
+
+### Hand ranking
+
+| # | Paper | Key idea | Result |
+| ---: | --- | --- | --- |
+| 1 | [ALM: universal cross-tokenizer distillation](2503.20083-universal-cross-tokenizer-distillation-via-approximate-likelihood-matc.md) (NeurIPS'25) | Approximate likelihood matching over aligned chunks; works for any tokenizer pair, including subword → byte | First effective cross-tokenizer distillation; also transfers tokenizers (Llama3/Gemma2 → bytes) |
+| 2 | [Bolmo: Byteifying LMs](2512.15586-bolmo-byteifying-the-next-generation-of-language-models.md) (AI2) | Byteify an existing LLM with local encoder/decoder + boundary prediction | Byte-level 1B/7B models matching the subword source with <1% of the pretraining budget |
+| 3 | [AdaptiVocab](2503.19693-adaptivocab-enhancing-llm-efficiency-in-focused-domains-through-lightw.md) | Domain n-gram tokens + exponential embedding init + light fine-tune | >25% fewer tokens (faster decode) at equal quality in focused domains |
+| 4 | [TokAlign](2506.03523-tokalign-efficient-vocabulary-adaptation-via-token-alignment.md) (ACL'25) / [TokAlign++](2605.13429-tokalign-advancing-vocabulary-adaptation-via-better-token-alignment.md) | Align vocabularies via token co-occurrence, then progressive fine-tune | Fast replacement; enables token-level KD between model families |
+| 5 | [Token Distillation](2505.20133-token-distillation-attention-aware-input-embeddings-for-new-tokens.md) (ICLR'26) | Distil new-token embeddings from the original multi-token representation's attention behaviour | Best training-free-ish initialization; minutes |
+| 6 | [OMP tokenizer transplantation](2506.06607-training-free-tokenizer-transplantation-via-orthogonal-matching-pursui.md) | Sparse anchor reconstruction, training-free | Strong zero-shot preservation; production tooling |
+| 7 | [MATT](2510.21954-model-aware-tokenizer-transfer.md) | Model-aware transfer using attention-influence modeling | Better transfer to distinct-script languages |
+| 8 | [Byte-prefix marginalization](2607.22334-cross-tokenizer-on-policy-distillation-via-byte-prefix-marginalization.md) | Re-express teacher next-token distribution over the student's tokens exactly via byte prefixes | **Cross-tokenizer on-policy distillation** without dropping probability mass |
+| 9 | [Byte-level distillation](2604.07466-cross-tokenizer-llm-distillation-through-a-byte-level-interface.md) | Distil at the common byte interface | Simple, strong cross-tokenizer baseline |
+| 10 | [VocabTailor](2508.15229-vocabtailor-dynamic-vocabulary-selection-for-downstream-tasks-in-small.md) (ACL'26) | Dynamic vocabulary selection for SLMs (offload embeddings, prune LM head per task) | Big memory cut for edge models |
+
+**Also useful.**
+* Cross-tokenizer distillation: [DWA-KD](2602.21669-dwa-kd-dual-space-weighting-and-time-warped-alignment-for-cross-tokeni.md), [Cross-Tokenizer Likelihood Scoring Algorithms for Language Model Distillation](2512.14954-cross-tokenizer-likelihood-scoring-algorithms-for-language-model-disti.md) (likelihood scoring), [ACTD](2608.29662-actd-anchor-based-cross-tokenizer-distillation-with-residual-regulariz.md),
+  [Dual-Space Knowledge Distillation with Key-Query Matching for Large Language Models with Vocabulary Mismatch](2603.22056-dual-space-knowledge-distillation-with-key-query-matching-for-large-la.md), [Distilling Token-Trained Models into Byte-Level Models](2602.01007-distilling-token-trained-models-into-byte-level-models.md) (token-trained → byte-level).
+* Vocabulary extension: [Teaching Old Tokenizers New Words](2512.03989-teaching-old-tokenizers-new-words-efficient-tokenizer-adaptation-for-p.md) (continued BPE training + pruning), [in-place tokenizer expansion](2607.15232-in-place-tokenizer-expansion-for-pre-trained-llms.md),
+  [Beyond Initialization Loss](2608.03494-beyond-initialization-loss-a-systematic-study-of-token-embedding-initi.md) (embedding init study), [Vocabulary Expansion of Large Language Models via Kullback-Leibler-Based Self-Distillation](2508.15807-vocabulary-expansion-of-large-language-models-via-kullback-leibler-bas.md), [Vocabulary Customization for Efficient Domain-Specific LLM Deployment](2509.26124-vocabulary-customization-for-efficient-domain-specific-llm-deployment.md).
+* Language adaptation: [Franken-Adapter](2502.08037-franken-adapter-cross-lingual-adaptation-of-llms-by-embedding-surgery.md).
+
+**Recommendation.**
+* For **speed in a domain or language**: extend or re-fit the vocabulary, initialize with OMP or Token Distillation, and
+  heal on ~0.1–1B tokens (≈2–50 H100-h at 7–8B).
+* For **distilling across model families**: use ALM or byte-prefix OPD rather than forcing the student onto the teacher's
+  tokenizer.
+* For a runtime, the LM head is a large share of small-model decode cost at 150K+ vocabularies. Vocabulary trimming
+  (VocabTailor) and certified sub-vocabulary heads are cheap wins. Byte-level models (Bolmo) need a runtime with
+  **boundary-aware patch decoding**.
+
 ## 🏆 Best of the best by impact score (top 10)
 
 1. **[AdaptiVocab: Enhancing LLM Efficiency in Focused Domains through Lightweight Vocabulary Adaptation](2503.19693-adaptivocab-enhancing-llm-efficiency-in-focused-domains-through-lightw.md)** (2025-08) — This work introduces AdaptiVocab, an end-to-end approach for vocabulary adaptation, designed to enhance LLM efficiency in low-resource domains, and shows that AdaptiVocab reduces token usage by over 25% without …  
@@ -44,6 +114,7 @@ Sorted cheapest first by the *smallest* compute figure found in the paper. Range
 
 | Paper | Min H100-h | Max H100-h | GPU seen | Evidence |
 | --- | ---: | ---: | --- | --- |
+| [Training-Free Tokenizer Transplantation via Orthogonal Matching Pursuit](2506.06607-training-free-tokenizer-transplantation-via-orthogonal-matching-pursui.md) | 0.01 | 312 | H100 | OMP proves highly efficient: on a single H100 GPU, it required only 38 seconds (with k=8) and 74 seconds (with k=32).… |
 | [Token Distillation: Attention-aware Input Embeddings For New Tokens](2505.20133-token-distillation-attention-aware-input-embeddings-for-new-tokens.md) | 0.02 | 0.17 | H100 | In return, ZeTT is faster at inference time (in our experiments on a single H100 80GB GPU, ZeTT took less than a minute).… |
 | [Universal Cross-Tokenizer Distillation via Approximate Likelihood Matching](2503.20083-universal-cross-tokenizer-distillation-via-approximate-likelihood-matc.md) | 48 | 192 | unspecified | The largest individual experiments run on a pod of 32 v4 TPU chips and take \approx 24 hours for transfer of Llama3 to byte-level tokenization, \approx 12 hours… |
 | [TokAlign: Efficient Vocabulary Adaptation via Token Alignment](2506.03523-tokalign-efficient-vocabulary-adaptation-via-token-alignment.md) | 661 | 661 | unspecified | ZeTT requires more computation to train a hypernetwork for the parameters prediction, e.g., 661.2 GPU hours for Pythia{}_{\text{2.8B}}, while our method only co… |

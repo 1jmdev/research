@@ -76,7 +76,7 @@ Also useful:
 3. **[MoBA: Mixture of Block Attention for Long-Context LLMs](2502.13189-moba-mixture-of-block-attention-for-long-context-llms.md)** (2025-02) — This work introduces Mixture of Block Attention (MoBA), an innovative approach that applies the principles of Mixture of Experts (MoE) to the attention mechanism, demonstrating superior performance on long-context tasks …  
    _score 15.75 · Neural Information Processing Systems (Neural Inf Process Sy · 200 cites · 20▲ HF · [code](https://github.com/MoonshotAI/MoBA)_
 4. **[VSA: Faster Video Diffusion with Trainable Sparse Attention](2505.13389-vsa-faster-video-diffusion-with-trainable-sparse-attention.md)** (2025-10) — VSA is established, a trainable, hardware-efficient sparse attention that replaces full attention at \emph{both} training and inference, and a key enabler for further scaling of video diffusion models.  
-   _score 15.56 · Accepted by Neurips 2025 · 102 cites · 38▲ HF · [code](https://github.com/hao-ai-lab/FastVideo)_
+   _score 15.56 · Accepted by Neurips 2025 · 102 cites · 38▲ HF · [code](https://github.com/hao-ai-lab/FastVideo) · ~0.00–99k H100-h_
 5. **[XAttention: Block Sparse Attention with Antidiagonal Scoring](2503.16428-xattention-block-sparse-attention-with-antidiagonal-scoring.md)** (2025-03) — XAttention is introduced, a plug-and-play framework that dramatically accelerates long-context inference in Transformers models using sparse attention, and achieves accuracy comparable to full attention while delivering …  
    _score 14.06 · International Conference on Machine Learning (ICML) · 139 cites · 15▲ HF · [code](https://github.com/mit-han-lab/x-attention)_
 6. **[SLA: Beyond Sparsity in Diffusion Transformers via Fine-Tunable Sparse-Linear Attention](2509.24006-sla-beyond-sparsity-in-diffusion-transformers-via-fine-tunable-sparse.md)** (2025-11) — SLA (Sparse-Linear Attention), a trainable attention method that fuses sparse and linear attention to accelerate diffusion models, and an efficient GPU kernel is implemented, which yields a 13.7x speedup in attention …  
@@ -86,7 +86,7 @@ Also useful:
 8. **[IndexCache: Accelerating Sparse Attention via Cross-Layer Index Reuse](2603.12201-indexcache-accelerating-sparse-attention-via-cross-layer-index-reuse.md)** (2026-03) — IndexCache exploits cross-layer redundancy by partitioning layers into a small set of Full layers that run their own indexers and a majority of Shared layers that simply reuse the nearest Full layer's top-k indices, …  
    _score 11.77 · 25 cites · 69▲ HF · [code](https://github.com/THUDM/IndexCache)_
 9. **[LServe: Efficient Long-sequence LLM Serving with Unified Sparse Attention](2502.14866-lserve-efficient-long-sequence-llm-serving-with-unified-sparse-attenti.md)** (2025-04) — LServe demonstrates the compatibility of static and dynamic sparsity in long-context LLM attention and enables multiplicative speedups by combining these optimizations, and converts half of the attention heads to nearly …  
-   _score 10.98 · Accepted by MLSys 2025 · 52 cites · 12▲ HF · [code](https://github.com/mit-han-lab/omniserve)_
+   _score 10.98 · Accepted by MLSys 2025 · 52 cites · 12▲ HF · [code](https://github.com/mit-han-lab/omniserve) · ~0.00 H100-h_
 10. **[FlexPrefill: A Context-Aware Sparse Attention Mechanism for Efficient Long-Sequence Inference](2502.20766-flexprefill-a-context-aware-sparse-attention-mechanism-for-efficient-l.md)** (2025-02) — FlexPrefill adaptively optimizes the sparse pattern and sparse ratio of each attention head based on the prompt, enhancing efficiency in long-sequence inference tasks, providing a more flexible and efficient solution …  
    _score 10.67 · Accepted at ICLR 2025 (Oral · 128 cites · [code](https://github.com/bytedance/FlexPrefill)_
 
@@ -102,6 +102,16 @@ Citations lag, so new work is under-ranked above. These are the most-upvoted or 
 - **[Kascade: A Practical Sparse Attention Method for Long-Context LLM Inference](2512.16391-kascade-a-practical-sparse-attention-method-for-long-context-llm-infer.md)** (2026-08-31; 0▲, 12 cites) — Kascade is a training-free sparse attention method that leverages known observations such as 1) post-softmax attention is intrinsically sparse, and 2) the identity of high-weight …
 - **[FSA: An Alternative Efficient Implementation of Native Sparse Attention Kernel](2508.18224-fsa-an-alternative-efficient-implementation-of-native-sparse-attention.md)** (2026-07-01; 0▲, 9 cites) — Flash Sparse Attention (FSA) is proposed, an alternative kernel implementation that enables efficient NSA computation across a wide range of popular LLMs with a varied, smaller …
 - **[FlashPrefill V2: Block-Sparse Prefill Attention for Long-Context LLM Serving](2608.19758-flashprefill-v2-block-sparse-prefill-attention-for-long-context-llm-se.md)** (2026-08-20; 20▲, 1 cites) — This paper introduces a mean correction term that effectively suppresses the approximation error, keeping performance degradation manageable even at extreme sparsity levels, and …
+
+## 💻 Compute cost (estimated H100-hours, auto-extracted)
+
+Sorted cheapest first by the *smallest* compute figure found in the paper. Ranges cover all figures the parser found (e.g. per-model-size runs). Verify against the quoted sentence in each paper file.
+
+| Paper | Min H100-h | Max H100-h | GPU seen | Evidence |
+| --- | ---: | ---: | --- | --- |
+| [VSA: Faster Video Diffusion with Trainable Sparse Attention](2505.13389-vsa-faster-video-diffusion-with-trainable-sparse-attention.md) | 0.00 | 99k | H200 | After 4,000 steps training, the 3-step generator achieves a 50.9× reduction in denoising time relative to the baseline model and can generate a 5-second video i… |
+| [LServe: Efficient Long-sequence LLM Serving with Unified Sparse Attention](2502.14866-lserve-efficient-long-sequence-llm-serving-with-unified-sparse-attenti.md) | 0.00 | 0.00 | A100 | To successfully run the experiments, a host system with x86_64 CPUs is required, along with at least one A100 or L40S NVIDIA GPU.… |
+| [SeerAttention-R: Sparse Attention Adaptation for Long Reasoning](2506.08889-seerattention-r-sparse-attention-adaptation-for-long-reasoning.md) | 2.0 | 12 | unspecified | Table 2 summarizes the GPU hours required for training models of various sizes.… |
 
 ## Full ranking
 

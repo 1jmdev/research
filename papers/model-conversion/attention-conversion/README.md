@@ -6,6 +6,74 @@ Retrofitting the attention of a pretrained model: MHA2MLA, TransMLA, X-EcoMLA, G
 
 📖 Written overview of this area: [../../../overviews/model-conversion.md](../../../overviews/model-conversion.md)
 
+## 🔬 Analyst notes: hand ranking and verdict
+
+_Written after reading the abstracts, and the full text where available, of this category's papers. The hand ranking weighs technical merit and usefulness for a runtime or model builder, not just citations. The automatic impact ranking follows below._
+
+**Verdict.** This is attention-to-attention retrofitting: the model stays a Transformer, but its KV cache and attention cost
+shrink. There are two families.
+
+1. **MHA/GQA → MLA** (DeepSeek-style latent KV). [TransMLA](2502.07864-transmla-multi-head-latent-attention-is-all-you-need.md) proves MLA is strictly more expressive than GQA
+   at equal KV size. It converts via **RoRoPE** (concentrate the RoPE signal into one head) + **FreqFold** + joint KV
+   low-rank factorization. MHA2MLA does partial-RoPE removal + SVD. The payoff is **reusing DeepSeek's MLA kernels**
+   (FlashMLA, absorbed MQA decode in vLLM/SGLang) and ~93–97% KV reduction.
+
+   The cheap part is initialization: [CARE](2603.17946-care-covariance-aware-and-rank-enhanced-decomposition-for-enabling-mul.md) (ICLR'26) makes it **activation-aware** (covariance-weighted
+   SVD, per-layer rank allocation), which cuts the healing needed afterwards. Healing takes **1–6B tokens** at 7–8B.
+2. **Full → sparse / sliding-window attention.** Full-attention models are intrinsically sparse. Only some heads are
+   "retrieval heads"; the rest can become streaming/SWA heads.
+   * [RTPurbo](2605.16928-full-attention-strikes-back-transferring-full-attention-into-sparse-wi.md) converts in **a few hundred training steps**: head specialization + low-dimensional retrieval
+     index + dynamic top-p.
+   * [SWAA](2512.10411-swaa-sliding-window-attention-adaptation-for-efficient-and-quality-pre.md) shows naive SWA collapses. The fix is a recipe: keep some full-attention layers, sinks,
+     interleave, and fine-tune briefly.
+   * LongCat's [LoZA](2512.23966-efficient-context-scaling-with-longcat-zigzag-attention.md) and DeepSeek-V3.2's DSA show the same thing at frontier scale, applied during
+     mid-training.
+
+A new consideration is **hardware fit.** MLA's absorbed MQA path suits H100 compute/bandwidth ratios but loses head-axis
+tensor parallelism and gains nothing from MTP on H20-class GPUs. [GQLA](2605.15250-gqla-group-query-latent-attention-for-hardware-adaptive-large-language.md) fixes this with group-indexed
+up-projections that allow two equivalent decode paths.
+
+### Conversion cost table (hand-checked)
+
+| Method | Conversion | Tokens / steps | H100-h | Basis |
+| --- | --- | ---: | ---: | --- |
+| [RTPurbo](2605.16928-full-attention-strikes-back-transferring-full-attention-into-sparse-wi.md) | Full → head-wise sparse (retrieval/streaming heads) | ~1M-token alignment + ~600 steps at 48K ctx | **~10–50** | estimate from steps (H20) |
+| [SWAA](2512.10411-swaa-sliding-window-attention-adaptation-for-efficient-and-quality-pre.md) | Full → SWA hybrid | short fine-tune | **~15** (Qwen3-4B), **~36** (30B-A3B) | reported: 8×H20 × 12 h / 30 h |
+| [NLL-guided layer selection](2606.27791-nll-guided-full-attention-layer-selection-for-training-free-sliding-wi.md) | Full → SWA hybrid, training-free | calibration only | **<1** | training-free |
+| [CARE](2603.17946-care-covariance-aware-and-rank-enhanced-decomposition-for-enabling-mul.md) (ICLR'26) | GQA → MLA (activation-aware init) | 0B one-shot; 1–3B healing | **~0 / ~35–100** | estimate (8B) |
+| [TransMLA](2502.07864-transmla-multi-head-latent-attention-is-all-you-need.md) | GQA → MLA (Llama-2-7B, Qwen) | 6B | **~180** | estimate |
+| [MHA2MLA](2502.14837-towards-economical-inference-enabling-deepseek-s-multi-head-latent-att.md) (ACL'25) | MHA/GQA → MLA | 0.6–1% of pretraining tokens (12K steps) | **~100–350** (7B) | estimate |
+| [X-EcoMLA](2503.11132-x-ecomla-upcycling-pre-trained-attention-into-mla-for-efficient-and-ex.md) | Attention → MLA via KD from a larger teacher | 3.6–7B | **~70–140 MI300-h** | reported |
+| [LoZA](2512.23966-efficient-context-scaling-with-longcat-zigzag-attention.md) (LongCat-Flash) | Full → ZigZag sparse during mid-training | 500B + 40B long-context | part of the mid-training budget | frontier scale |
+
+### Hand ranking
+
+| # | Paper | Key idea | Result |
+| ---: | --- | --- | --- |
+| 1 | [TransMLA](2502.07864-transmla-multi-head-latent-attention-is-all-you-need.md) | Any GQA → MLA; RoRoPE + FreqFold decouple RoPE; balanced KV factorization; direct compatibility with DeepSeek code | 93% KV compressed on Llama-2-7B, **10.6× speedup at 8K**; 6B tokens to restore quality |
+| 2 | [RTPurbo: Full Attention Strikes Back](2605.16928-full-attention-strikes-back-transferring-full-attention-into-sparse-wi.md) | Retrieval vs streaming heads + low-dim retrieval index + dynamic top-p; a few hundred steps | Near-lossless long-context and reasoning at high sparsity |
+| 3 | [MHA2MLA](2502.14837-towards-economical-inference-enabling-deepseek-s-multi-head-latent-att.md) (ACL'25) | Contribution-aware partial-RoPE removal + SVD joint KV projection | Up to **96.87% KV reduction** (Llama-2-7B) with 0.6–1% of the data; composes with KV quantization |
+| 4 | [CARE](2603.17946-care-covariance-aware-and-rank-enhanced-decomposition-for-enabling-mul.md) (ICLR'26) | Covariance-aware, rank-enhanced factorization + per-layer rank allocation | Much better one-shot MLA init; fewer healing tokens |
+| 5 | [SWAA](2512.10411-swaa-sliding-window-attention-adaptation-for-efficient-and-quality-pre.md) | Diagnoses SWA collapse (train/inference mismatch + no distant access); a recipe of FA layers + sinks + interleaving + light fine-tuning | Recovers long-context quality with SWA efficiency; ~12 h on 8×H20 for 4B |
+| 6 | [GQLA](2605.15250-gqla-group-query-latent-attention-for-hardware-adaptive-large-language.md) | MLA variant whose weights admit **both** absorbed-MQA and GQA-style decode paths | Hardware-adaptive MLA: tensor parallelism + MTP gains on H20 |
+| 7 | [LoZA](2512.23966-efficient-context-scaling-with-longcat-zigzag-attention.md) (Meituan) | Convert full attention to ZigZag sparse during mid-training | 1M-token context; >50% prefill speedup and >30% decode savings at 256K |
+| 8 | [X-EcoMLA](2503.11132-x-ecomla-upcycling-pre-trained-attention-into-mla-for-efficient-and-ex.md) | SVD init + distillation from a larger teacher ("dark knowledge") | 6.4× KV compression on Llama-3.2-1B, no loss, 70 MI300 GPU-h |
+| 9 | [Attention Editing](2604.05688-attention-editing-a-versatile-framework-for-cross-architecture-attenti.md) | General framework: any trained attention → MLA or hybrid SWA without strict structural requirements | Practical cross-architecture conversion |
+| 10 | [Zebra-Llama](2505.17272-zebra-llama-towards-extremely-efficient-hybrid-models.md) (NeurIPS'25) | MLA + Mamba2 hybrid composed from a pretrained Transformer | Extreme KV reduction (see [transformer-to-linear-or-hybrid](../transformer-to-linear-or-hybrid/README.md)) |
+
+**Also useful.**
+* Other modalities: [MHA2MLA-VLM](2601.11464-mha2mla-vlm-enabling-deepseek-s-economical-multi-head-latent-attention.md) (VLMs), [Whisper-MLA](2603.00563-whisper-mla-reducing-gpu-memory-consumption-of-asr-models-based-on-mha.md) (ASR).
+* Domain case study: [YouZhi](2606.05868-youzhi-towards-high-concurrency-financial-llms-via-adaptive-gqa-to-mla.md) (layer-adaptive FreqFold on Ascend).
+* Small-model study: [Latent Multi-Head Attention for Small Language Models](2506.09342-latent-multi-head-attention-for-small-language-models.md) (MLA + RoPE at half rank is a Pareto improvement at 30M).
+
+**Recommendation.**
+* For serving an existing GQA model at long context, **GQA → MLA (TransMLA + CARE init, 1–6B tokens, ≈50–200 H100-h)**
+  pays for itself immediately. It gets 4–10× smaller KV plus DeepSeek's MLA kernels.
+* For a lower-effort win, do head-level full → sparse/SWA conversion (RTPurbo/SWAA, ≈10–40 H100-h). This keeps GQA
+  kernels.
+* For a runtime, MLA support needs both the **absorbed decode path** (latent KV, MQA-style) and the **expanded prefill
+  path**. Watch GQLA if you target non-H100 hardware.
+
 ## 🏆 Best of the best by impact score (top 10)
 
 1. **[TransMLA: Multi-Head Latent Attention Is All You Need](2502.07864-transmla-multi-head-latent-attention-is-all-you-need.md)** (2025-06) — TransMLA, a framework that seamlessly converts any GQA-based pre-trained model into an MLA-based model, enables direct compatibility with DeepSeek's codebase, allowing these models to fully leverage DeepSeek-specific …  

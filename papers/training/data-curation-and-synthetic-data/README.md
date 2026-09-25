@@ -49,6 +49,8 @@ Sorted cheapest first by the *smallest* compute figure found in the paper. Range
 | Paper | Min H100-h | Max H100-h | GPU seen | Evidence |
 | --- | ---: | ---: | --- | --- |
 | [Organize the Web: Constructing Domains Enhances Pre-Training Data Curation](2502.10341-organize-the-web-constructing-domains-enhances-pre-training-data-curat.md) | 183 | 360 | H100 | We speed up training by adding torch.compile, making a single training run take 183 NVIDIA H100 hours.… |
+| [RefineX: Learning to Refine Pre-training Data at Scale from Expert-Guided Progra](2507.03253-refinex-learning-to-refine-pre-training-data-at-scale-from-expert-guid.md) | 1.7k | 12k | H800 | Evaluating each baseline requires training a model on its corresponding corpus, consuming approximately 1,728 GPU hours on H800-80G GPUs.… |
+| [Essential-Web v1.0: 24T tokens of organized web data](2506.14111-essential-web-v1-0-24t-tokens-of-organized-web-data.md) | 117k | 117k | MI300X | Inference at this scale requires \approx90k AMD MI300x GPU-hours. 4 The inference job ran on 512 AMD MI300x for about 1 week.… |
 
 ## Full ranking
 

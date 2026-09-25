@@ -6,6 +6,75 @@ Merging fine-tuned checkpoints (task arithmetic, TIES, DARE, model soups, mergin
 
 📖 Written overview of this area: [../../../overviews/model-conversion.md](../../../overviews/model-conversion.md)
 
+## 🔬 Analyst notes: hand ranking and verdict
+
+_Written after reading the abstracts, and the full text where available, of this category's papers. The hand ranking weighs technical merit and usefulness for a runtime or model builder, not just citations. The automatic impact ranking follows below._
+
+**Verdict.** This is a big, noisy area (100+ papers). Most "new merging operator" papers report small gains on ViT/T5
+task-vector benchmarks that don't transfer to modern LLMs ([in-the-wild study](2511.21437-a-systematic-study-of-in-the-wild-model-merging-for-large-language-mod.md)). What actually matters for
+someone building models:
+
+1. **Merging checkpoints inside pretraining is the highest-ROI use.** [Model Merging in Pre-training](2505.12082-model-merging-in-pre-training-of-large-language-models.md)
+   (PMA, ByteDance Seed; up to 100B+ MoE) shows that averaging constant-LR checkpoints **reproduces the gains of LR
+   annealing** and predicts annealed performance, which cuts ablation cost. [WSM](../../training/optimizers/2507.17634-wsm-decay-free-learning-rate-schedule-via-checkpoint-merging-for-llm-p.md) goes further: a
+   decay-free LR schedule where checkpoint merging *is* the decay.
+2. **Weighted souping of post-trained variants gets state-of-the-art results almost for free.**
+   [Souper-Model / SoCE](2511.13254-souper-model-how-simple-arithmetic-unlocks-state-of-the-art-llm-perfor.md) (Meta) picks a category expert per weakly-correlated benchmark cluster and uses
+   optimized weights instead of a uniform average. It is state of the art on BFCL.
+3. **Capability transfer by task vectors between siblings.** Examples:
+   * [Reasoning Vectors](2509.01363-reasoning-vectors-transferring-chain-of-thought-capabilities-via-task.md): θ_GRPO − θ_SFT added to another model;
+   * [Typhoon2-R1 one-day recipe](2502.09056-adapting-language-specific-llms-to-a-reasoning-model-in-one-day-via-mo.md): language-specific model + R1-distilled reasoning model merged for $120;
+   * long-to-short reasoning merges ([Unlocking Efficient Long-to-Short LLM Reasoning with Model Merging](../../reasoning/efficient-reasoning/2503.20641-unlocking-efficient-long-to-short-llm-reasoning-with-model-merging.md)) that shorten CoT;
+   * [re-basin task vectors](2505.22697-update-your-transformer-to-the-latest-release-re-basin-of-task-vectors.md) (ICML'25): carry a fine-tune to a *new base release* without training.
+4. **Principled interference handling, when merging many experts:**
+   * spectral/subspace methods: [Iso-C/Iso-CTS](2502.04959-no-task-left-behind-isotropic-model-merging-with-common-and-task-speci.md) (ICML'25), [STAR](2502.10339-star-spectral-truncation-and-rescale-for-model-merging.md), [DC-Merge](2603.06242-dc-merge-improving-model-merging-with-directional-consistency.md);
+   * data-free least-squares on task vectors: [WUDI](2503.08099-whoever-started-the-interference-should-end-it-guiding-data-free-model.md) (ICML'25);
+   * activation-informed methods: [AIM](2502.02421-activation-informed-merging-of-large-language-models.md), [ACM](2505.14009-activation-guided-consensus-merging-for-large-language-models.md);
+   * LoRA-specific: [Core Space](2509.17786-accurate-and-efficient-low-rank-model-merging-in-core-space.md), [OSRM](2505.22934-unraveling-lora-interference-orthogonal-subspaces-for-robust-model-mer.md).
+
+   [Merging scaling laws](2509.24244-model-merging-scaling-laws-in-large-language-models.md) (ICML'26) shows a size-dependent floor plus **diminishing returns in the number
+   of experts**, so plan how many experts to merge.
+
+**Cost.** Weight-space merges take **minutes of CPU/GPU**. Evolutionary/Bayesian searches cost 10–1,000 GPU-h of
+*evaluation* ([Mergenetic](2505.11427-mergenetic-a-simple-evolutionary-model-merging-library.md), [MERGE³](2502.10436-merge-3-efficient-evolutionary-merging-on-consumer-grade-gpus.md) on consumer GPUs, [Darwin](2605.14386-darwin-family-mri-trust-weighted-evolutionary-merging-for-training-fre.md)). PMA in
+pretraining costs nothing extra; it replaces annealing runs.
+
+### Hand ranking
+
+| # | Paper | Setting | Key idea | Result |
+| ---: | --- | --- | --- | --- |
+| 1 | [PMA: Model Merging in Pre-training](2505.12082-model-merging-in-pre-training-of-large-language-models.md) (NeurIPS'25) | Pretraining, dense + MoE to >100B | Average checkpoints from the constant-LR phase (SMA/EMA/WMA studied) | ≈ annealing gains without annealing; predicts final performance; stabilizes spikes (PMA-init). **Adopt in every pretraining run** |
+| 2 | [Souper-Model (SoCE)](2511.13254-souper-model-how-simple-arithmetic-unlocks-state-of-the-art-llm-perfor.md) | Post-training soups | Category-aware expert selection + optimized non-uniform weights | State of the art on BFCL; robust gains across domains |
+| 3 | [Iso-C / Iso-CTS](2502.04959-no-task-left-behind-isotropic-model-merging-with-common-and-task-speci.md) (ICML'25) | Multi-task merging | **Flatten the singular spectrum** of the merged task matrix (isotropic) + common/task-specific subspaces | State of the art across task counts and scales |
+| 4 | [WUDI merging](2503.08099-whoever-started-the-interference-should-end-it-guiding-data-free-model.md) (ICML'25) | Data-free | Task vectors span the input subspace of linear layers → solve interference by least squares using the task vectors themselves | +10.9% over data-free baselines; beats test-time adaptation |
+| 5 | [Model merging scaling laws](2509.24244-model-merging-scaling-laws-in-large-language-models.md) (ICML'26) | Planning | Power law in model size and number of experts; holds across methods | Choose the number of experts vs base size under a budget |
+| 6 | [Reasoning Vectors](2509.01363-reasoning-vectors-transferring-chain-of-thought-capabilities-via-task.md) | Capability transfer | θ_GRPO − θ_SFT from identically initialized Qwen2.5 → add to other models | +GSM8K/HumanEval gains; subtracting it drops GSM8K 11.8% |
+| 7 | [Language-specific → reasoning in one day](2502.09056-adapting-language-specific-llms-to-a-reasoning-model-in-one-day-via-mo.md) | Recipe | Data selection + merge a language-specific LLM with an R1-distilled model | R1-level reasoning in Thai for **$120 of compute** |
+| 8 | [Core Space merging](2509.17786-accurate-and-efficient-low-rank-model-merging-in-core-space.md) (NeurIPS'25) | LoRA merging | Merge LoRAs in a shared core basis (lossless projection) | State of the art at a fraction of full-matrix merge cost |
+| 9 | [Re-basin of task vectors](2505.22697-update-your-transformer-to-the-latest-release-re-basin-of-task-vectors.md) (ICML'25) | Base-model update | Permute heads (spectral) to move fine-tunes to a new base release, data-free | Keeps fine-tunes alive across base upgrades |
+| 10 | [MergeBench](2505.10833-mergebench-a-benchmark-for-merging-domain-specialized-llms.md) (NeurIPS'25) | Benchmark | Domain-specialized LLM merging at scale (Llama/Gemma 2–9B) | Shows the gap to multi-task training; **use it for evaluation** |
+| 11 | [AIM](2502.02421-activation-informed-merging-of-large-language-models.md) (NeurIPS'25) / [ACM](2505.14009-activation-guided-consensus-merging-for-large-language-models.md) | Activation-aware | Protect weights important in activation space; layer-wise coefficients from activation similarity | Plug-in gains for any merge method; ACM shortens reasoning (System 1/2) |
+| 12 | [Darwin Family](2605.14386-darwin-family-mri-trust-weighted-evolutionary-merging-for-training-fre.md) | Evolutionary | 14-dim merge genome + diagnostic layer-importance ("MRI-trust") weighting | Training-free improvements at 4–35B; merges Transformer + Mamba parts |
+
+**Also useful.**
+* Heterogeneous fusion (different architectures/vocabularies): [InfiGFusion](2505.13893-infigfusion-graph-on-logits-distillation-via-efficient-gromov-wasserst.md), [Can Heterogeneous Language Models Be Fused?](2604.01674-can-heterogeneous-language-models-be-fused.md),
+  [Training-free Heterogeneous Model Merging](2501.00061-training-free-heterogeneous-model-merging.md).
+* MoE-aware merging: [MergeME](2502.00997-mergeme-model-merging-techniques-for-homogeneous-and-heterogeneous-moe.md), [When Model Merging Breaks Routing](2606.03391-when-model-merging-breaks-routing-training-free-calibration-for-moe.md) (merging breaks routing; training-free calibration).
+* Merging as data-mixture search: [Merge to Mix](2505.16066-merge-to-mix-mixing-datasets-via-model-merging.md), [Linear Model Merging Unlocks Simple and Scalable Multimodal Data Mixture Optimization](2602.04937-linear-model-merging-unlocks-simple-and-scalable-multimodal-data-mixtu.md). See also the training-data notes: OptiMer,
+  MergeMix.
+* Failure analyses: [From Memorization to Parameter Interference](2506.14126-from-memorization-to-parameter-interference-how-overtraining-experts-h.md) (overtrained experts merge worse), [Are we Merging the Right Models? Impact of Expert Training Duration on Model Merging for LLMs](2607.11997-are-we-merging-the-right-models-impact-of-expert-training-duration-on.md), [An Empirical Study and Theoretical Explanation on Task-Level Model-Merging Collapse](2603.09463-an-empirical-study-and-theoretical-explanation-on-task-level-model-mer.md) (merging collapse),
+  [On the Limits of Model Merging for Multilinguality in Pre-Training](2605.25846-on-the-limits-of-model-merging-for-multilinguality-in-pre-training.md) (limits for multilinguality in pretraining).
+* SFT + RLVR vector synthesis: [Decouple before Integration](2605.00610-decouple-before-integration-test-time-synthesis-of-sft-and-rlvr-task-v.md). Merging for DiLoCo aggregation: [Can Model Merging Improve Aggregation in DiLoCo?](2607.03011-can-model-merging-improve-aggregation-in-diloco.md).
+* Survey: [Model Merging in the Era of Large Language Models](2603.09938-model-merging-in-the-era-of-large-language-models-methods-applications.md).
+
+**Recommendation for model builders.**
+1. **Pretraining.** Keep constant-LR checkpoints and use PMA/WSM merging instead of (or before) annealing.
+2. **Post-training.** Train domain/skill specialists from the same base, then do SoCE-style weighted souping or
+   Iso-CTS/WUDI for many experts. Measure against a multi-task baseline on MergeBench.
+3. **Capability grafting.** Use reasoning or long-to-short task vectors between siblings; re-basin when the base updates.
+4. For **runtimes**, merging is offline. The relevant runtime feature is **multi-LoRA serving**, which lets you defer
+   merging to request time.
+
 ## 🏆 Best of the best by impact score (top 10)
 
 1. **[No Task Left Behind: Isotropic Model Merging with Common and Task-Specific Subspaces](2502.04959-no-task-left-behind-isotropic-model-merging-with-common-and-task-speci.md)** (2025-06) — This work proposes an isotropic merging framework that flattens the singular value spectrum of task matrices, enhances alignment, and reduces the performance gap, and achieves state-of-the-art performance on vision and …  

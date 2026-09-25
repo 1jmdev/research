@@ -109,6 +109,7 @@ Sorted cheapest first by the *smallest* compute figure found in the paper. Range
 
 | Paper | Min H100-h | Max H100-h | GPU seen | Evidence |
 | --- | ---: | ---: | --- | --- |
+| [Judge Decoding: Faster Speculative Sampling Requires Going Beyond Model Alignmen](2501.19309-judge-decoding-faster-speculative-sampling-requires-going-beyond-model.md) | 0.22 | 0.22 | H100 | These benefits remain present even in optimized inference frameworks, where our method reaches up to 141 tokens/s for 8B/70B-Judge and 129 tokens/s for 8B/405B … |
 | [R2R: Efficiently Navigating Divergent Reasoning Paths with Small-Large Model Tok](2505.21600-r2r-efficiently-navigating-divergent-reasoning-paths-with-small-large.md) | 56 | 448 | unspecified | The subsequent LLM continuation and verification stages take 7 h (56 GPU hours) and 14 h (112 GPU hours), respectively.… |
 
 ## Full ranking
