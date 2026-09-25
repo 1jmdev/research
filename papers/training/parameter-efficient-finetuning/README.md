@@ -6,6 +6,71 @@ LoRA/DoRA/QLoRA variants, adapters, PEFT for LLMs, serving many LoRAs.
 
 📖 Written overview of this area: [../../../overviews/training.md](../../../overviews/training.md)
 
+## 🔬 Analyst notes: hand ranking and verdict
+
+_Written after reading the abstracts, and the full text where available, of this category's papers. The hand ranking weighs technical merit and usefulness for a runtime or model builder, not just citations. The automatic impact ranking follows below._
+
+**Verdict.** The LoRA-variant zoo produced little that survives careful tuning.
+[Learning Rate Matters: Vanilla LoRA May Suffice](2602.04998-learning-rate-matters-vanilla-lora-may-suffice-for-llm-fine-tuning.md) finds that with per-method LR/batch/rank sweeps, most
+variants land within noise of plain LoRA. They mainly prefer different learning rates. The live directions are
+elsewhere:
+
+1. **Hypernetworks that generate adapters (prompt → weights).**
+   * [Text-to-LoRA](2506.06105-text-to-lora-instant-transformer-adaption.md) (Sakana, ICML'25): builds a LoRA from a task description in one forward pass.
+   * [Drag-and-Drop LLMs](2506.16406-drag-and-drop-llms-zero-shot-prompt-to-weights.md): prompts → LoRA in seconds; up to 12,000× cheaper than fine-tuning, +30% over
+     training LoRAs on unseen tasks.
+   * [SHINE](2602.06358-shine-a-scalable-in-context-hypernetwork-for-mapping-context-to-lora-i.md): context → LoRA, turning in-context knowledge into parameters.
+   * [Transformer²](2501.06252-transformer-squared-self-adaptive-llms.md) (ICLR'25): singular-value "expert vectors" mixed per prompt.
+2. **Knowledge injection and continual learning.**
+   * [How much knowledge fits in a LoRA](2502.14502-how-much-knowledge-can-you-pack-into-a-lora-adapter-without-harming-ll.md): mixing known and new facts helps, but external QA still degrades.
+   * [Sparse memory fine-tuning](2510.15103-continual-learning-via-sparse-memory-finetuning.md) (Meta): update only memory-layer slots highly activated by the new
+     knowledge, with far less forgetting than LoRA or full fine-tuning.
+   * [parametric memory law](2605.30260-how-lora-remembers-a-parametric-memory-law-for-llm-finetuning.md) for LoRA recall.
+3. **Efficiency of PEFT training itself:**
+   * [SparseLoRA](2506.16500-sparselora-accelerating-llm-fine-tuning-with-contextual-sparsity.md) (ICML'25): contextual sparsity in the frozen base; 2.2× less compute, 1.6× faster;
+   * [LoRAM](2502.13533-train-small-infer-large-memory-efficient-lora-training-for-large-langu.md): train on a pruned model, infer on the full one;
+   * [LoRAFusion](2510.00206-lorafusion-efficient-lora-fine-tuning-for-llms.md) and [fused DoRA kernels](2603.22276-scaling-dora-high-rank-adaptation-via-factored-norms-and-fused-kernels.md);
+   * quantized/zeroth-order fine-tuning: [Fine-tuning Quantized Neural Networks with Zeroth-order Optimization](2505.13430-fine-tuning-quantized-neural-networks-with-zeroth-order-optimization.md), [LowRA](2502.08141-lowra-accurate-and-efficient-lora-fine-tuning-of-llms-under-2-bits.md) (<2-bit);
+   * multi-LoRA concurrent training: [PLoRA](2508.02932-plora-efficient-concurrent-lora-training-for-large-language-models.md).
+4. **Serving-aware adapters.** [Activated LoRA](2504.12397-activated-lora-fine-tuned-llms-for-intrinsics.md) (IBM) applies the adapter only *after* its invocation
+   point, so the base model's KV cache is reused: adapters as cheap "intrinsics". PEFT at million-adapter scale:
+   [On the Scaling of PEFT](2606.02437-on-the-scaling-of-peft-towards-million-personal-models-of-trillion-par.md) / MinT.
+5. **Optimization geometry.** [Riemannian LoRA with Muon](2507.12142-lora-meets-riemannion-muon-optimizer-for-parametrization-independent-l.md), [LoRA-One](2502.01235-lora-one-one-step-full-gradient-could-suffice-for-fine-tuning-large-la.md) (one full-gradient step
+   init), [LoRA Training Provably Converges to a Low-Rank Global Minimum or It Fails Loudly (But it Probably Won't Fail)](2502.09376-lora-training-provably-converges-to-a-low-rank-global-minimum-or-it-fa.md) (LoRA converges to a low-rank minimum or fails loudly).
+
+### Hand ranking
+
+| # | Paper | Kind | Key idea | Result |
+| ---: | --- | --- | --- | --- |
+| 1 | [Learning Rate Matters: Vanilla LoRA may suffice](2602.04998-learning-rate-matters-vanilla-lora-may-suffice-for-llm-fine-tuning.md) | Benchmark | Full hyperparameter sweeps for LoRA variants across tasks and scales | All variants within 1–2% of vanilla LoRA once LR is tuned. **Tune LR before trying variants** |
+| 2 | [Drag-and-Drop LLMs](2506.16406-drag-and-drop-llms-zero-shot-prompt-to-weights.md) (NeurIPS'25) | Prompt → weights | Condition a hyper-convolutional decoder on prompt embeddings to emit full LoRA matrices | Seconds per adapter; up to 30% over trained LoRAs zero-shot; 12,000× less overhead |
+| 3 | [Text-to-LoRA](2506.06105-text-to-lora-instant-transformer-adaption.md) (ICML'25) | Hypernetwork | Task description → LoRA in one forward pass | Matches task-specific adapters; generalizes to unseen tasks |
+| 4 | [Sparse memory fine-tuning](2510.15103-continual-learning-via-sparse-memory-finetuning.md) | Continual learning | Memory-layer model; update only slots specific to new data (TF-IDF vs pretraining usage) | Much less forgetting than full fine-tuning/LoRA at equal new-fact learning |
+| 5 | [SparseLoRA](2506.16500-sparselora-accelerating-llm-fine-tuning-with-contextual-sparsity.md) (ICML'25) | Training speed | SVD-based contextual sparsity estimator skips base-weight channels in the forward pass | Up to 2.2× less compute, 1.6× faster at equal accuracy |
+| 6 | [Activated LoRA](2504.12397-activated-lora-fine-tuned-llms-for-intrinsics.md) | Serving | Adapter activates mid-sequence; reuse the base model's KV for the prefix | Instant switching between base and adapters without re-prefill |
+| 7 | [Transformer²](2501.06252-transformer-squared-self-adaptive-llms.md) (ICLR'25) | Self-adaptive | RL-trained singular-value scaling vectors, mixed per prompt at inference | Beats LoRA with far fewer parameters |
+| 8 | [Knowledge in a LoRA adapter](2502.14502-how-much-knowledge-can-you-pack-into-a-lora-adapter-without-harming-ll.md) | Knowledge injection | Measure how many new facts fit and what breaks | Known+new mixtures work best; general QA still regresses |
+| 9 | [LoRAM: train small, infer large](2502.13533-train-small-infer-large-memory-efficient-lora-training-for-large-langu.md) (ICLR'25) | Memory | Train LoRA on a pruned model, recover to the full model for inference | QLoRAM cuts parameter storage 15.8× for Llama-3.1-70B LoRA training and beats a LoRA-trained 8B |
+| 10 | [LoRA meets Riemannion](2507.12142-lora-meets-riemannion-muon-optimizer-for-parametrization-independent-l.md) | Optimization | Parameterization-independent Riemannian Muon for low-rank factors | Consistent gains on LLM and diffusion fine-tuning |
+| 11 | [GOAT](2502.16894-make-lora-great-again-boosting-lora-with-adaptive-singular-values-and.md) | LoRA-MoE | SVD-structured MoE of LoRAs + scaling aligned with full fine-tuning | Closes much of the gap to full fine-tuning |
+| 12 | [SHINE](2602.06358-shine-a-scalable-in-context-hypernetwork-for-mapping-context-to-lora-i.md) | Context → LoRA | In-context hypernetwork maps documents to adapters in one pass | Answers questions about a context without seeing it at inference |
+
+**Also useful.**
+* Rank and initialization: [GoRA](2502.12171-gora-gradient-driven-adaptive-low-rank-adaptation.md) (NeurIPS'25), [Put the Space of LoRA Initialization to the Extreme to Preserve Pre-trained Knowledge](2503.02659-put-the-space-of-lora-initialization-to-the-extreme-to-preserve-pre-tr.md).
+* Multi-task interference: [LoRI](2504.07448-lori-reducing-cross-task-interference-in-multi-task-low-rank-adaptatio.md).
+* MoE fine-tuning: [DR-LoRA](2601.04823-dr-lora-dynamic-rank-lora-for-fine-tuning-mixture-of-experts-models.md), [MoE-Sieve](2603.24044-moe-sieve-routing-guided-lora-for-efficient-moe-fine-tuning.md).
+* SSM PEFT: [State-offset Tuning](2503.03499-state-offset-tuning-state-based-parameter-efficient-fine-tuning-for-st.md).
+* Benchmarks: [PEFT-Bench](2511.21285-peft-bench-a-parameter-efficient-fine-tuning-methods-benchmark.md).
+* Zeroth-order: [FZOO](2506.09034-fzoo-fast-zeroth-order-optimizer-for-fine-tuning-large-language-models.md).
+* Shadow networks: [ShadowPEFT](2604.19254-shadowpeft-shadow-network-for-parameter-efficient-fine-tuning.md).
+* Surveys: [Parameter-Efficient Fine-Tuning for Foundation Models](2501.13787-parameter-efficient-fine-tuning-for-foundation-models.md), [Low-Rank Adaptation for Foundation Models](2501.00365-low-rank-adaptation-for-foundation-models-a-comprehensive-review.md).
+
+**Recommendation.**
+* *Model builders:* plain LoRA (or full fine-tuning for RL-scale changes) with a properly tuned LR; high rank for
+  knowledge, low rank suffices for RL.
+* *Runtime builders:* multi-LoRA batching (Punica/S-LoRA-style kernels), **aLoRA-style KV reuse**, adapter paging,
+  and hypernetwork-generated adapters as a new request type.
+
 ## 🏆 Best of the best by impact score (top 10)
 
 1. **[Make LoRA Great Again: Boosting LoRA with Adaptive Singular Values and Mixture-of-Experts Optimization Alignment](2502.16894-make-lora-great-again-boosting-lora-with-adaptive-singular-values-and.md)** (2026-03) — GOAT, a framework that adaptively integrates relevant priors using an SVD-structured MoE, and aligns optimization with full fine-tuned MoE by deriving a theoretical scaling factor, demonstrates that proper scaling, …  
@@ -190,8 +255,8 @@ Sorted cheapest first by the *smallest* compute figure found in the paper. Range
 | [GSQ-Tuning: Group-Shared Exponents Integer in Fully Quantized Training for LLMs On-Device Fine-tuning](../../quantization/low-precision-training/2502.12913-gsq-tuning-group-shared-exponents-integer-in-fully-quantized-training.md) | Low-precision training (FP8 / FP4 / INT8 training) | 4.88 |
 | [Every Rollout Counts: Optimal Resource Allocation for Efficient Test-Time Scaling](../../reasoning/test-time-scaling/2506.15707-every-rollout-counts-optimal-resource-allocation-for-efficient-test-ti.md) | Test-time scaling & inference-time compute | 4.63 |
 | [Low-Rank Adapters Meet Neural Architecture Search for LLM Compression](../../compression/low-rank-decomposition/2501.16372-low-rank-adapters-meet-neural-architecture-search-for-llm-compression.md) | Low-rank decomposition & weight factorization | 4.49 |
+| [EdgeLoRA: An Efficient Multi-Tenant LLM Serving System on Edge Devices](../../serving-systems/edge-and-on-device/2507.01438-edgelora-an-efficient-multi-tenant-llm-serving-system-on-edge-devices.md) | Edge, mobile & on-device inference | 3.79 |
 | [Efficient Reasoning on the Edge](../../reasoning/efficient-reasoning/2603.16867-efficient-reasoning-on-the-edge.md) | Efficient reasoning (CoT compression, overthinking, adaptive thinking) | 3.45 |
-| [EdgeLoRA: An Efficient Multi-Tenant LLM Serving System on Edge Devices](../../serving-systems/edge-and-on-device/2507.01438-edgelora-an-efficient-multi-tenant-llm-serving-system-on-edge-devices.md) | Edge, mobile & on-device inference | 3.29 |
 | [RestoreKV: Recovering Full-Cache Behavior Under Aggressive Query-Agnostic KV Cache Eviction](../../kv-cache/eviction-and-token-selection/2608.01247-restorekv-recovering-full-cache-behavior-under-aggressive-query-agnost.md) | KV cache eviction / token selection / sparse retrieval | 3.27 |
 | [LayerRoute: Input-Conditioned Adaptive Layer Skipping via LoRA Fine-Tuning for Agentic Language Models](../../decoding/early-exit-and-layer-skipping/2606.01838-layerroute-input-conditioned-adaptive-layer-skipping-via-lora-fine-tun.md) | Early exit, layer skipping & dynamic depth | 2.79 |
 | [Small Language Models for Agentic Systems: A Survey of Architectures, Capabilities, and Deployment Trade offs](../../models-and-architectures/small-language-models/2510.03847-small-language-models-for-agentic-systems-a-survey-of-architectures-ca.md) | Small language models (≤ ~4B) | 2.77 |

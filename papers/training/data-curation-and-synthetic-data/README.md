@@ -6,6 +6,76 @@ Pre-/post-training data selection, filtering, mixture optimization, synthetic da
 
 📖 Written overview of this area: [../../../overviews/training.md](../../../overviews/training.md)
 
+## 🔬 Analyst notes: hand ranking and verdict
+
+_Written after reading the abstracts, and the full text where available, of this category's papers. The hand ranking weighs technical merit and usefulness for a runtime or model builder, not just citations. The automatic impact ranking follows below._
+
+**Verdict.** Data is still the highest-leverage knob (see [LLMs on the Line](../scaling-laws/2502.12120-llms-on-the-line-data-determines-loss-to-loss-scaling-laws.md)). The 2025–26 lessons are:
+
+1. **Pretraining data: model-based selection + mixture search + rephrasing.**
+   * *Selection*: [PreSelect](2503.00808-predictive-data-selection-the-data-that-predicts-is-the-data-that-teac.md) keeps data whose loss predicts downstream ability, beating DCLM/FineWeb-Edu
+     filters at 3B/100B. [OPUS](2602.05400-opus-towards-efficient-and-principled-data-selection-in-large-language.md) does per-iteration selection at 4.7% overhead. [Organize the
+     Web](2502.10341-organize-the-web-constructing-domains-enhances-pre-training-data-curat.md) builds topic×format domains.
+   * *Mixtures*: [Nemotron-CLIMB](2504.13161-nemotron-climb-clustering-based-iterative-data-mixture-bootstrapping-f.md) (cluster + iterative proxy search), mixture laws (see
+     [`scaling-laws`](../scaling-laws/README.md)).
+   * *Rephrasing/synthetic*: [BeyondWeb](2508.10975-beyondweb-lessons-from-scaling-synthetic-data-for-trillion-scale-pretr.md) (DatologyAI) beats Cosmopedia and Nemotron-Synth by up to 5.1 pp
+     and trains up to 7.7× faster; [Recycling the Web](2506.04689-recycling-the-web-a-method-to-enhance-pre-training-data-quality-and-qu.md), [RePro](2510.10681-repro-training-language-models-to-faithfully-recycle-the-web-for-pretr.md),
+     [RefineX](2507.03253-refinex-learning-to-refine-pre-training-data-at-scale-from-expert-guid.md). Synthetic data follows its own scaling laws ([Scaling Laws of Synthetic Data for Language Models](2503.19551-scaling-laws-of-synthetic-data-for-language-models.md)).
+   * *Small-scale prediction*: [DataDecide](2504.11393-datadecide-how-to-predict-best-pretraining-data-with-small-experiments.md): rankings at 150M predict 1B about 80% of the time; continuous
+     likelihood proxies make benchmarks >80% predictable at 0.01% of the compute.
+   * *Open corpora*: [FineWeb2](2506.20920-fineweb2-one-pipeline-to-scale-them-all-adapting-pre-training-data-pro.md) (multilingual pipeline), [Common Pile](2506.05209-the-common-pile-v0-1-an-8tb-dataset-of-public-domain-and-openly-licens.md) (8 TB openly
+     licensed), [MegaMath](2504.02807-megamath-pushing-the-limits-of-open-math-corpora.md), [olmOCR](2502.18443-olmocr-unlocking-trillions-of-tokens-in-pdfs-with-vision-language-mode.md) (PDF → trillions of tokens),
+     [Institutional Books](2506.08300-institutional-books-1-0-a-242b-token-dataset-from-harvard-library-s-co.md).
+2. **Post-training data: small and hard beats large.**
+   * [LIMO](2502.03387-limo-less-is-more-for-reasoning.md) (COLM'25): ~800 curated examples (1% of prior data) give 63.3% AIME'24. Also s1's 1K ([s1](../../reasoning/test-time-scaling/2501.19393-s1-simple-test-time-scaling.md)).
+   * [Data repetition beats data scaling](2602.11149-data-repetition-beats-data-scaling-in-long-cot-supervised-fine-tuning.md): many epochs on a small long-CoT set beat more data.
+   * **Distillation source matters** ([Not All Correct Answers Are Equal](2505.14464-not-all-correct-answers-are-equal-why-your-distillation-source-matters.md)).
+   * Automated instruction selection often loses to random at scale ([Large-Scale Data Selection for Instruction Tuning](2503.01807-large-scale-data-selection-for-instruction-tuning.md)).
+   * Diversity measured by gradients predicts OOD generalization: [Prismatic Synthesis / G-Vendi](2505.20161-prismatic-synthesis-gradient-based-data-diversification-boosts-general.md).
+3. **RL data at pretraining scale** (the new frontier):
+   * [Webscale-RL](2510.06499-webscale-rl-automated-data-pipeline-for-scaling-rl-data-to-pretraining.md): 1.2M verifiable QA pairs from pretraining documents; RL matches continual pretraining
+     with up to 100× fewer tokens.
+   * [Golden Goose](2601.22975-golden-goose-a-simple-trick-to-synthesize-unlimited-rlvr-tasks-from-un.md): unlimited RLVR tasks from unverifiable text via masked-span multiple choice.
+   * Procedural environments: [Reasoning Gym](2505.24760-reasoning-gym-reasoning-environments-for-reinforcement-learning-with-v.md).
+   * Verified datasets: [DeepMath-103K](2504.11456-deepmath-103k-a-large-scale-challenging-decontaminated-and-verifiable.md), [Big-Math](2502.17387-big-math-a-large-scale-high-quality-math-dataset-for-reinforcement-lea.md), [KodCode](2503.02951-kodcode-a-diverse-challenging-and-verifiable-synthetic-dataset-for-cod.md),
+     [OpenCodeReasoning](2504.01943-opencodereasoning-advancing-data-distillation-for-competitive-coding.md).
+4. **Safety through data.** [Deep Ignorance](2508.06601-deep-ignorance-filtering-pretraining-data-builds-tamper-resistant-safe.md): filtering biothreat-proxy content from pretraining gives
+   tamper-resistant safeguards that survive fine-tuning attacks. Token-level filtering: [Shaping capabilities with token-level data filtering](2601.21571-shaping-capabilities-with-token-level-data-filtering.md).
+
+### Hand ranking
+
+| # | Paper | Stage | Key idea | Result |
+| ---: | --- | --- | --- | --- |
+| 1 | [BeyondWeb](2508.10975-beyondweb-lessons-from-scaling-synthetic-data-for-trillion-scale-pretr.md) | Pretraining synthetic | Targeted rephrasing of web data at trillion scale (format, style, diversity jointly tuned) | +5.1 pp over Cosmopedia, +2.6 over Nemotron-Synth; up to 7.7× faster training |
+| 2 | [Nemotron-CLIMB](2504.13161-nemotron-climb-clustering-based-iterative-data-mixture-bootstrapping-f.md) | Mixture | Embed + cluster the corpus; iterative proxy-model + predictor search over cluster weights | 1B model beats Llama-3.2-1B by 2.0% on 400B tokens; ClimbMix released |
+| 3 | [LIMO](2502.03387-limo-less-is-more-for-reasoning.md) (COLM'25) | SFT data | ~800 carefully chosen reasoning demonstrations as "cognitive templates" | 63.3% AIME'24, 95.6% MATH500; +45.8% absolute OOD vs models trained on 100× more data |
+| 4 | [PreSelect](2503.00808-predictive-data-selection-the-data-that-predicts-is-the-data-that-teac.md) | Selection | Score documents by how predictive their loss is of downstream ability (fastText scorer) | Beats DCLM and FineWeb-Edu filters at 3B / 100B tokens |
+| 5 | [Webscale-RL](2510.06499-webscale-rl-automated-data-pipeline-for-scaling-rl-data-to-pretraining.md) | RL data | Convert pretraining documents to verifiable QA for RL | Matches continual pretraining with up to 100× fewer tokens |
+| 6 | [DataDecide](2504.11393-datadecide-how-to-predict-best-pretraining-data-with-small-experiments.md) | Methodology | 25 corpora × 14 sizes × 3 seeds | Small-scale rankings predict 1B ~80%; continuous metrics >80% predictable at 0.01% compute |
+| 7 | [Data repetition beats data scaling (long-CoT SFT)](2602.11149-data-repetition-beats-data-scaling-in-long-cot-supervised-fine-tuning.md) | SFT recipe | Many epochs on fewer examples, stop by token accuracy | Better than scaling unique data at equal compute |
+| 8 | [Reasoning Gym](2505.24760-reasoning-gym-reasoning-environments-for-reinforcement-learning-with-v.md) (NeurIPS'25) | RL environments | 100+ procedurally generated verifiable tasks with adjustable difficulty | Unlimited curriculum data for RLVR |
+| 9 | [FineWeb2](2506.20920-fineweb2-one-pipeline-to-scale-them-all-adapting-pre-training-data-pro.md) | Multilingual pretraining | Language-adaptive filtering and dedup pipeline for 1,000+ languages | Better non-English corpora than prior pipelines |
+| 10 | [Deep Ignorance](2508.06601-deep-ignorance-filtering-pretraining-data-builds-tamper-resistant-safe.md) | Safety | Multi-stage filtering of dual-use knowledge in pretraining | 6.9B models resist up to 10K steps / 300M tokens of adversarial fine-tuning; knowledge still usable in-context |
+| 11 | [Prismatic Synthesis](2505.20161-prismatic-synthesis-gradient-based-data-diversification-boosts-general.md) | Diversity | G-Vendi gradient-entropy diversity metric + targeted synthesis | Diversity predicts OOD reasoning; beats larger datasets |
+| 12 | [Golden Goose](2601.22975-golden-goose-a-simple-trick-to-synthesize-unlimited-rlvr-tasks-from-un.md) | RL data | Mask key spans of reasoning-rich text → multiple-choice RLVR tasks | Scales RLVR to unverifiable domains (e.g. cybersecurity) |
+
+**Also useful.**
+* Instruction data: [Infinity Instruct](2506.11116-infinity-instruct-scaling-instruction-selection-and-synthesis-to-enhan.md), [Condor](2501.12273-condor-enhance-llm-alignment-with-knowledge-driven-data-synthesis-and.md), [Token Cleaning](2502.01968-token-cleaning-fine-grained-data-selection-for-llm-supervised-fine-tun.md),
+  [Principled Data Selection for Alignment](2502.09650-principled-data-selection-for-alignment-the-hidden-risks-of-difficult.md) (difficult examples can hurt alignment).
+* Reasoning distillation datasets: [1.4 Million Open-Source Distilled Reasoning Dataset to Empower Large Language Model Training](2503.19633-1-4-million-open-source-distilled-reasoning-dataset-to-empower-large-l.md) (AM-1.4M), [Loong](2509.03059-loong-synthesize-long-chain-of-thoughts-at-scale-through-verifiers.md).
+* Crawling for LLMs: [Craw4LLM](2502.13347-craw4llm-efficient-web-crawling-for-llm-pretraining.md).
+* Data quality via gradients: [How Instruction and Reasoning Data shape Post-Training](2504.10766-how-instruction-and-reasoning-data-shape-post-training-data-quality-th.md).
+* Data-mixing frameworks: [DataFlex](2603.26164-dataflex-a-unified-framework-for-data-centric-dynamic-training-of-larg.md); benchmark of post-training data: [OpenDataArena](2512.14051-opendataarena-a-fair-and-open-arena-for-benchmarking-post-training-dat.md).
+* Multilingual selection: [Enhancing Multilingual LLM Pretraining with Model-Based Data Selection](2502.10361-enhancing-multilingual-llm-pretraining-with-model-based-data-selection.md).
+* Survey: [Synthetic Data Generation Using Large Language Models](2503.14023-synthetic-data-generation-using-large-language-models-advances-in-text.md).
+
+**Recommendation.**
+* **Pretraining:** FineWeb/DCLM-style base + model-based selection (PreSelect/OPUS) + a mixture fitted with
+  CLIMB-style search + 20–40% well-designed rephrased synthetic data. Validate choices at 150M–1B with DataDecide-style
+  continuous metrics.
+* **Post-training:** a few thousand hard, diverse, verified examples trained for multiple epochs.
+* **RL data:** procedural generators + Webscale-RL-style conversion from pretraining text.
+
 ## 🏆 Best of the best by impact score (top 10)
 
 1. **[LIMO: Less is More for Reasoning](2502.03387-limo-less-is-more-for-reasoning.md)** (2025-07) — It is demonstrated that sophisticated mathematical reasoning can emerge with only a few examples and suggested that the threshold for eliciting complex reasoning is not dictated by task complexity but rather by two key …  

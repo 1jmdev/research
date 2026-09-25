@@ -6,6 +6,79 @@ Pre-training methodology, efficiency, curriculum, mid-training, architecture abl
 
 📖 Written overview of this area: [../../../overviews/training.md](../../../overviews/training.md)
 
+## 🔬 Analyst notes: hand ranking and verdict
+
+_Written after reading the abstracts, and the full text where available, of this category's papers. The hand ranking weighs technical merit and usefulness for a runtime or model builder, not just citations. The automatic impact ranking follows below._
+
+**Verdict.** The pretraining recipe of 2025–26 is **"pretrain → mid-train (reasoning/agentic data, long context) → RL"**
+designed as one pipeline. The most consequential findings:
+
+1. **Mid-training decides RL headroom.**
+   * [OctoThinker](2506.20512-octothinker-mid-training-incentivizes-reinforcement-learning-scaling.md): Llama-family models become Qwen-level RL learners after math-heavy mid-training
+     (MegaMath-Web-Pro-Max, QA-style long CoT, then instruction data). Releases a 70B-token corpus.
+   * [Front-loading reasoning](2510.03264-front-loading-reasoning-the-synergy-between-pretraining-and-post-train.md) (NVIDIA): reasoning data in *pretraining* gives durable gains that SFT can't
+     reproduce, while naively scaling SFT data washes them out.
+   * [Pre-, mid-training and RL interplay](2512.07783-on-the-interplay-of-pre-training-mid-training-and-rl-on-reasoning-lang.md) (CMU): controlled study. RL only extends capabilities the base
+     can almost do; mid-training is central.
+   * [Agentic continual pretraining](2509.13310-scaling-agents-via-continual-pre-training.md) (AgentFounder): the same idea for agents.
+   * The [coverage principle](2510.15020-the-coverage-principle-how-pre-training-enables-post-training.md) gives theory: pretraining must *cover* good behaviours for post-training to
+     find them.
+2. **Don't overtrain the base you will fine-tune.** [Overtrained LMs are harder to fine-tune](2503.19206-overtrained-language-models-are-harder-to-fine-tune.md) (ICML'25):
+   past a token budget, more pretraining *hurts* post-fine-tuning performance ("catastrophic overtraining") because
+   parameter sensitivity grows.
+3. **Cheap, drop-in training accelerators:**
+   * [Metadata conditioning (MeCo)](2501.01956-metadata-conditioning-accelerates-language-model-pre-training.md): prepend source URLs for most of training, then cool down without them;
+     equal quality with 33% less data;
+   * [SkyLadder](2503.15450-skyladder-better-and-faster-pretraining-via-context-window-scheduling.md): short-to-long context-window schedule; +3.7% and 22% faster;
+   * [Token Superposition](2605.06546-efficient-pre-training-with-token-superposition.md): up to 2.5× less pretraining time at equal loss (10B-A1B);
+   * [WSM](../optimizers/2507.17634-wsm-decay-free-learning-rate-schedule-via-checkpoint-merging-for-llm-p.md): checkpoint merging replaces LR decay; +3.5 MATH, +5.5 MMLU-Pro over WSD;
+   * [CoLA](2502.10940-cola-compute-efficient-pre-training-of-llms-via-low-rank-activation.md): low-rank activations, 2× less compute;
+   * [progressive residual warmup](2603.05369-progressive-residual-warmup-for-language-model-pretraining.md).
+4. **New objectives beyond NTP:**
+   * [Reinforcement Pre-Training](2506.08007-reinforcement-pre-training.md) (Microsoft): next-token prediction as an RL task with verifiable reward,
+     scaling with compute;
+   * [CoCoMix](2502.08524-llm-pretraining-with-continuous-concepts.md) (Meta): predict SAE concepts and interleave them;
+   * [NITP](2605.24956-nitp-next-implicit-token-prediction-for-llm-pre-training.md) (ICML'26): next implicit token prediction;
+   * [PretrainZero](2512.03442-pretrainzero-reinforcement-active-pretraining.md).
+   * See also MTP / TOP in [`decoding/multi-token-prediction`](../../decoding/multi-token-prediction/README.md).
+5. **Architecture-level training bottlenecks**: [the LM head suppresses 95–99% of gradient norm](2603.10145-lost-in-backpropagation-the-lm-head-is-a-gradient-bottleneck.md)
+   (COLM'26). This motivates better output layers.
+6. **Synthetic pre-pretraining**: [neural cellular automata](2603.10055-training-language-models-via-neural-cellular-automata.md). 164M NCA tokens improve LM by up to 6% and
+   converge 1.6× faster, beating 1.6B natural tokens.
+
+### Hand ranking
+
+| # | Paper | Kind | Key idea | Result |
+| ---: | --- | --- | --- | --- |
+| 1 | [OctoThinker](2506.20512-octothinker-mid-training-incentivizes-reinforcement-learning-scaling.md) | Mid-training | Stable-then-decay mid-training on high-quality math + long-CoT QA makes Llama RL-scalable | Closes the RL gap to Qwen; open 70B-token math corpus |
+| 2 | [Overtrained LMs are harder to fine-tune](2503.19206-overtrained-language-models-are-harder-to-fine-tune.md) (ICML'25) | Pretraining budget | Parameter sensitivity grows with pretraining tokens | Instruction-tuned OLMo-1B pretrained on 3T tokens is >2% worse than its 2.3T counterpart. Budget for adaptability |
+| 3 | [Front-Loading Reasoning](2510.03264-front-loading-reasoning-the-synergy-between-pretraining-and-post-train.md) (NVIDIA) | Data allocation | Reasoning data early (pretraining) vs late (SFT) | Early injection gives durable gains; over-scaling SFT erases them |
+| 4 | [Reinforcement Pre-Training](2506.08007-reinforcement-pre-training.md) | Objective | Reason about the next token and get a verifiable reward from the corpus | Better NTP accuracy with compute; stronger RL starting point |
+| 5 | [MeCo: metadata conditioning](2501.01956-metadata-conditioning-accelerates-language-model-pre-training.md) | Efficiency | URL/metadata prefix in pretraining, removed in cooldown | Same performance with 33% less data; steerable |
+| 6 | [WSM: checkpoint-merging schedule](../optimizers/2507.17634-wsm-decay-free-learning-rate-schedule-via-checkpoint-merging-for-llm-p.md) | LR schedule | Constant LR + merge checkpoints instead of decay | +3.5% MATH, +2.9% HumanEval, +5.5% MMLU-Pro vs WSD |
+| 7 | [Token Superposition](2605.06546-efficient-pre-training-with-token-superposition.md) | Efficiency | Train on superposed token sequences early in training | Up to 2.5× less pretraining time at equal loss (10B-A1B MoE) |
+| 8 | [SkyLadder](2503.15450-skyladder-better-and-faster-pretraining-via-context-window-scheduling.md) (NeurIPS'25) | Context schedule | Grow context window during pretraining | +3.7% and 22% faster training |
+| 9 | [Interplay of pre-/mid-training and RL](2512.07783-on-the-interplay-of-pre-training-mid-training-and-rl-on-reasoning-lang.md) | Science | Synthetic reasoning tasks with controlled distributions | RL extends only near-competence skills; mid-training matters; process rewards reduce hacking |
+| 10 | [Agentic continual pre-training](2509.13310-scaling-agents-via-continual-pre-training.md) (Tongyi) | Agent CPT | Large-scale agentic trajectories in CPT before post-training | AgentFounder-30B state of the art on BrowseComp/HLE |
+| 11 | [LM head is a gradient bottleneck](2603.10145-lost-in-backpropagation-the-lm-head-is-a-gradient-bottleneck.md) (COLM'26) | Analysis | Low-rank LM head suppresses most of the gradient | Trivial patterns become unlearnable; motivates new heads |
+| 12 | [CoCoMix: continuous concepts](2502.08524-llm-pretraining-with-continuous-concepts.md) (Meta) | Objective | Predict SAE concepts and mix them into the hidden state | More sample-efficient than NTP, KD and pause tokens |
+
+**Also useful.**
+* Training dynamics: [EvoLM](2506.16029-evolm-in-search-of-lost-language-model-training-dynamics.md), [PolyPythias](2503.09543-polypythias-stability-and-outliers-across-fifty-language-model-pre-tra.md), [Grokking in LLM Pretraining? Monitor Memorization-to-Generalization without Test](2506.21551-grokking-in-llm-pretraining-monitor-memorization-to-generalization-wit.md) (grokking in MoE pretraining).
+* Reflection appears in pretraining: [Rethinking Reflection in Pre-Training](2504.04022-rethinking-reflection-in-pre-training.md).
+* Curriculum and reweighting: [Beyond Random Sampling](2506.11300-beyond-random-sampling-efficient-language-model-pretraining-via-curric.md), [Dynamic Loss-Based Sample Reweighting for Improved Large Language Model Pretraining](2502.06733-dynamic-loss-based-sample-reweighting-for-improved-large-language-mode.md).
+* Multimodal pretraining: [Beyond Language Modeling](2603.03276-beyond-language-modeling-an-exploration-of-multimodal-pretraining.md), [Towards Physics of Multimodal Pretraining](2608.05000-towards-physics-of-multimodal-pretraining-knowledge-flow-modality-syne.md), [Scaling Native Multimodal Pre-Training From Scratch](2607.22043-scaling-native-multimodal-pre-training-from-scratch.md).
+* Recovery without checkpoints: [CheckFree](2506.15461-all-is-not-lost-llm-recovery-without-checkpoints.md).
+* Long-sequence memory: [StreamBP](2506.03077-streambp-memory-efficient-exact-backpropagation-for-long-sequence-trai.md).
+* Distributed: [Streaming DiLoCo](2501.18512-streaming-diloco-with-overlapping-communication-towards-a-distributed.md).
+* Budget case study: [Puro-2B](2608.27370-puro-2b-poor-lab-s-qwen2-1-5b-trained-on-rtx-5090-within-5090.md) (Qwen2-1.5B-class on one RTX 5090 for $5,090).
+
+**Recommendation.**
+* Plan the base for **post-training**: don't overtrain small bases far beyond what the fine-tune can use.
+* Front-load reasoning and code data, then run a dedicated mid-training phase before RL.
+* Use MeCo + short-to-long context + WSM-style merging.
+* Add an MTP/TOP auxiliary loss; they are cheap.
+
 ## 🏆 Best of the best by impact score (top 10)
 
 1. **[Scaling Agents via Continual Pre-training](2509.13310-scaling-agents-via-continual-pre-training.md)** (2025-09) — This work is the first to propose incorporating Agentic Continual Pre-training (Agentic CPT) into the deep research agents training pipeline to build powerful agentic foundational models, and develops a deep research …  
@@ -81,13 +154,13 @@ Sorted cheapest first by the *smallest* compute figure found in the paper. Range
 | 25 | [Beyond Random Sampling: Efficient Language Model Pretraining via Curriculum Learning](2506.11300-beyond-random-sampling-efficient-language-model-pretraining-via-curric.md) | 2026-01-28 | 5.66 | 28 | 0 | Conference of the European Chapter of th |  | The first systematic investigation of curriculum learning in LLM pretraining is presented, with over 200 models trained on up to 100B tokens across three … |
 | 26 | [Metadata Conditioning Accelerates Language Model Pre-training](2501.01956-metadata-conditioning-accelerates-language-model-pre-training.md) | 2025-06-27 | 5.58 | 22 | 0 | Accepted to ICML 2025 | [✓](https://github.com/princeton-pli/MeCo) | This work proposes a new method, termed Metadata Conditioning then Cooldown (MeCo), to incorporate additional learning cues during pre-training to produce more … |
 | 27 | [The Coverage Principle: How Pre-Training Enables Post-Training](2510.15020-the-coverage-principle-how-pre-training-enables-post-training.md) | 2025-10-22 | 5.52 | 27 | 0 |  |  | An understanding of the coverage principle is developed, a phenomenon whereby next-token prediction implicitly optimizes toward a model with good coverage, and … |
-| 28 | [SLAI T-Rex: Full-Parameter Post-training of the DeepSeek-V4 Family on Ascend SuperPOD](2607.20145-slai-t-rex-full-parameter-post-training-of-the-deepseek-v4-family-on-a.md) | 2026-08-19 | 5.48 | 0 | 76 |  | [✓](https://github.com/SLAI-AITP/SLAI-T-Rex) | This work demonstrates a full-stack pathway from efficient trillion-parameter model post-training on Ascend infra to domain-specialized Flash models for … |
-| 29 | [Learning Dynamics in Continual Pre-Training for Large Language Models](2505.07796-learning-dynamics-in-continual-pre-training-for-large-language-models.md) | 2025-06-19 | 5.42 | 7 | 19 | International Conference on Machine Lear |  | This work derives a CPT scaling law that combines the two factors, enabling the prediction of loss at any (continual) training steps and across learning rate … |
-| 30 | [StreamBP: Memory-Efficient Exact Backpropagation for Long Sequence Training of LLMs](2506.03077-streambp-memory-efficient-exact-backpropagation-for-long-sequence-trai.md) | 2025-06-03 | 5.28 | 3 | 15 | Neural Information Processing Systems (N | [✓](https://github.com/Ledzy/StreamBP) | A memory-efficient and exact BP method called StreamBP, which performs a linear decomposition of the chain rule along the sequence dimension in a layer-wise … |
-| 31 | [EvoLM: In Search of Lost Language Model Training Dynamics](2506.16029-evolm-in-search-of-lost-language-model-training-dynamics.md) | 2025-11-18 | 5.27 | 22 | 0 | NeurIPS 2025 |  | EvoLM is presented, a model suite that enables systematic and transparent analysis of LMs'training dynamics across pre-training, continued pre-training, … |
-| 32 | [The Sharpness Disparity Principle in Transformers for Accelerating Language Model Pre-Training](2502.19002-the-sharpness-disparity-principle-in-transformers-for-accelerating-lan.md) | 2025-06-13 | 5.09 | 27 | 0 | accepted by ICML 2025 |  | This paper unveils a clear Sharpness Disparity across these blocks, which emerges early in training and intriguingly persists throughout the training process, … |
-| 33 | [Efficient Training on Multiple Consumer GPUs with RoundPipe](2604.27085-efficient-training-on-multiple-consumer-gpus-with-roundpipe.md) | 2026-04-29 | 5.08 | 0 | 45 |  | [✓](https://github.com/ITcarrot/RoundPipe) | RoundPipe is a novel pipeline schedule that breaks the weight binding constraint on consumer GPU servers and treats GPUs as a pool of stateless execution … |
-| 34 | [Mask-Enhanced Autoregressive Prediction: Pay Less Attention to Learn More](2502.07490-mask-enhanced-autoregressive-prediction-pay-less-attention-to-learn-mo.md) | 2026-03-13 | 5.01 | 2 | 11 | International Conference on Machine Lear |  | The analysis indicates that MEAP's effectiveness arises from its ability to promote more distinguishable attention scores by concentrating on a reduced set of … |
+| 28 | [Mask-Enhanced Autoregressive Prediction: Pay Less Attention to Learn More](2502.07490-mask-enhanced-autoregressive-prediction-pay-less-attention-to-learn-mo.md) | 2026-03-13 | 5.51 | 2 | 11 | International Conference on Machine Lear | [✓](https://github.com/CharlieZhuang-Code/MEAP) | The analysis indicates that MEAP's effectiveness arises from its ability to promote more distinguishable attention scores by concentrating on a reduced set of … |
+| 29 | [SLAI T-Rex: Full-Parameter Post-training of the DeepSeek-V4 Family on Ascend SuperPOD](2607.20145-slai-t-rex-full-parameter-post-training-of-the-deepseek-v4-family-on-a.md) | 2026-08-19 | 5.48 | 0 | 76 |  | [✓](https://github.com/SLAI-AITP/SLAI-T-Rex) | This work demonstrates a full-stack pathway from efficient trillion-parameter model post-training on Ascend infra to domain-specialized Flash models for … |
+| 30 | [Learning Dynamics in Continual Pre-Training for Large Language Models](2505.07796-learning-dynamics-in-continual-pre-training-for-large-language-models.md) | 2025-06-19 | 5.42 | 7 | 19 | International Conference on Machine Lear |  | This work derives a CPT scaling law that combines the two factors, enabling the prediction of loss at any (continual) training steps and across learning rate … |
+| 31 | [StreamBP: Memory-Efficient Exact Backpropagation for Long Sequence Training of LLMs](2506.03077-streambp-memory-efficient-exact-backpropagation-for-long-sequence-trai.md) | 2025-06-03 | 5.28 | 3 | 15 | Neural Information Processing Systems (N | [✓](https://github.com/Ledzy/StreamBP) | A memory-efficient and exact BP method called StreamBP, which performs a linear decomposition of the chain rule along the sequence dimension in a layer-wise … |
+| 32 | [EvoLM: In Search of Lost Language Model Training Dynamics](2506.16029-evolm-in-search-of-lost-language-model-training-dynamics.md) | 2025-11-18 | 5.27 | 22 | 0 | NeurIPS 2025 |  | EvoLM is presented, a model suite that enables systematic and transparent analysis of LMs'training dynamics across pre-training, continued pre-training, … |
+| 33 | [The Sharpness Disparity Principle in Transformers for Accelerating Language Model Pre-Training](2502.19002-the-sharpness-disparity-principle-in-transformers-for-accelerating-lan.md) | 2025-06-13 | 5.09 | 27 | 0 | accepted by ICML 2025 |  | This paper unveils a clear Sharpness Disparity across these blocks, which emerges early in training and intriguingly persists throughout the training process, … |
+| 34 | [Efficient Training on Multiple Consumer GPUs with RoundPipe](2604.27085-efficient-training-on-multiple-consumer-gpus-with-roundpipe.md) | 2026-04-29 | 5.08 | 0 | 45 |  | [✓](https://github.com/ITcarrot/RoundPipe) | RoundPipe is a novel pipeline schedule that breaks the weight binding constraint on consumer GPU servers and treats GPUs as a pool of stateless execution … |
 | 35 | [Progressive Residual Warmup for Language Model Pretraining](2603.05369-progressive-residual-warmup-for-language-model-pretraining.md) | 2026-03-05 | 4.97 | 1 | 35 |  | [✓](https://github.com/dandingsky/ProRes) | Comprehensive analysis shows that ProRes not only stabilizes pretraining but also introduces a unique optimization trajectory, leading to faster convergence, … |
 | 36 | [Efficient Pre-Training with Token Superposition](2605.06546-efficient-pre-training-with-token-superposition.md) | 2026-05-19 | 4.88 | 1 | 46 |  |  | Token-Superposition Training (TST), a simple drop-in method that significantly improves the data throughput per FLOPs during pre-training without modifying the … |
 | 37 | [Puro-2B: Poor Lab's Qwen2-1.5B Trained on RTX 5090 within $5090](2608.27370-puro-2b-poor-lab-s-qwen2-1-5b-trained-on-rtx-5090-within-5090.md) | 2026-09-03 | 4.85 | 0 | 37 |  | [✓](https://huggingface.co/collections/thu-pacman) | This report presents an open pretraining recipe that trains a collection of Puro-2B models from scratch on up to 1.4 trillion tokens with FP8 precision on … |

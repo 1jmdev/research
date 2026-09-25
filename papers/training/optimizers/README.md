@@ -6,6 +6,76 @@ New optimizers, second-order methods, learning-rate schedules, hyper-parameter t
 
 📖 Written overview of this area: [../../../overviews/training.md](../../../overviews/training.md)
 
+## 🔬 Analyst notes: hand ranking and verdict
+
+_Written after reading the abstracts, and the full text where available, of this category's papers. The hand ranking weighs technical merit and usefulness for a runtime or model builder, not just citations. The automatic impact ranking follows below._
+
+**Verdict.** 2025 was the year of **Muon** (orthogonalized momentum via Newton–Schulz).
+[Muon is Scalable](2502.16982-muon-is-scalable-for-llm-training.md) (Moonshot) added weight decay and per-shape update-RMS matching, trained Moonlight
+(16B-A3B, 5.7T tokens) at ~2× AdamW compute efficiency, and Kimi K2 followed (MuonClip). The careful benchmarks then
+tempered the hype:
+
+* [Fantastic Pretraining Optimizers](2509.02046-fantastic-pretraining-optimizers-and-where-to-find-them.md) (Stanford/Marin): with *fair* per-optimizer tuning, the fastest
+  optimizers are all **matrix-preconditioned** (Muon, SOAP, Kron). The speedup over AdamW **shrinks with scale**: 1.4×
+  at 0.1B, 1.1× at 1.2B.
+* [HP transfer for matrix optimizers](2512.05620-hyperparameter-transfer-enables-consistent-gains-of-matrix-preconditio.md): with *correct* hyperparameter scaling (µP-style LR transfer +
+  independent weight decay), the ~1.4× gain holds from 190M to 1.4B. Much of the "shrinking gain" is mis-scaled
+  hyperparameters.
+* [Benchmarking optimizers for LLM pretraining](2509.01440-benchmarking-optimizers-for-large-language-model-pretraining.md) (EPFL): per-scenario guidance across model size, batch
+  size and duration.
+
+**Refinements worth adopting:**
+* [NorMuon](2510.05491-normuon-making-muon-more-efficient-and-scalable.md): Muon + neuron-wise second moment; +11% over Muon at 1.1B.
+* [Spectral Sphere Optimizer](2601.08393-controlled-llm-training-on-spectral-sphere.md): µP-aligned; beats AdamW and Muon on dense, MoE and 200-layer models, with
+  better router balance and bounded activations.
+* [Cautious Weight Decay](2510.12402-cautious-weight-decay.md): drop-in, no new hyperparameters.
+* Weight decay drives LR transfer ([Weight Decay may matter more than muP for Learning Rate Transfer in Practice](2510.19093-weight-decay-may-matter-more-than-mup-for-learning-rate-transfer-in-pr.md), [Hyperball](2606.16899-fantastic-pretraining-optimizers-and-where-to-find-them-ii-hyperball-o.md)).
+* **Distributed Muon** at scale: [Dion](2504.05295-dion-distributed-orthonormalized-updates.md) (low-rank orthonormalized updates with error feedback),
+  [Canzona](2602.06079-canzona-a-unified-asynchronous-and-load-balanced-framework-for-distrib.md), [MuonBP](2510.16981-muonbp-faster-muon-via-block-periodic-orthogonalization.md).
+* Muon for DiLoCo: [MuLoCo](2505.23725-muloco-muon-is-a-practical-inner-optimizer-for-diloco.md).
+
+**Stability** (loss/gradient spikes are the practical killer): [SPAM](2501.06842-spam-spike-aware-adam-with-momentum-reset-for-stable-llm-training.md) (ICLR'25, momentum reset on
+spikes), [ZClip](2504.02507-zclip-adaptive-spike-mitigation-for-llm-pre-training.md) (z-score adaptive clipping), [GradientStabilizer](2502.17055-gradientstabilizer-fix-the-norm-not-the-gradient.md), [MSign](2602.01734-msign-an-optimizer-preventing-training-instability-in-large-language-m.md).
+
+**Surprises:**
+* [Small batch sizes](2507.07101-small-batch-size-training-for-language-models-when-vanilla-sgd-works-a.md): batch size 1 with vanilla SGD/Adam trains stably, is more hyperparameter-robust and
+  is equal or better per FLOP. Scale β₂ by token half-life; avoid gradient accumulation.
+* [Adam's secret sauce](2505.21829-in-search-of-adam-s-secret-sauce.md) (NeurIPS'25): β₁ = β₂ keeps near-optimal performance.
+* [Muon learns tail associations](2509.26030-muon-outperforms-adam-in-tail-end-associative-memory-learning.md) better than Adam on heavy-tailed data.
+
+### Hand ranking
+
+| # | Paper | Kind | Key idea | Result |
+| ---: | --- | --- | --- | --- |
+| 1 | [Muon is Scalable for LLM Training](2502.16982-muon-is-scalable-for-llm-training.md) (Moonshot) | Optimizer at scale | Muon + weight decay + per-parameter update-scale matching; distributed ZeRO-1 implementation | ~2× compute efficiency vs AdamW; Moonlight 16B-A3B on 5.7T tokens |
+| 2 | [Fantastic Pretraining Optimizers](2509.02046-fantastic-pretraining-optimizers-and-where-to-find-them.md) | Benchmark | Rigorous per-optimizer tuning at 0.1–1.2B and multiple data ratios | Matrix preconditioners win; speedup 1.4× → 1.1× with scale under standard tuning |
+| 3 | [HP transfer for matrix-preconditioned optimizers](2512.05620-hyperparameter-transfer-enables-consistent-gains-of-matrix-preconditio.md) | Scaling | Correct LR/WD transfer rules for Muon/Shampoo/SOAP | Consistent ~1.4× over AdamW from 190M to 1.4B |
+| 4 | [NorMuon](2510.05491-normuon-making-muon-more-efficient-and-scalable.md) | Optimizer | Orthogonalization + neuron-level adaptive LR (second moment per row) | +21.7% over Adam, +11.3% over Muon (1.1B); Muon-level memory |
+| 5 | [Spectral Sphere Optimizer](2601.08393-controlled-llm-training-on-spectral-sphere.md) | Optimizer | Steepest descent on the spectral sphere; fully µP-aligned; Megatron implementation | Beats AdamW and Muon on dense 1.7B, MoE 8B-A1B and 200-layer DeepNet; bounded activations |
+| 6 | [Dion](2504.05295-dion-distributed-orthonormalized-updates.md) (Microsoft) | Distributed | Low-rank orthonormalized updates with error feedback, compatible with sharding | Muon-quality updates with much lower wall-clock at scale |
+| 7 | [SPAM](2501.06842-spam-spike-aware-adam-with-momentum-reset-for-stable-llm-training.md) (ICLR'25) | Stability | Momentum reset + spike-aware clipping | Beats Adam and memory-efficient optimizers; removes spike damage |
+| 8 | [Small batch size training](2507.07101-small-batch-size-training-for-language-models-when-vanilla-sgd-works-a.md) | Recipe | Scale Adam β₂ by token half-life; small batches are stable and efficient | Batch-size-1 training works; gradient accumulation is wasteful |
+| 9 | [Cautious Weight Decay](2510.12402-cautious-weight-decay.md) | Regularization | Apply decay only where it agrees with the update direction | Consistent loss gains for AdamW/Lion/Muon, zero new hyperparameters |
+| 10 | [Benchmarking optimizers](2509.01440-benchmarking-optimizers-for-large-language-model-pretraining.md) (EPFL) | Benchmark | 11+ optimizers across size, batch and duration | Practitioner guidance per regime |
+| 11 | [Weight decay > µP for LR transfer](2510.19093-weight-decay-may-matter-more-than-mup-for-learning-rate-transfer-in-pr.md) | Theory/empirics | µP mostly acts as implicit warmup; independent weight decay is what transfers | Simplifies HP transfer recipes |
+| 12 | [ZClip](2504.02507-zclip-adaptive-spike-mitigation-for-llm-pre-training.md) | Stability | Z-score anomaly detection on gradient norms for adaptive clipping | Prevents loss spikes without manual thresholds |
+
+**Also useful.**
+* Muon theory and variants: [Understanding Gradient Orthogonalization for Deep Learning via Non-Euclidean Trust-Region Optimization](2503.12645-understanding-gradient-orthogonalization-for-deep-learning-via-non-euc.md) (non-Euclidean trust region), [Gluon](2505.13416-gluon-making-muon-scion-great-again-bridging-theory-and-practice-of-lm.md), [PolarGrad](2505.21799-polargrad-a-class-of-matrix-gradient-optimizers-from-a-unifying-precon.md),
+  [Convergence Bound and Critical Batch Size of Muon Optimizer](2507.01598-convergence-bound-and-critical-batch-size-of-muon-optimizer.md) (critical batch size), [ROOT](2511.20626-root-robust-orthogonalized-optimizer-for-neural-network-training.md), [AdaMuon-style](2602.17080-adam-improves-muon-adaptive-moment-estimation-with-orthogonalized-mome.md), [MARS-M](2510.21800-mars-m-when-variance-reduction-meets-matrices.md).
+* Muon with MLA and MoE: [Muon](2509.24406-muon-training-and-trade-offs-with-latent-attention-and-moe.md).
+* Second-order: [The Potential of Second-Order Optimization for LLMs](2510.09378-the-potential-of-second-order-optimization-for-llms-a-study-with-full.md) (full Gauss-Newton upper bound), [SPlus](2506.07254-a-stable-whitening-optimizer-for-efficient-neural-network-training.md).
+* Memory-efficient: [COSMOS](2502.17410-cosmos-a-hybrid-adaptive-optimizer-for-memory-efficient-training-of-ll.md), [SubTrack++](2502.01586-subtrack-gradient-subspace-tracking-for-scalable-llm-training.md), [Memory-Efficient LLM Pretraining via Minimalist Optimizer Design](2506.16659-memory-efficient-llm-pretraining-via-minimalist-optimizer-design.md).
+* Update masking: [On Surprising Effectiveness of Masking Updates in Adaptive Optimizers](2602.15322-on-surprising-effectiveness-of-masking-updates-in-adaptive-optimizers.md). Learnable multipliers: [Learnable Multipliers](2601.04890-learnable-multipliers-freeing-the-scale-of-language-model-matrix-layer.md). Symmetry principle: [Symmetry-Compatible Principle for Optimizer Design](2605.18106-symmetry-compatible-principle-for-optimizer-design-embeddings-lm-heads.md).
+* Benchmark taxonomy: [OmniOpt](2607.04033-omniopt-taxonomy-geometry-and-benchmarking-of-modern-optimizers.md).
+
+**Recommendation for model builders.**
+* Use Muon (or NorMuon/SSO) for 2D matrices and AdamW for embeddings, norms and heads.
+* Use µP-style width scaling with **independent weight decay**.
+* Add spike protection (ZClip/SPAM-style).
+* Distribute Muon with a Dion/Canzona-style implementation.
+* Tune per optimizer; don't transfer AdamW hyperparameters.
+
 ## 🏆 Best of the best by impact score (top 10)
 
 1. **[Muon is Scalable for LLM Training](2502.16982-muon-is-scalable-for-llm-training.md)** (2025-02) — This work identifies two crucial techniques for scaling up Muon: adding weight decay and carefully adjusting the per-parameter update scale, which allow Muon to work out-of-the-box on large-scale training without the …  

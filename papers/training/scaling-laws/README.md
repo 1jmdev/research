@@ -6,6 +6,76 @@ Compute/data/parameter scaling laws, compute-optimal training, scaling of infere
 
 📖 Written overview of this area: [../../../overviews/training.md](../../../overviews/training.md)
 
+## 🔬 Analyst notes: hand ranking and verdict
+
+_Written after reading the abstracts, and the full text where available, of this category's papers. The hand ranking weighs technical merit and usefulness for a runtime or model builder, not just citations. The automatic impact ranking follows below._
+
+**Verdict.** Scaling-law work moved from "N vs D" to **everything else**: hyperparameters, data mixtures, sparsity,
+depth, inference cost, and new axes of compute. What a model builder should take from 2025–26:
+
+1. **Hyperparameters are predictable. Stop sweeping at scale.**
+   * [Step Law](2503.04715-predictable-scale-part-i-step-law-optimal-hyperparameter-scaling-law-i.md) (StepFun): optimal LR and batch size as power laws in N and D, with a broad convex optimum.
+   * [Power Lines](2505.13738-power-lines-scaling-laws-for-weight-decay-and-batch-size-in-llm-pre-tr.md) (Cerebras): optimal weight decay (via the AdamW timescale), B_opt and B_crit are power
+     laws in **D, independent of N**.
+   * [CompleteP](2505.01618-don-t-be-lazy-completep-enables-compute-efficient-deep-transformers.md) (NeurIPS'25): depth-wise parameterization that transfers hyperparameters over depth *and*
+     keeps all layers non-lazy; 12–34% compute savings.
+   * Full-stack transfer across modules, width, depth, batch and duration: [Completed Hyperparameter Transfer across Modules, Width, Depth, Batch and Duration](2512.22382-completed-hyperparameter-transfer-across-modules-width-depth-batch-and.md).
+   * Norm-based view: [Optimal scaling needs optimal norm](2510.03871-optimal-scaling-needs-optimal-norm.md).
+2. **Data dominates downstream behaviour.** [LLMs on the Line](2502.12120-llms-on-the-line-data-determines-loss-to-loss-scaling-laws.md) (ICML'25): loss-to-loss scaling is set by
+   the pretraining data; architecture and tokenizer matter little. [Scaling laws for optimal data
+   mixtures](2507.09404-scaling-laws-for-optimal-data-mixtures.md) (Apple) predicts optimal domain weights from small runs, for LLMs, native multimodal models and LVMs.
+3. **New compute axes.**
+   * [Parallel Scaling Law (ParScale)](2505.10475-parallel-scaling-law-for-language-models.md): P parallel streams with learnable transforms ≈ scaling parameters
+     by O(log P), at much lower memory/latency cost than parameter scaling.
+   * Looped MoE: [SMELT](2609.01343-smelt-scaling-laws-for-compute-matched-moe-looped-transformers.md) saves 6.8–18% FLOPs on the compute-optimal frontier.
+   * DiLoCo scales predictably ([Communication-Efficient Language Model Training Scales Reliably and Robustly](2503.09799-communication-efficient-language-model-training-scales-reliably-and-ro.md)).
+4. **Inference-aware scaling.** Include inference cost in the objective:
+   * [Scaling inference-efficient LMs](2501.18107-scaling-inference-efficient-language-models.md): wider and shallower models; Morph-1B is 1.8× faster at equal
+     accuracy.
+   * [Conditional scaling law over architecture](2510.18245-scaling-laws-meet-model-architecture-toward-inference-efficient-llms.md): +2.1% accuracy and +42% throughput vs Llama-3.2 at equal
+     budget.
+5. **Data-constrained regime.** [Pre-training under infinite compute](2509.14786-pre-training-under-infinite-compute.md): with fixed data, heavy
+   regularization + epoching + **ensembles** lower the loss asymptote; 17.5× data efficiency. Diffusion LMs also win
+   here (see decoding/diffusion-language-models).
+6. **MoE laws**: [Parameters vs FLOPs](2501.12370-parameters-vs-flops-scaling-laws-for-optimal-sparsity-for-mixture-of-e.md), [Joint MoE Scaling Laws](2502.05172-joint-moe-scaling-laws-mixture-of-experts-can-be-memory-efficient.md), [Towards Greater Leverage](2507.17702-towards-greater-leverage-scaling-laws-for-efficient-mixture-of-experts.md), [Compute-Optimal Is Not Cluster-Optimal](2608.10605-compute-optimal-is-not-cluster-optimal-systems-aware-scaling-for-spars.md) (see
+   [`mixture-of-experts/architecture-and-routing`](../../mixture-of-experts/architecture-and-routing/README.md)).
+   **Native multimodal**: [Scaling Laws for Native Multimodal Models](2504.07951-scaling-laws-for-native-multimodal-models.md) (ICCV'25) finds early fusion ≥ late fusion, and MoE helps.
+
+### Hand ranking
+
+| # | Paper | Axis | Key idea | Result |
+| ---: | --- | --- | --- | --- |
+| 1 | [Step Law: optimal hyperparameter scaling](2503.04715-predictable-scale-part-i-step-law-optimal-hyperparameter-scaling-law-i.md) | Hyperparameters | ~3,700 runs → LR*(N,D), B*(N,D) power laws; convex, broad optimum | Plug-and-play LR/batch for any N, D, data recipe |
+| 2 | [CompleteP](2505.01618-don-t-be-lazy-completep-enables-compute-efficient-deep-transformers.md) (NeurIPS'25) | Parameterization | Depth-µP with α=1 residual scaling → hyperparameter transfer over depth + non-lazy learning | 12–34% compute savings; flexible width/depth |
+| 3 | [Power Lines](2505.13738-power-lines-scaling-laws-for-weight-decay-and-batch-size-in-llm-pre-tr.md) | Weight decay + batch | Optimal AdamW timescale is constant in tokens; B_opt and B_crit ∝ D^α independent of N | Predict λ_opt and batch size before a big run |
+| 4 | [Scaling laws for optimal data mixtures](2507.09404-scaling-laws-for-optimal-data-mixtures.md) (NeurIPS'25) | Data | Loss as a function of (N, D, domain weights) fitted from small runs | Optimal mixtures for LLM, NMM and LVM pretraining; extrapolates |
+| 5 | [Parallel Scaling Law](2505.10475-parallel-scaling-law-for-language-models.md) (NeurIPS'25) | New axis | P learned input transforms + parallel forward passes + learned aggregation | P streams ≈ O(log P)× parameters, with far less memory and latency growth |
+| 6 | [LLMs on the Line](2502.12120-llms-on-the-line-data-determines-loss-to-loss-scaling-laws.md) (ICML'25) | Data vs architecture | Loss-to-loss scaling across 6K+ checkpoints | Data determines transfer; architecture can be chosen for efficiency |
+| 7 | [Pre-training under infinite compute](2509.14786-pre-training-under-infinite-compute.md) | Data-constrained | Regularization + epoching + ensembling, judged by loss asymptote | 17.5× data efficiency on math mid-training |
+| 8 | [Scaling laws meet architecture](2510.18245-scaling-laws-meet-model-architecture-toward-inference-efficient-llms.md) | Inference-aware | Conditional scaling law over hidden size, MLP ratio, GQA | +42% throughput and +2.1% accuracy vs Llama-3.2 |
+| 9 | [Scaling laws for native multimodal models](2504.07951-scaling-laws-for-native-multimodal-models.md) (ICCV'25) | Multimodal | 457 models: early vs late fusion | Early fusion wins at small scale, simpler to deploy; MoE learns modality-specific weights |
+| 10 | [Multi-power law for LR schedules](2503.12811-a-multi-power-law-for-loss-curve-prediction-across-learning-rate-sched.md) (ICLR'25) | Schedules | Predict whole loss curves across LR schedules from a few fits | Optimized schedule beats WSD slightly |
+| 11 | [Scaling laws for DiLoCo](2503.09799-communication-efficient-language-model-training-scales-reliably-and-ro.md) | Distributed | DiLoCo scaling with replicas and model size | Scales better than DP with model size when tuned |
+| 12 | [Forgetting scaling laws](2502.06042-scaling-laws-for-forgetting-during-finetuning-with-pretraining-data-in.md) | Fine-tuning | Forgetting vs pretraining-data injection | **Injecting 1% pretraining data prevents forgetting** |
+
+**Also useful.**
+* Evaluation methodology: [Signal and Noise](2508.13144-signal-and-noise-a-framework-for-reducing-uncertainty-in-language-mode.md) (pick low-noise benchmarks for scaling decisions),
+  [(Mis)Fitting survey](2502.18969-mis-fitting-a-survey-of-scaling-laws.md), [Gemstones](2502.06857-gemstones-a-model-suite-for-multi-faceted-scaling-laws.md) (sensitivity of scaling prescriptions).
+* Skills: [Compute Optimal Scaling of Skills](2503.10061-compute-optimal-scaling-of-skills-knowledge-vs-reasoning.md) (knowledge vs reasoning scale differently).
+* Code: [Scaling Laws for Code](2512.13472-scaling-laws-for-code-every-programming-language-matters.md).
+* Compression laws: [Compression Scaling Laws](2502.16440-compression-scaling-laws-unifying-sparsity-and-quantization.md), [Pruning Laws for Large Language Models](2504.04342-pruning-laws-for-large-language-models.md).
+* Theory: [Superposition Yields Robust Neural Scaling](2505.10465-superposition-yields-robust-neural-scaling.md) (superposition → robust scaling), [Scaling Collapse Reveals Universal Dynamics in Compute-Optimally Trained Neural Networks](2507.02119-scaling-collapse-reveals-universal-dynamics-in-compute-optimally-train.md) (supercollapse),
+  [L²M](2503.04725-l-2-m-mutual-information-scaling-law-for-long-context-language-modelin.md) (long-context mutual information).
+* Refined laws: [Farseer](2506.10972-predictable-scale-part-ii-farseer-a-refined-scaling-law-in-large-langu.md), [Skaling](2608.07222-skaling-chinchilla-s-exponents-meet-kaplan-s-coupling.md).
+* Batch schedules: [Fast Catch-Up, Late Switching](2602.14208-fast-catch-up-late-switching-optimal-batch-size-scheduling-via-functio.md).
+* MoE hyperparameters: [Let's Scale Step by Step](2608.20061-let-s-scale-step-by-step-compute-efficient-hyperparameter-transfer-for.md), [How to Scale Mixture-of-Experts](2605.14200-how-to-scale-mixture-of-experts-from-mup-to-the-maximally-scale-stable.md), [Hyperparameter Scaling Laws Across MoE Sparsity](2609.08690-hyperparameter-scaling-laws-across-moe-sparsity.md).
+
+**Recommendation.**
+* Set LR/batch/weight decay from Step Law + Power Lines; use CompleteP/µP for width and depth.
+* Choose the data mixture with a fitted mixture law.
+* Add an inference-cost term (wider/shallower, GQA ratio) before fixing the architecture.
+* For data-limited domains, prefer many epochs with strong regularization or ensembles, or a diffusion objective.
+
 ## 🏆 Best of the best by impact score (top 10)
 
 1. **[Parallel Scaling Law for Language Models](2505.10475-parallel-scaling-law-for-language-models.md)** (2025-05) — A new scaling law is proposed and validated through large-scale pre-training, which shows that a model with a model with parallel streams is similar to scaling the parameters by O(\log P) while showing superior …  

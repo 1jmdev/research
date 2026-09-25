@@ -112,6 +112,7 @@ Sorted cheapest first by the *smallest* compute figure found in the paper. Range
 | [VSA: Faster Video Diffusion with Trainable Sparse Attention](2505.13389-vsa-faster-video-diffusion-with-trainable-sparse-attention.md) | 0.00 | 99k | H200 | After 4,000 steps training, the 3-step generator achieves a 50.9× reduction in denoising time relative to the baseline model and can generate a 5-second video i… |
 | [LServe: Efficient Long-sequence LLM Serving with Unified Sparse Attention](2502.14866-lserve-efficient-long-sequence-llm-serving-with-unified-sparse-attenti.md) | 0.00 | 0.00 | A100 | To successfully run the experiments, a host system with x86_64 CPUs is required, along with at least one A100 or L40S NVIDIA GPU.… |
 | [SeerAttention-R: Sparse Attention Adaptation for Long Reasoning](2506.08889-seerattention-r-sparse-attention-adaptation-for-long-reasoning.md) | 2.0 | 12 | unspecified | Table 2 summarizes the GPU hours required for training models of various sizes.… |
+| [VideoNSA: Native Sparse Attention Scales Video Understanding](2510.02295-videonsa-native-sparse-attention-scales-video-understanding.md) | 4.6k | 5.3k | H100 | The complete training process requires 4600 H100 GPU hours.… |
 
 ## Full ranking
 

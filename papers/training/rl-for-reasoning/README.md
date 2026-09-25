@@ -6,6 +6,104 @@ RL post-training methods, RL training efficiency (rollout systems, async RL), re
 
 📖 Written overview of this area: [../../../overviews/training.md](../../../overviews/training.md)
 
+## 🔬 Analyst notes: hand ranking and verdict
+
+_Written after reading the abstracts, and the full text where available, of this category's papers. The hand ranking weighs technical merit and usefulness for a runtime or model builder, not just citations. The automatic impact ranking follows below._
+
+**Verdict.** With ~500 papers, this is the busiest area of 2025–26. The practical consensus after DeepSeek-R1:
+
+**1. The algorithm is GRPO-family with specific fixes.**
+* [DAPO](2503.14476-dapo-an-open-source-llm-reinforcement-learning-system-at-scale.md) (ByteDance): clip-higher, dynamic sampling (drop all-correct and all-wrong groups), token-level
+  loss, overlong shaping. 50 AIME'24 on Qwen2.5-32B base.
+* [Dr. GRPO](2503.20783-understanding-r1-zero-like-training-a-critical-perspective.md): remove length and std normalization biases.
+* [GSPO](2507.18071-group-sequence-policy-optimization.md) (Qwen3): **sequence-level** importance ratios, which stabilize MoE RL.
+* Also: CISPO (MiniMax-M1), [SAPO](2511.20347-soft-adaptive-policy-optimization.md), [GMPO](2507.20673-geometric-mean-policy-optimization.md), [REINFORCE++](2501.03262-reinforce-stabilizing-critic-free-policy-optimization-with-global-adva.md),
+  [VAPO](2504.05118-vapo-efficient-and-reliable-reinforcement-learning-for-advanced-reason.md) (value-based).
+* [The Art of Scaling RL Compute](2510.13786-the-art-of-scaling-reinforcement-learning-compute-for-llms.md) (ScaleRL, Meta): a 400K GPU-hour study. RL follows **sigmoidal
+  compute–performance curves** that can be fitted early. Recipe choices change the *efficiency*; only some change the
+  *ceiling*. Validated on a single 100K GPU-h run.
+
+**2. What RL actually does (keep expectations calibrated).**
+* [Does RL really incentivize reasoning beyond the base?](2504.13837-does-reinforcement-learning-really-incentivize-reasoning-capacity-in-l.md) (NeurIPS'25 oral): RLVR improves pass@1 but the
+  base model wins at large k. RL *sharpens* the distribution. Prolonged, diverse RL ([ProRL](2505.24864-prorl-prolonged-reinforcement-learning-expands-reasoning-boundaries-in.md)) and
+  [pass@k training](2508.10751-pass-k-training-for-adaptively-balancing-exploration-and-exploitation.md) push the boundary somewhat.
+* Only **high-entropy "fork" tokens** matter: training on the top 20% entropy tokens matches or beats full RL
+  ([Beyond the 80/20 rule](2506.01939-beyond-the-80-20-rule-high-entropy-minority-tokens-drive-effective-rei.md)).
+* Entropy collapse sets a predictable ceiling ([The Entropy Mechanism](2505.22617-the-entropy-mechanism-of-reinforcement-learning-for-reasoning-language.md); Clip-Cov / KL-Cov fix it).
+* RL updates **small subnetworks** ([Reinforcement Learning Finetunes Small Subnetworks in Large Language Models](2505.11711-reinforcement-learning-finetunes-small-subnetworks-in-large-language-m.md)).
+* **1–2 training examples** can give most of the math gain on Qwen ([1-shot RLVR](2504.20571-reinforcement-learning-for-reasoning-in-large-language-models-with-one.md)). Spurious and random
+  rewards also help Qwen ([Spurious Rewards](2506.10947-spurious-rewards-rethinking-training-signals-in-rlvr.md)): be careful about data contamination
+  ([Reasoning or Memorization? Unreliable Results of Reinforcement Learning Due to Data Contamination](2507.10532-reasoning-or-memorization-unreliable-results-of-reinforcement-learning.md)) and model-family effects.
+
+**3. Systems are the bottleneck.** Rollout generation is 70–90% of RL time.
+* **Asynchronous RL** with staleness control: [AReaL](2505.24298-areal-a-large-scale-asynchronous-reinforcement-learning-system-for-lan.md) (2.77×), [AsyncFlow](2507.01663-asyncflow-an-asynchronous-streaming-rl-framework-for-efficient-llm-pos.md),
+  [Laminar](2510.12633-laminar-a-scalable-asynchronous-rl-post-training-framework.md), [LlamaRL](2505.24034-llamarl-a-distributed-asynchronous-reinforcement-learning-framework-fo.md), [StreamRL](2504.15930-streamrl-scalable-heterogeneous-and-elastic-rl-for-llms-with-disaggreg.md) (disaggregated generation);
+  [stale-data limits](2510.01161-prosperity-before-collapse-how-far-can-off-policy-rl-reach-with-stale.md); [staleness-adaptive trust regions](2607.18722-stale-but-stable-staleness-adaptive-trust-regions-for-stabilizing-asyn.md).
+* **Long-tail rollouts**: [RollPacker](2509.21009-rollpacker-mitigating-long-tail-rollouts-for-fast-synchronous-rl-post.md), [Seer](2511.14617-seer-online-context-learning-for-fast-synchronous-llm-reinforcement-le.md) (online context learning for synchronous RL).
+* **Speculative decoding inside rollouts**: [Accelerating RL Post-Training Rollouts via System-Integrated Speculative Decoding](2604.26779-accelerating-rl-post-training-rollouts-via-system-integrated-speculati.md), [EfficientRollout](2606.18967-efficientrollout-system-aware-self-speculative-decoding-for-rl-rollout.md), [Online Draft Co-Training for Speculative Decoding in Large-Scale, Long-Context RL Post-Training](2609.07108-online-draft-co-training-for-speculative-decoding-in-large-scale-long.md) (online
+  draft co-training).
+* **Training–inference mismatch** (vLLM vs FSDP numerics) destabilizes RL. Fixes:
+  * FP16 instead of BF16 ([Defeating the Training-Inference Mismatch via FP16](../../quantization/low-precision-training/2510.26788-defeating-the-training-inference-mismatch-via-fp16.md));
+  * deterministic TP-invariant kernels ([Deterministic Inference across Tensor Parallel Sizes That Eliminates Training-Inference Mismatch](../../serving-systems/distributed-inference-and-parallelism/2511.17826-deterministic-inference-across-tensor-parallel-sizes-that-eliminates-t.md));
+  * MoE routing replay ([R3](2510.11370-stabilizing-moe-reinforcement-learning-by-aligning-training-and-infere.md));
+  * LR scheduling ([Beyond Precision](2602.01826-beyond-precision-training-inference-mismatch-is-an-optimization-proble.md)); diagnosis in [Diagnosing Training Inference Mismatch in LLM Reinforcement Learning](2605.14220-diagnosing-training-inference-mismatch-in-llm-reinforcement-learning.md).
+* Quantized RL rollouts: [QeRL](2510.11696-qerl-beyond-efficiency-quantization-enhanced-reinforcement-learning-fo.md), [QaRL](../../quantization/low-precision-training/2604.07853-qarl-rollout-aligned-quantization-aware-rl-for-fast-and-stable-trainin.md).
+
+**4. Beyond verifiable math and code.**
+* Rubrics as rewards ([RaR](2507.17746-rubrics-as-rewards-reinforcement-learning-beyond-verifiable-domains.md)).
+* Verifier-free probability rewards ([RLPR](2506.18254-rlpr-extrapolating-rlvr-to-general-domains-without-verifiers.md)).
+* Generative reward models ([RM-R1](2505.02387-rm-r1-reward-modeling-as-reasoning.md), [Skywork-Reward-V2](2507.01352-skywork-reward-v2-scaling-preference-data-curation-via-human-ai-synerg.md)).
+* Self-rewarding / unsupervised: [TTRL](2504.16084-ttrl-test-time-reinforcement-learning.md), [Intuitor](2505.19590-learning-to-reason-without-external-rewards.md); limits in [How Far Can Unsupervised RLVR Scale LLM Training?](2603.08660-how-far-can-unsupervised-rlvr-scale-llm-training.md).
+* Self-play: [Absolute Zero](2505.03335-absolute-zero-reinforced-self-play-reasoning-with-zero-data.md), [SPIRAL](2506.24119-spiral-self-play-on-zero-sum-games-incentivizes-reasoning-via-multi-ag.md).
+* Agentic RL: [Search-R1](2503.09516-search-r1-training-llms-to-reason-and-leverage-search-engines-with-rei.md), [ReTool](2504.11536-retool-reinforcement-learning-for-strategic-tool-use-in-llms.md), [SimpleTIR](2509.02479-simpletir-end-to-end-reinforcement-learning-for-multi-turn-tool-integr.md), [GiGPO](2505.10978-group-in-group-policy-optimization-for-llm-agent-training.md),
+  [ARPO](2507.19849-agentic-reinforced-policy-optimization.md), [rStar2-Agent](2508.20722-rstar2-agent-agentic-reasoning-technical-report.md), [SWE-RL](2502.18449-swe-rl-advancing-llm-reasoning-via-reinforcement-learning-on-open-soft.md).
+* Self-distillation as RL: [SDPO](2601.20802-reinforcement-learning-via-self-distillation.md).
+
+### Hand ranking
+
+| # | Paper | Kind | Key idea | Result |
+| ---: | --- | --- | --- | --- |
+| 1 | [DAPO](2503.14476-dapo-an-open-source-llm-reinforcement-learning-system-at-scale.md) (NeurIPS'25) | Algorithm + open system | Clip-higher, dynamic sampling, token-level loss, overlong reward shaping (verl) | 50 on AIME'24 from Qwen2.5-32B base in half DeepSeek's steps; fully open |
+| 2 | [The Art of Scaling RL Compute (ScaleRL)](2510.13786-the-art-of-scaling-reinforcement-learning-compute-for-llms.md) | RL scaling | Sigmoidal compute–performance fits; ablate what changes the asymptote vs efficiency | Predicts a 100K GPU-h run from early points; best-practice recipe |
+| 3 | [GSPO](2507.18071-group-sequence-policy-optimization.md) (Qwen) | Algorithm | Sequence-level ratio, clipping and optimization | Stabilizes MoE RL; used for Qwen3 |
+| 4 | [Does RL really incentivize reasoning?](2504.13837-does-reinforcement-learning-really-incentivize-reasoning-capacity-in-l.md) | Science | Pass@k at large k: base ≥ RLVR model | RLVR sharpens rather than expands; sets expectations |
+| 5 | [High-entropy minority tokens](2506.01939-beyond-the-80-20-rule-high-entropy-minority-tokens-drive-effective-rei.md) | Science + method | Policy-gradient only on the top-20% entropy "fork" tokens | Matches or beats full-token RL, larger gains at 32B |
+| 6 | [The Entropy Mechanism of RL](2505.22617-the-entropy-mechanism-of-reinforcement-learning-for-reasoning-language.md) | Science + method | Performance ≈ −a·exp(entropy)+b; entropy change driven by covariance | Clip-Cov / KL-Cov prevent collapse and raise the ceiling |
+| 7 | [Understanding R1-Zero-like training / Dr. GRPO](2503.20783-understanding-r1-zero-like-training-a-critical-perspective.md) | Algorithm | Remove GRPO length and std normalization biases; base-model template effects | 43.3% AIME'24 at 7B; shorter wrong answers |
+| 8 | [AReaL](2505.24298-areal-a-large-scale-asynchronous-reinforcement-learning-system-for-lan.md) | System | Fully asynchronous rollouts and training with staleness-aware PPO | Up to 2.77× training speedup at equal or better accuracy |
+| 9 | [Defeating training–inference mismatch via FP16](../../quantization/low-precision-training/2510.26788-defeating-the-training-inference-mismatch-via-fp16.md) | Stability | BF16 rounding causes rollout/trainer divergence; FP16 removes it | Stable RL without importance-sampling hacks |
+| 10 | [1-shot RLVR](2504.20571-reinforcement-learning-for-reasoning-in-large-language-models-with-one.md) (NeurIPS'25) | Data efficiency | RL on a single example | MATH500 36% → 73.6% on Qwen2.5-Math-1.5B. Beware family effects |
+| 11 | [ProRL](2505.24864-prorl-prolonged-reinforcement-learning-expands-reasoning-boundaries-in.md) (NVIDIA) | Long RL | KL control + reference resets + diverse tasks over 2K+ steps | Expands the reasoning boundary on tasks where the base fails |
+| 12 | [Rubrics as Rewards](2507.17746-rubrics-as-rewards-reinforcement-learning-beyond-verifiable-domains.md) | Reward design | Checklist rubrics scored by a judge as dense structured rewards | RL beyond verifiable domains (medicine, science) |
+| 13 | [Search-R1](2503.09516-search-r1-training-llms-to-reason-and-leverage-search-engines-with-rei.md) | Agentic RL | Interleaved search calls with retrieved-token masking and outcome reward | +41% over RAG baselines (Qwen2.5-7B) |
+| 14 | [GEPA](2507.19457-gepa-reflective-prompt-evolution-can-outperform-reinforcement-learning.md) | Alternative to RL | Reflective prompt evolution with Pareto selection | Beats GRPO with up to 35× fewer rollouts on several tasks |
+
+**Also useful.**
+* Off-policy guidance and SFT+RL: [LUFFY](2504.14945-learning-to-reason-under-off-policy-guidance.md), [On-Policy RL Meets Off-Policy Experts](2508.11408-on-policy-rl-meets-off-policy-experts-harmonizing-supervised-fine-tuni.md), [Learning What Reinforcement Learning Can't](2506.07527-learning-what-reinforcement-learning-can-t-interleaved-online-fine-tun.md), [Towards a Unified View of Large Language Model Post-Training](2509.04419-towards-a-unified-view-of-large-language-model-post-training.md),
+  [DFT](2508.05629-on-the-generalization-of-sft-a-reinforcement-learning-perspective-with.md) (one-line SFT fix).
+* Reward models and judges: [One token to fool LLM-as-a-judge](2507.08794-one-token-to-fool-llm-as-a-judge.md).
+* Rollout efficiency: [Not All Rollouts are Useful](2504.13818-not-all-rollouts-are-useful-down-sampling-rollouts-in-llm-reinforcemen.md) (down-sampling), [Act Only When It Pays](2506.02177-act-only-when-it-pays-efficient-reinforcement-learning-for-llm-reasoni.md) (selective rollouts), [BroRL](2510.01180-brorl-scaling-reinforcement-learning-via-broadened-exploration.md).
+* Recipes: [Open-Reasoner-Zero](2503.24290-open-reasoner-zero-an-open-source-approach-to-scaling-up-reinforcement.md), [SimpleRL-Zoo](2503.18892-simplerl-zoo-investigating-and-taming-zero-reinforcement-learning-for.md), [AceReason-Nemotron](2505.16400-acereason-nemotron-advancing-math-and-code-reasoning-through-reinforce.md),
+  [Nemotron-Cascade](2512.13607-nemotron-cascade-scaling-cascaded-reinforcement-learning-for-general-p.md), [Light-R1](2503.10460-light-r1-curriculum-sft-dpo-and-rl-for-long-cot-from-scratch-and-beyon.md).
+* Agent frameworks: [Agent Lightning](2508.03680-agent-lightning-train-any-ai-agents-with-reinforcement-learning.md), [VerlTool](2509.01055-verltool-towards-holistic-agentic-reinforcement-learning-with-tool-use.md), [AgentGym-RL](2509.08755-agentgym-rl-training-llm-agents-for-long-horizon-decision-making-throu.md),
+  [AgentRL](2510.04206-agentrl-scaling-agentic-reinforcement-learning-with-a-multi-turn-multi.md), [ProRL Agent](2603.18815-prorl-agent-rollout-as-a-service-for-rl-training-of-multi-turn-llm-age.md) (rollout-as-a-service).
+* Evolution strategies: [Evolution Strategies at Scale](2509.24372-evolution-strategies-at-scale-llm-fine-tuning-beyond-reinforcement-lea.md).
+* PEFT for RLVR: [Evaluating Parameter Efficient Methods for RLVR](2512.23165-evaluating-parameter-efficient-methods-for-rlvr.md).
+* Surveys: [A Survey of Reinforcement Learning for Large Reasoning Models](2509.08827-a-survey-of-reinforcement-learning-for-large-reasoning-models.md), [The Landscape of Agentic Reinforcement Learning for LLMs](2509.02547-the-landscape-of-agentic-reinforcement-learning-for-llms-a-survey.md).
+
+**Recommendation.**
+* *Model builders:* strong mid-trained base → cold-start SFT on long CoT → DAPO/GSPO-style RL with clip-higher,
+  dynamic sampling, entropy management and no KL. Fit a ScaleRL sigmoid early to decide whether to keep going.
+  Evaluate at pass@k too.
+* *Runtime builders (rollout engines):*
+  * weight hot-swap from the trainer;
+  * deterministic / TP-invariant mode, and optionally FP16;
+  * routing capture for MoE (R3);
+  * async generation with staleness tags;
+  * speculative decoding with online-updated drafters;
+  * long-tail rollout packing;
+  * multi-turn tool environments with KV kept across tool calls.
+
 ## 🏆 Best of the best by impact score (top 10)
 
 1. **[DAPO: An Open-Source LLM Reinforcement Learning System at Scale](2503.14476-dapo-an-open-source-llm-reinforcement-learning-system-at-scale.md)** (2025-05) — Unlike previous works that withhold training details, this work introduces four key techniques of the algorithm that make large-scale LLM RL a success and fully open-source a state-of-the-art large-scale RL system that …  

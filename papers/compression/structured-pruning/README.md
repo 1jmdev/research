@@ -125,6 +125,7 @@ Sorted cheapest first by the *smallest* compute figure found in the paper. Range
 | Paper | Min H100-h | Max H100-h | GPU seen | Evidence |
 | --- | ---: | ---: | --- | --- |
 | [DarwinLM: Evolutionary Structured Pruning of Large Language Models](2502.07780-darwinlm-evolutionary-structured-pruning-of-large-language-models.md) | 0.01 | 520 | unspecified | We provide the inference throughput and latency on vLLM inference framework and also add the comparison with Dense model and Shearedllama (with sequence length … |
+| [SEAP: Training-free Sparse Expert Activation Pruning Unlock the Brainpower of La](2503.07605-seap-training-free-sparse-expert-activation-pruning-unlock-the-brainpo.md) | 0.17 | 0.17 | H800 | Our pruning method completes pruning on Llama-2-7B in approximately 5–10 minutes on a single NVIDIA H800 80GB GPU.… |
 
 ## Full ranking
 

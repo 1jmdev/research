@@ -116,7 +116,7 @@ multi-teacher OPD). The main threads:
 8. **[Distilling LLM Agent into Small Models with Retrieval and Code Tools](2505.17612-distilling-llm-agent-into-small-models-with-retrieval-and-code-tools.md)** (2025-11) — This work proposes Agent Distillation, a framework for transferring not only reasoning capability but full task-solving behavior from LLM-based agents into sLMs with retrieval and code tools, and introduces a prompting …  
    _score 13.44 · NeurIPS 2025 · 46 cites · 82▲ HF · [code](https://github.com/Nardien/agent-distillation)_
 9. **[A Survey of On-Policy Distillation for Large Language Models](2604.00626-a-survey-of-on-policy-distillation-for-large-language-models.md)** (2026-06) — This survey formalizes OPD as f-divergence minimization over student-sampled trajectories, organize the field along three design axes, and consolidate success conditions, recurring failure modes, and the connection …  
-   _score 13.38 · 124 cites · 11▲ HF_
+   _score 13.38 · 124 cites · 11▲ HF · ~100–5.0k H100-h_
 10. **[MOPD: Multi-Teacher On-Policy Distillation for Capability Integration in LLM Post-Training](2606.30406-mopd-multi-teacher-on-policy-distillation-for-capability-integration-i.md)** (2026-06) — Multi-teacher On-Policy Distillation (MOPD), a post-training paradigm for combining the capabilities of multiple domain RL teachers: the authors first run per-domain specialised RL to obtain a set of domain teachers, …  
    _score 12.44 · 38 cites · 25▲ HF_
 
@@ -132,6 +132,14 @@ Citations lag, so new work is under-ranked above. These are the most-upvoted or 
 - **[Rethinking On-Policy Distillation of Large Language Models II: One Training Example](2609.04172-rethinking-on-policy-distillation-of-large-language-models-ii-one-trai.md)** (2026-09-03; 101▲, 4 cites) — On-policy distillation improves over hundreds of steps from a single query by rapidly covering teacher states, yet student alignment remains slow, indicating the method is …
 - **[Uni-OPD: Unifying On-Policy Distillation with a Dual-Perspective Recipe](2605.03677-uni-opd-unifying-on-policy-distillation-with-a-dual-perspective-recipe.md)** (2026-07-06; 0▲, 36 cites) — This work identifies two fundamental bottlenecks that limit effective OPD: insufficient exploration of informative states and unreliable teacher supervision for student rollouts, …
 - **[RLCSD: Reinforcement Learning with Contrastive On-Policy Self-Distillation](2606.11709-rlcsd-reinforcement-learning-with-contrastive-on-policy-self-distillat.md)** (2026-09-14; 0▲, 21 cites) — This work proposes RLCSD (Reinforcement Learning with Contrastive on-policy Self-Distillation), which mitigates this drift by contrasting the teacher-student gap under a correct …
+
+## 💻 Compute cost (estimated H100-hours, auto-extracted)
+
+Sorted cheapest first by the *smallest* compute figure found in the paper. Ranges cover all figures the parser found (e.g. per-model-size runs). Verify against the quoted sentence in each paper file.
+
+| Paper | Min H100-h | Max H100-h | GPU seen | Evidence |
+| --- | ---: | ---: | --- | --- |
+| [A Survey of On-Policy Distillation for Large Language Models](2604.00626-a-survey-of-on-policy-distillation-for-large-language-models.md) | 100 | 5.0k | unspecified | The teacher generates the dataset offline (\sim200 GPU-hours), the student trains for \sim100 GPU-hours, totaling \sim300 GPU-hours.… |
 
 ## Full ranking
 

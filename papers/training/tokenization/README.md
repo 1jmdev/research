@@ -6,6 +6,71 @@ Tokenizer design, vocabulary size, byte-level / tokenizer-free models, dynamic p
 
 📖 Written overview of this area: [../../../overviews/training.md](../../../overviews/training.md)
 
+## 🔬 Analyst notes: hand ranking and verdict
+
+_Written after reading the abstracts, and the full text where available, of this category's papers. The hand ranking weighs technical merit and usefulness for a runtime or model builder, not just citations. The automatic impact ranking follows below._
+
+**Verdict.** Tokenization is back as a first-class design decision, with three directions.
+
+1. **Bigger and better vocabularies are nearly free wins.**
+   * [Over-Tokenized Transformer](2501.16975-over-tokenized-transformer-vocabulary-is-generally-worth-scaling.md) (ICML'25): decouple the input vocabulary (huge, multi-gram) from the
+     output vocabulary. Log-linear gains in input vocabulary size; comparable to a 2× larger model at no extra compute.
+   * [SuperBPE](2503.13423-superbpe-space-travel-for-language-models.md) (COLM'25): a pretokenization curriculum that learns *superword* tokens crossing
+     whitespace. Up to ~33% fewer tokens and better downstream results (+4% average at 8B) at equal compute, because
+     per-token difficulty becomes more uniform. [SupraTok](2508.11857-supratok-cross-boundary-tokenization-for-enhanced-language-model-perfo.md) refines it.
+   * Numbers: [FoNE](2502.09741-fone-precise-single-token-number-embeddings-via-fourier-features.md) encodes each number as one token with Fourier features; 64× less data for 99%
+     addition accuracy.
+2. **Tokenizer-free / learned chunking is getting competitive.**
+   * [H-Net: dynamic chunking](2507.07955-dynamic-chunking-for-end-to-end-hierarchical-sequence-modeling.md) (Goomba/CMU): end-to-end learned segmentation. A byte-level H-Net beats a
+     BPE Transformer at matched compute and data; ~4× data efficiency on DNA; biggest wins for Chinese and code.
+   * [AU-Net](2506.14761-from-bytes-to-ideas-language-modeling-with-autoregressive-u-nets.md) (Meta, NeurIPS'25): autoregressive U-Net over bytes.
+   * [FLEXITOKENS](2507.12720-flexitokens-flexible-tokenization-for-evolving-language-models.md), [ByteFlow](2603.03583-byteflow-language-modeling-through-adaptive-byte-compression-without-a.md), [hierarchical AR transformers](2501.10322-hierarchical-autoregressive-transformers-combining-byte-and-word-level.md).
+   * Byte-level decoding speed: [Fast BLT](2605.08044-fast-byte-latent-transformer.md) (parallel bytes + self-speculation / diffusion, >50% lower
+     bandwidth) and [dynamic multi-byte prediction](2608.15454-dynamic-multi-byte-prediction-with-hierarchical-language-models.md).
+   * Converting existing models: see Bolmo in
+     [`model-conversion/tokenizer-and-vocab-transfer`](../../model-conversion/tokenizer-and-vocab-transfer/README.md).
+3. **Inference-time tokenization tricks.**
+   * [zip2zip](2506.01084-zip2zip-inference-time-adaptive-tokenization-via-online-compression.md) (NeurIPS'25): online LZW "hypertokens" learned at inference; 15–40% fewer input and output
+     tokens after a 10 GPU-hour PEFT uptrain.
+   * [Byte-level sampling from BPE models](2506.14123-sampling-from-your-language-model-one-byte-at-a-time.md): exact conversion to byte/character LMs. This fixes
+     prompt-boundary problems and allows ensembling models with different tokenizers.
+   * [Non-canonical tokenizations](2506.19004-broken-tokens-your-language-model-can-secretly-handle-non-canonical-to.md): models tolerate them, and character-level segmentation can help
+     string tasks.
+
+Measurement and fairness: [TokSuite](2512.20757-toksuite-measuring-the-impact-of-tokenizer-choice-on-language-model-be.md) (same model, many tokenizers), [causal tokenization
+bias](2506.03149-causal-estimation-of-tokenisation-bias.md), [The Token Tax](2509.05486-the-token-tax-systematic-bias-in-multilingual-tokenization.md) (a 2× token blow-up means ~4× training cost for many languages),
+[Beyond Text Compression](2506.03101-beyond-text-compression-evaluating-tokenizers-across-scales.md) (Zipf-based intrinsic metrics beat compression rate).
+
+### Hand ranking
+
+| # | Paper | Kind | Key idea | Result |
+| ---: | --- | --- | --- | --- |
+| 1 | [Over-Tokenized Transformer](2501.16975-over-tokenized-transformer-vocabulary-is-generally-worth-scaling.md) (ICML'25) | Vocabulary scaling | Separate large multi-gram input vocabulary from the output vocabulary | Log-linear loss gains; ≈ a 2× larger baseline at no extra cost |
+| 2 | [H-Net: dynamic chunking](2507.07955-dynamic-chunking-for-end-to-end-hierarchical-sequence-modeling.md) | Tokenizer-free | Learned content-dependent chunking inside a hierarchical network, end to end | Byte-level H-Net beats BPE Transformers at matched compute; large gains on code, Chinese and DNA |
+| 3 | [SuperBPE](2503.13423-superbpe-space-travel-for-language-models.md) (COLM'25) | Tokenizer | Two-stage BPE: subwords, then superwords across spaces | Fewer tokens per byte and better downstream results at equal compute |
+| 4 | [AU-Net: from bytes to ideas](2506.14761-from-bytes-to-ideas-language-modeling-with-autoregressive-u-nets.md) (NeurIPS'25) | Tokenizer-free | Autoregressive U-Net pooling bytes → words → multi-word | Ties strong BPE baselines; deeper hierarchies promising |
+| 5 | [zip2zip](2506.01084-zip2zip-inference-time-adaptive-tokenization-via-online-compression.md) (NeurIPS'25) | Inference-time | LZW hypertokens created on the fly; model uptrained to read and write them | 15–40% fewer tokens; 10 GPU-hours of PEFT |
+| 6 | [FoNE](2502.09741-fone-precise-single-token-number-embeddings-via-fourier-features.md) | Numbers | Fourier-feature single-token number embeddings | 64× data efficiency on 6-digit addition; 100% arithmetic accuracy |
+| 7 | [Fast Byte Latent Transformer](2605.08044-fast-byte-latent-transformer.md) | Byte decoding | Parallel multi-byte decoding + BLT self-speculation / diffusion + verification | >50% lower estimated bandwidth cost vs BLT |
+| 8 | [Sampling one byte at a time](2506.14123-sampling-from-your-language-model-one-byte-at-a-time.md) | Inference | Exact byte-level sampling from any BPE model | Fixes prompt-boundary artefacts; ensembling across tokenizers |
+| 9 | [TokSuite](2512.20757-toksuite-measuring-the-impact-of-tokenizer-choice-on-language-model-be.md) | Evaluation | Identical models trained with different tokenizers + multilingual robustness benchmark | Isolates tokenizer effects |
+| 10 | [The Token Tax](2509.05486-the-token-tax-systematic-bias-in-multilingual-tokenization.md) | Fairness/economics | Token fertility vs accuracy and cost across African languages | Fertility predicts accuracy drops; 2× tokens → 4× cost |
+
+**Also useful.**
+* Tokenizer design: [SCRIPT-BPE](2505.24689-bpe-stays-on-script-structured-encoding-for-robust-multilingual-pretok.md), [MorphBPE](2502.00894-morphbpe-a-morpho-aware-tokenizer-bridging-linguistic-complexity-for-e.md), [AdaptBPE](2601.21665-adaptbpe-from-general-purpose-to-specialized-tokenizers.md),
+  [Functionalizer](2609.15991-the-functionalizer-lossless-functional-decomposition-for-subword-token.md), [Pruned BPE](2608.00837-pruned-bpe-post-training-visibility-pruning-and-token-reallocation-for.md), [One Tokenizer To Rule Them All](2506.10766-one-tokenizer-to-rule-them-all-emergent-language-plasticity-via-multil.md) (multilingual tokenizers give plasticity).
+* Robustness: [StochasTok](2506.01687-stochastok-improving-fine-grained-subword-understanding-in-llms.md), [UTF-8 Plumbing](2511.05578-utf-8-plumbing-byte-level-tokenizers-unavoidably-enable-llms-to-genera.md) (ill-formed UTF-8 from byte-level tokenizers).
+* Proxy compression training: [Proxy Compression for Language Modeling](2602.04289-proxy-compression-for-language-modeling.md) (ICML'26).
+* Pixel fallback: [Overcoming Vocabulary Constraints with Pixel-level Fallback](2504.02122-overcoming-vocabulary-constraints-with-pixel-level-fallback.md).
+* Position paper: [Stop Taking Tokenizers for Granted](2601.13260-stop-taking-tokenizers-for-granted-they-are-core-design-decisions-in-l.md).
+
+**Recommendation.**
+* *Model builders:* use a SuperBPE-style tokenizer with a large (≥200K) input vocabulary (over-tokenization) and
+  special handling for numbers. Watch H-Net/AU-Net for the next generation.
+* *Runtime builders:* handle byte-level/hierarchical models (patch boundaries, multi-byte decode). Implement exact
+  token-healing / byte-level sampling at prompt boundaries, and stateful incremental tokenization for agents (see
+  serving `_general`, TokTier).
+
 ## 🏆 Best of the best by impact score (top 10)
 
 1. **[Dynamic Chunking for End-to-End Hierarchical Sequence Modeling](2507.07955-dynamic-chunking-for-end-to-end-hierarchical-sequence-modeling.md)** (2025-07) — A collection of new techniques are introduced that enable a dynamic chunking mechanism which automatically learns content- and context- dependent segmentation strategies learned jointly with the rest of the model, …  
