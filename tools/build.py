@@ -518,12 +518,17 @@ def render_root_readme(papers, cat_items, majors):
          f"model building, all first submitted between **2025-01-01 and {TODAY.isoformat()}**. Each paper has its own "
          "Markdown file with abstract, key claimed results, venue, citations, code link, models and hardware used, and where "
          "available: **compute cost in estimated H100-hours**, results tables, contributions, conclusion and limitations "
-         "taken from the full text.\n",
+         "taken from the full text. Every paper was kept or dropped by hand from ~21K keyword-matched candidates, plus a recall "
+         "audit that rescued popular papers the keyword filter missed (see METHODOLOGY.md).\n",
          "Built for engineers writing an LLM runtime (quantization, KV cache, attention kernels, speculative/parallel/"
          "diffusion decoding, serving) and for people training or converting models.\n",
          "* 📖 **Start with the [overviews](overviews/)**: hand-written syntheses of what is state of the art in each area and what to "
          "implement first.",
-         "* 🏆 Each category README has a **Best of the best** top-10 and a full ranking table.",
+         f"* 🔬 Every one of the {sum(len(v) for v in majors.values())} category READMEs opens with **analyst notes**. These are hand-written: a verdict, a "
+         "**hand ranking** of the papers that matter, hand-checked H100-hour cost tables where relevant, and concrete "
+         "recommendations for runtime builders and model builders.",
+         "* 🏆 Below the notes, each category README has an automatic **Best of the best** top-10 by impact score and a "
+         "full ranking table.",
          "* 💻 Compute-heavy categories (quantization, conversion, diffusion LMs, MTP, training, …) have a **compute-cost table** "
          "sorted by H100-hours.",
          "* 🧮 [`data/papers.csv`](data/papers.csv) has every paper with category, rank, score, citations, bits and compute, ready "

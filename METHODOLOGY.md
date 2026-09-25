@@ -42,8 +42,22 @@ Special rules:
 * **Diffusion LMs.** Papers about accelerating dLLMs (caching, parallel unmasking, speedups) go to
   `decoding/diffusion-llm-inference`. Papers about models and training go to `decoding/diffusion-language-models`.
 
-This is a keyword classifier, not a human curator. Expect roughly 5–15% of papers in a leaf to be better placed
-elsewhere. The "Also relevant" links help with this.
+The keyword classifier only produces a first guess.
+
+### 2b. Manual review and recall audit
+
+* **Every candidate was reviewed by hand.** The reviewer (Claude) read the title and abstract of all 21,353 prefiltered
+  candidates. Each paper was kept with a category code or dropped: **8,146 kept, 13,207 dropped**. The decisions,
+  including the final category, are in [`data/curation.tsv`](data/curation.tsv) (the last line for an id wins). The
+  keep/drop rules and codes are in [`data/CURATION-GUIDE.md`](data/CURATION-GUIDE.md). The hand-assigned category
+  overrides the keyword classifier.
+* **Recall audit.** The prefilter was checked against Hugging Face daily-papers popularity and against landmark papers
+  in each area. About 1,900 popular titles that were missing from the candidate set were reviewed by hand. **130
+  relevant papers were rescued** and categorised manually. About 12 more were added later because an analyst note needed
+  them, e.g. *Distillation Scaling Laws* (2502.08606) and *Joint MoE Scaling Laws* (2502.05172). The rescued ids are in
+  `curation.tsv`, and their candidate records carry the query tag `rescue`.
+* The remaining error is mostly about **placement, not inclusion**. Borderline papers can reasonably live in two
+  leaves; "Also relevant to" links cover that.
 
 ## 3. Ranking: the impact score
 
@@ -112,7 +126,34 @@ Caveats:
 * A figure with an unspecified GPU is taken 1:1 as H100-hours.
 * Papers without an HTML version fall back to PDF text, which is less reliable.
 
-## 5. Reproducing / updating
+## 5. Analyst notes (hand ranking and verdicts)
+
+Every leaf README opens with **🔬 Analyst notes**, written by hand from the papers rather than generated. They live in
+[`overviews_src/categories/<area>/<leaf>.md`](overviews_src/categories/) and are rendered into the README by
+`tools/build.py`. `[[arxiv-id]]` references are resolved into links to the paper pages. Each note has:
+
+* a **verdict**: what is state of the art, what failed, and what the consensus is;
+* a **hand ranking table**. The rank reflects usefulness for building a runtime or model, **not** the citation-based
+  impact score, so it often differs from the automatic top-10 below it;
+* an **"Also useful"** list for the long tail;
+* **recommendations** for runtime builders and for model builders.
+
+How the notes were written: for each leaf, the reviewer read the abstracts, contributions, conclusions and limitations
+of the top ~24 papers by impact score plus the titles and snippets of the rest of the leaf. For the papers used in a
+ranking or a cost table, the full text was fetched with the `arxiv` CLI to check claims and numbers. Headline numbers in
+the tables come from each paper's abstract or text. They are the authors' claims, not independent reproductions.
+
+**Compute in the notes is hand-checked.** The automatic compute parser (section 4) often picks up sentences that
+describe *other* papers' compute, so the notes do not reuse its figures blindly. Conversion, quantization and
+distillation costs were recomputed in one of two ways:
+
+* **reported**: GPU count × wall-clock from the paper, normalised to H100 with the table above;
+* **estimated**: 6·N·D FLOPs at 40% MFU of H100 BF16 dense (≈1.42·10¹⁸ FLOP per H100-hour), with N = active parameters
+  and D = training tokens.
+
+Every table says which basis it uses. Treat estimates as ±2×.
+
+## 6. Reproducing / updating
 
 See [`tools/README.md`](tools/README.md). In short:
 

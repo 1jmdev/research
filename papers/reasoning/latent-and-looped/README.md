@@ -111,6 +111,7 @@ Sorted cheapest first by the *smallest* compute figure found in the paper. Range
 
 | Paper | Min H100-h | Max H100-h | GPU seen | Evidence |
 | --- | ---: | ---: | --- | --- |
+| [BDH-CQ: In-Context Learning with Recurrent Latent Reasoning](2608.09888-bdh-cq-in-context-learning-with-recurrent-latent-reasoning.md) | 3.3 | 3.3 | H200 | At $3 per H200-hour this gives a computed cost of $0.00070 per task, less than one-tenth of a cent.… |
 | [CODI: Compressing Chain-of-Thought into Continuous Space via Self-Distillation](2502.21074-codi-compressing-chain-of-thought-into-continuous-space-via-self-disti.md) | 12 | 15 | A100 | Training runs for 40 epochs, taking approximately 36 hours on a single A100 (80GB).… |
 | [LoopUS: Recasting Pretrained LLMs into Looped Latent Refinement Models](2605.11011-loopus-recasting-pretrained-llms-into-looped-latent-refinement-models.md) | 33 | 73 | RTX PRO 6000 | We evaluate LoopUS across five pretrained backbones spanning model families and scales: Qwen3-1.7B, Qwen3-4B, and Qwen3-8B [44], using cloud NVIDIA L40S, RTX PR… |
 | [Memory-Efficient Looped Transformer: Decoupling Compute from Memory in Looped La](2605.07721-memory-efficient-looped-transformer-decoupling-compute-from-memory-in.md) | 500 | 20k | unspecified | Evaluation required approximately 500 GPU-hours, while preliminary experiments accounted for roughly 15,000 GPU-hours.… |
