@@ -1,5 +1,5 @@
 {
- "total": 8144,
+ "total": 8145,
  "categories": {
   "attention/attention-variants": 70,
   "attention/hybrid-architectures": 52,
@@ -10,7 +10,7 @@
   "attention/state-space-and-recurrent": 93,
   "compression/_general": 36,
   "compression/activation-sparsity": 33,
-  "compression/knowledge-distillation": 246,
+  "compression/knowledge-distillation": 247,
   "compression/low-rank-decomposition": 82,
   "compression/structured-pruning": 149,
   "compression/unstructured-and-semi-structured-pruning": 38,
@@ -75,6 +75,6 @@
   "training/scaling-laws": 87,
   "training/tokenization": 90
  },
- "with_fulltext": 996,
- "with_compute": 148
+ "with_fulltext": 1042,
+ "with_compute": 153
 }

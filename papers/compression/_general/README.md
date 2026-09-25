@@ -6,6 +6,65 @@ Compression surveys, benchmarks and combined pipelines (prune + quantize + disti
 
 📖 Written overview of this area: [../../../overviews/compression.md](../../../overviews/compression.md)
 
+## 🔬 Analyst notes: hand ranking and verdict
+
+_Written after reading the abstracts, and the full text where available, of this category's papers. The hand ranking weighs technical merit and usefulness for a runtime or model builder, not just citations. The automatic impact ranking follows below._
+
+**Verdict.** This bucket holds cross-cutting compression work. Two parts are directly actionable for a runtime.
+
+1. **Lossless weight compression is real and cheap to adopt.** BF16 weights carry only ~11 bits of entropy (the
+   exponent is highly skewed), so entropy coding gives **~30% smaller models with bit-identical outputs**:
+   * [DFloat11](2504.11651-70-size-100-accuracy-lossless-llm-compression-for-efficient-gpu-infere.md): Huffman-coded exponents + a GPU decompression kernel; Llama-3.1-405B on one 8×80GB node;
+     2.3–46× faster than CPU offload;
+   * [ZipServ](2603.17435-zipserv-fast-and-memory-efficient-llm-inference-with-hardware-aware-lo.md): fixed-length tensor-core-aware encoding decompressed **inside the GEMM**; *faster* than
+     cuBLAS (up to 2.21× kernel, 1.22× end-to-end over vLLM);
+   * [Shannon-bound ANS](2606.15789-approaching-shannon-bound-with-lossless-llm-weight-compression.md): tile-aligned ANS decoding in SGLang; bigger batches, up to 1.6× throughput on
+     Mixtral, 11× over DFloat11/NeuZip;
+   * [Huff-LLM](2502.00922-huff-llm-end-to-end-lossless-compression-for-efficient-llm-inference.md) (hardware) and [ENEC](2604.03298-enec-a-lossless-ai-model-compression-method-enabling-fast-inference-on.md) (Ascend).
+
+   This is the **free lunch for BF16 serving** and composes with KV/activation tricks. It does not stack on top of
+   4-bit quantization, which is already near-entropy.
+2. **Evaluate compressed models on generation and safety, not multiple choice.**
+   * [The Benchmark Illusion](2606.17609-the-benchmark-illusion-pruned-llms-can-pass-multiple-choice-but-fail-t.md): pruned models pass MC but cannot *produce* the answer.
+   * [UniComp](2602.09130-unicomp-a-unified-evaluation-of-large-language-model-compression-via-p.md): factual recall survives while multi-step reasoning, multilingual and instruction following
+     degrade; retained accuracy does not imply retained safety.
+   * [Fidelity Is Not Safety](2607.28196-fidelity-is-not-safety-gently-compressed-llms-pass-every-data-free-qua.md): gently compressed low-rank builds pass perplexity/MMLU guards yet invent
+     procedure steps in agentic use. It proposes a data-free screen.
+   * [When reasoning meets compression](2504.02010-when-reasoning-meets-compression-understanding-the-effects-of-llms-com.md): quantizers over-compress the final-layer MLP and gate
+     projections; protecting 2% of weights gives +6.57%.
+
+Also here: outlier science ([Systematic Outliers](2502.06415-systematic-outliers-in-large-language-models.md), ICLR'25: outliers act as implicit attention scaling
+factors, and removing them structurally helps compression), any-size compression without recomputation
+([ACIP](2502.01717-choose-your-model-size-any-compression-of-large-language-models-withou.md)), rate-distortion bit allocation ([Radio](2505.03031-radio-rate-distortion-optimization-for-large-language-model-compressio.md)), delta compression of fine-tunes
+([ImPart](2504.13237-impart-importance-aware-delta-sparsification-for-improved-model-compre.md), [UltraDelta](2505.13563-breaking-the-compression-ceiling-data-free-pipeline-for-ultra-efficien.md)), and dLLM-specific pruning ([sink-aware pruning for
+DLMs](2602.17664-sink-aware-pruning-for-diffusion-language-models.md)).
+
+### Hand ranking
+
+| # | Paper | Kind | Key idea | Result |
+| ---: | --- | --- | --- | --- |
+| 1 | [DFloat11](2504.11651-70-size-100-accuracy-lossless-llm-compression-for-efficient-gpu-infere.md) | Lossless | Entropy-code BF16 exponents; hierarchical-LUT GPU decoder | 70% size, bit-exact; 405B on a single node; 5.7–14.9× longer generation at fixed memory |
+| 2 | [ZipServ](2603.17435-zipserv-fast-and-memory-efficient-llm-inference-with-hardware-aware-lo.md) | Lossless + kernel | Triple-bitmap fixed-length encoding decoded straight into tensor-core registers (ZipGEMM) | −30% size **and** 1.22× faster end to end than vLLM |
+| 3 | [Approaching the Shannon bound](2606.15789-approaching-shannon-bound-with-lossless-llm-weight-compression.md) | Lossless | Tile-level ANS decoding aligned with GEMM tiling; SGLang integration | Batch 20 → 95 on Mixtral-176B (1.6× throughput); up to 11× over prior lossless |
+| 4 | [UniComp](2602.09130-unicomp-a-unified-evaluation-of-large-language-model-compression-via-p.md) | Evaluation | 7 compression methods × 40+ datasets incl. safety/fairness | Knowledge bias + performance-reliability decoupling; task calibration +50% for pruned reasoning |
+| 5 | [When reasoning meets compression](2504.02010-when-reasoning-meets-compression-understanding-the-effects-of-llms-com.md) | Analysis | Mechanistic view of compressed R1-distilled models | Final-layer MLP-up/gate are critical; protect 2% → +6.57% |
+| 6 | [The Benchmark Illusion](2606.17609-the-benchmark-illusion-pruned-llms-can-pass-multiple-choice-but-fail-t.md) | Evaluation | Recognition-only errors in pruned models | MC benchmarks overstate usability |
+| 7 | [Systematic Outliers](2502.06415-systematic-outliers-in-large-language-models.md) (ICLR'25) | Analysis | Activation, weight and attention outliers share a cause (softmax); they act as context-aware scaling | Structural removal speeds convergence and improves compressibility |
+| 8 | [ACIP](2502.01717-choose-your-model-size-any-compression-of-large-language-models-withou.md) | Any-size compression | Sparsity-penalized SVD pruning order gives a global score map → any target size, no recomputation | One run, every size |
+| 9 | [Fidelity Is Not Safety](2607.28196-fidelity-is-not-safety-gently-compressed-llms-pass-every-data-free-qua.md) | Safety eval | Gently compressed models pass all data-free guards but fail agentic procedures | Data-free two-axis screen of compression error |
+| 10 | [Radio](2505.03031-radio-rate-distortion-optimization-for-large-language-model-compressio.md) | Bit allocation | Rate-distortion optimization for post-training quantization at 100B+ scale | Size- or accuracy-targeted compression |
+
+**Also useful.**
+* Composition order: [A Systematic Study of Compression Ordering for Large Language Models](2511.19495-a-systematic-study-of-compression-ordering-for-large-language-models.md) (compression ordering), [Compression Trinity](2608.24070-compression-trinity-exploring-sparsity-quantization-and-low-rank-appro.md).
+* Recovery: [Recover-LoRA](2510.08600-recover-lora-data-free-accuracy-recovery-of-degraded-language-models-v.md), [GRAIL](2602.23795-grail-post-hoc-compensation-by-linear-reconstruction-for-compressed-ne.md).
+* Tooling: [OneComp](2603.28845-onecomp-one-line-revolution-for-generative-ai-model-compression.md).
+* Domain calibration: [MixCal](2502.18424-compressing-language-models-for-specialized-domains.md).
+* Edge lossless: [EntroLLM](2505.02380-entrollm-entropy-encoded-weight-compression-for-efficient-large-langua.md).
+
+**Recommendation for a runtime.** Ship a lossless BF16 path (ZipServ/DFloat11-style fused decompress-GEMM) for "no
+accuracy risk" deployments. Put a **generation-based and agentic regression suite** in front of every lossy compression
+recipe, because perplexity, MMLU and weight fidelity are not sufficient acceptance tests.
+
 ## 🏆 Best of the best by impact score (top 10)
 
 1. **[70% Size, 100% Accuracy: Lossless LLM Compression for Efficient GPU Inference via Dynamic-Length Float (DFloat11)](2504.11651-70-size-100-accuracy-lossless-llm-compression-for-efficient-gpu-infere.md)** (2026-01) — Dynamic-Length Float (DFloat11), a lossless compression framework that reduces LLM and DM size by 30% while preserving outputs that are bit-for-bit identical to the original model, is introduced.  

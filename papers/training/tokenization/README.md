@@ -13,7 +13,7 @@ Tokenizer design, vocabulary size, byte-level / tokenizer-free models, dynamic p
 2. **[Over-Tokenized Transformer: Vocabulary is Generally Worth Scaling](2501.16975-over-tokenized-transformer-vocabulary-is-generally-worth-scaling.md)** (2025-05) — Over-Tokenized Transformers is introduced, a novel framework that decouples input and output vocabularies to improve language modeling performance and uncovers a log-linear relationship between input vocabulary size and …  
    _score 10.67 · International Conference on Machine Learning (ICML) · 41 cites · 34▲ HF_
 3. **[FoNE: Precise Single-Token Number Embeddings via Fourier Features](2502.09741-fone-precise-single-token-number-embeddings-via-fourier-features.md)** (2026-04) — Inspired by the observation that pre-trained LLMs internally learn Fourier-like features for number tokens, Fourier Number Embedding (FoNE) is proposed, a novel method that directly maps numbers into the embedding space …  
-   _score 9.26 · 19 cites · 15▲ HF · [code](https://github.com/KevinZhoutianyi/FoNE)_
+   _score 9.26 · 19 cites · 15▲ HF · [code](https://github.com/KevinZhoutianyi/FoNE) · ~3.8 H100-h_
 4. **[From Bytes to Ideas: Language Modeling with Autoregressive U-Nets](2506.14761-from-bytes-to-ideas-language-modeling-with-autoregressive-u-nets.md)** (2025-06) — An autoregressive U-Net that learns to embed its own tokens as it trains, which means the same system can handle character-level tasks and carry knowledge across low-resource languages.  
    _score 8.19 · Neural Information Processing Systems (Neural Inf Process Sy · 14 cites · 16▲ HF · [code](https://github.com/facebookresearch/lingua)_
 5. **[SuperBPE: Space Travel for Language Models](2503.13423-superbpe-space-travel-for-language-models.md)** (2025-08) — A "superword"tokenizer, SuperBPE, is introduced, which incorporates a simple pretokenization curriculum into the byte-pair encoding (BPE) algorithm to first learn subwords, then superwords that bridge whitespace, …  
@@ -41,6 +41,14 @@ Citations lag, so new work is under-ranked above. These are the most-upvoted or 
 - **[Objective vs. Search: Decomposing What Makes a Good Tokeniser](2609.19145-objective-vs-search-decomposing-what-makes-a-good-tokeniser.md)** (2026-09-16; 0▲, 0 cites) — Two new tokenisation algorithms are introduced by introducing two new tokenisation algorithms that complete this 2x2 design space: BottomUpLL, a bottom-up likelihood-based …
 - **[Less Is More: Reducing Token Counts Without Compromising Performance](2506.15138-less-is-more-reducing-token-counts-without-compromising-performance.md)** (2026-07-09; 0▲, 2 cites) — Experimental results indicate that Thunder-Tok reduces fertility by approximately 10% compared to BPE without compromising performance across various downstream tasks, …
 - **[You Can Learn Tokenization End-to-End with Reinforcement Learning](2602.13940-you-can-learn-tokenization-end-to-end-with-reinforcement-learning.md)** (2026-09-14; 0▲, 0 cites) — This work observes that techniques from reinforcement learning, such as time discounting, are necessary to reduce the variance of this score function sufficiently to make it …
+
+## 💻 Compute cost (estimated H100-hours, auto-extracted)
+
+Sorted cheapest first by the *smallest* compute figure found in the paper. Ranges cover all figures the parser found (e.g. per-model-size runs). Verify against the quoted sentence in each paper file.
+
+| Paper | Min H100-h | Max H100-h | GPU seen | Evidence |
+| --- | ---: | ---: | --- | --- |
+| [FoNE: Precise Single-Token Number Embeddings via Fourier Features](2502.09741-fone-precise-single-token-number-embeddings-via-fourier-features.md) | 3.8 | 3.8 | A6000 | Training is conducted using a language model cramming approach (Geiping and Goldstein, 2023), constrained to 8 exaFLOP (equivalent to 24 hours of training on a … |
 
 ## Full ranking
 

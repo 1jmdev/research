@@ -6,6 +6,68 @@ SVD / low-rank / tensor-train compression of weights (SVD-LLM, ASVD), weight sha
 
 📖 Written overview of this area: [../../../overviews/compression.md](../../../overviews/compression.md)
 
+## 🔬 Analyst notes: hand ranking and verdict
+
+_Written after reading the abstracts, and the full text where available, of this category's papers. The hand ranking weighs technical merit and usefulness for a runtime or model builder, not just citations. The automatic impact ranking follows below._
+
+**Verdict.** Post-training SVD compression of LLM weights (W ≈ U·Vᵀ) is a crowded field of 80+ papers with steady but
+**small** gains. At equal memory, 20–40% SVD compression usually loses to 4-bit weight quantization, and naive low-rank
+factors don't even cut *peak* memory or latency without a dedicated runtime. Where the progress is:
+
+1. **Better truncation and rank allocation.** Whiten by calibration activations (SVD-LLM lineage), then optimize
+   per-matrix ranks:
+   * [SVD-LLM V2](2503.12340-svd-llm-v2-optimizing-singular-value-truncation-for-large-language-mod.md): truncation-loss-based heterogeneous ratios;
+   * [Dobi-SVD](2502.02723-dobi-svd-differentiable-svd-for-llm-compression-and-some-new-perspecti.md): differentiable truncation positions + activation-side reconstruction;
+   * [ZS-SVD](2602.02848-zero-sum-svd-balancing-loss-sensitivity-for-low-rank-llm-compression.md): global zero-sum component selection;
+   * [Swift-SVD](2604.01609-swift-svd-theoretical-optimality-meets-practical-efficiency-in-low-ran.md): closed-form optimum via one eigendecomposition, 3–70× faster compression;
+   * [A³](2505.12942-a3-an-analytical-low-rank-approximation-framework-for-attention.md): attention-aware analytic factorization, Llama-3.1-70B PPL 4.69 vs 7.87 for the prior best.
+2. **Beyond plain low rank.**
+   * Sparse dictionary learning: [CoSpaDi](2509.22075-cospadi-compressing-llms-via-calibration-guided-sparse-dictionary-lear.md), [MASA](2508.04581-share-your-attention-transformer-weight-sharing-via-matrix-based-dicti.md) (−66.7% attention parameters by sharing
+     dictionary atoms across layers).
+   * Sparse + low-rank: [3BASiL](2603.01376-3basil-an-algorithmic-framework-for-sparse-plus-low-rank-compression-o.md).
+   * Quantized + low-rank, W ≈ Q + LR: [UniQL](2512.03383-uniql-unified-quantization-and-low-rank-compression-for-adaptive-edge.md) for Transformers, SSMs and hybrids, 4–5.7× memory,
+     2.7–3.4× throughput on edge; [Assigning Distinct Roles to Quantized and Low-Rank Matrices Toward Optimal Weight Decomposition](2506.02077-assigning-distinct-roles-to-quantized-and-low-rank-matrices-toward-opt.md).
+3. **Runtime co-design is mandatory.** [FlashSVD v1.5](2605.08314-flashsvd-v1-5-making-low-rank-transformers-inference-actually-fast.md) shows factorized models only speed up with
+   phase-specific kernels, packed MLPs, dense-KV decode and CUDA graphs: up to 2.55× decode and 1.48× on average.
+   [FlashSVD](2508.01506-flashsvd-memory-efficient-inference-with-streaming-for-low-rank-models.md) fixes activation memory with streaming rank-aware kernels.
+4. **Native low-rank *pretraining* is becoming viable.** [Spectron](2602.12429-stabilizing-native-low-rank-llm-pretraining.md) (ICML'26) bounds the spectral norm of
+   updates to stop loss spikes and gives compute-optimal scaling laws for factorized transformers. See also
+   [LaX](2505.21732-lax-boosting-low-rank-training-of-foundation-models-via-latent-crossin.md) and [LOST](2508.02668-lost-low-rank-and-sparse-pre-training-for-large-language-models.md).
+5. **Low-rank for reasoning speed.** [Caprese](2505.07861-scalable-llm-reasoning-acceleration-with-low-rank-distillation.md) recovers reasoning lost by efficient FFN approximations
+   with low-rank distillation (~2B fewer active parameters on 8–9B models; 16% lower TTNT).
+
+### Hand ranking
+
+| # | Paper | Kind | Key idea | Result |
+| ---: | --- | --- | --- | --- |
+| 1 | [FlashSVD v1.5](2605.08314-flashsvd-v1-5-making-low-rank-transformers-inference-actually-fast.md) | Runtime | Thin low-rank serving path: phase-specific kernels, dense-KV decode, packed MLP, per-layer CUDA-graph replay | Up to 2.55× decode / 2.39× end to end; **the piece that makes SVD compression pay off** |
+| 2 | [SVD-LLM V2](2503.12340-svd-llm-v2-optimizing-singular-value-truncation-for-large-language-mod.md) (NAACL'25) | Post-training SVD | Heterogeneous per-matrix ratios from theoretical truncation loss + loss-optimized truncation | State of the art among SVD methods across 5 LLMs |
+| 3 | [Dobi-SVD](2502.02723-dobi-svd-differentiable-svd-for-llm-compression-and-some-new-perspecti.md) | Differentiable SVD | Learn truncation positions; reconstruct weights from truncated activations; handles SVD "injection" loss | Principled activation-side SVD; strong at high compression ratios |
+| 4 | [A³](2505.12942-a3-an-analytical-low-rank-approximation-framework-for-attention.md) | Attention-aware low rank | Decompose QK, OV and MLP functionally; no extra kernel launches (reduced head dim) | Llama-3.1-70B: PPL 4.69 vs 7.87 previous state of the art at equal budget; also compresses KV |
+| 5 | [UniQL](2512.03383-uniql-unified-quantization-and-low-rank-compression-for-adaptive-edge.md) | Quant + low-rank for edge | Structured weight sorting, quantization-aware SVD, state-aware sorting for SSMs; one model, many sizes | 4–5.7× memory, 2.7–3.4× throughput within 5% accuracy (Llama3, Qwen2.5, Mamba2, Nemotron-H) |
+| 6 | [Spectron: native low-rank pretraining](2602.12429-stabilizing-native-low-rank-llm-pretraining.md) (ICML'26) | Pretraining | Spectral renormalization + orthogonalization of factor updates; no full-rank guidance | Stable factorized pretraining with compute-optimal scaling laws |
+| 7 | [CoSpaDi](2509.22075-cospadi-compressing-llms-via-calibration-guided-sparse-dictionary-lear.md) | Dictionary learning | Calibration-guided sparse dictionary instead of a low-rank basis | Beats SVD and structured pruning at 20–40% compression; composes with quantization |
+| 8 | [Swift-SVD](2604.01609-swift-svd-theoretical-optimality-meets-practical-efficiency-in-low-ran.md) | Fast post-training | Aggregate output-activation covariance, single eigendecomposition, effective-rank-based allocation | Optimal layer-wise approximation; 3–70× faster compression |
+| 9 | [Caprese](2505.07861-scalable-llm-reasoning-acceleration-with-low-rank-distillation.md) | Low-rank distillation | Low-rank corrections distilled to recover reasoning lost by FFN sparsification | ~2B fewer active parameters, >16% lower TTNT, shorter responses |
+| 10 | [3BASiL](2603.01376-3basil-an-algorithmic-framework-for-sparse-plus-low-rank-compression-o.md) | Sparse + low-rank | Algorithmic S+LR decomposition with transformer-matching | 2:4 + rank 64: >30% smaller PPL gap on Llama-3-8B; 2.5× faster compression |
+| 11 | [MASA](2508.04581-share-your-attention-transformer-weight-sharing-via-matrix-based-dicti.md) | Cross-layer sharing | Q/K/V/O as combinations of shared dictionary atoms | −66.7% attention parameters at parity (small scale) |
+| 12 | [FlashSVD](2508.01506-flashsvd-memory-efficient-inference-with-streaming-for-low-rank-models.md) | Runtime (memory) | Stream factor tiles through SRAM; never materialize full activations | −70% peak activation memory |
+
+**Also useful.**
+* Rank allocation: [AdaSVD](2502.01403-adasvd-adaptive-singular-value-decomposition-for-large-language-models.md), [SAES-SVD](2602.03051-saes-svd-self-adaptive-suppression-of-accumulated-and-local-errors-for.md), [DipSVD](2506.20353-dipsvd-dual-importance-protected-svd-for-efficient-llm-compression.md), [Layer-wise dynamic rank for compressing large language models](2509.25622-layer-wise-dynamic-rank-for-compressing-large-language-models.md),
+  [ARA](2510.19389-ara-adaptive-rank-allocation-for-efficient-large-language-model-svd-co.md), [Low-Rank Compression of Language Models via Differentiable Rank Selection](2512.13733-low-rank-compression-of-language-models-via-differentiable-rank-select.md), [Globally optimized SVD compression of LLMs via Fermi-function-based rank selection and gauge fixing](2512.03062-globally-optimized-svd-compression-of-llms-via-fermi-function-based-ra.md).
+* Fisher-weighted / Hessian-aware: [Generalized Fisher-Weighted SVD](2505.17974-generalized-fisher-weighted-svd-scalable-kronecker-factored-fisher-app.md), [Optimal Brain Decomposition](2604.00821-optimal-brain-decomposition-for-accurate-llm-low-rank-approximation.md).
+* Activation-space methods: [FLAT-LLM](2505.23966-flat-llm-fine-grained-low-rank-activation-space-transformation-for-lar.md), [IMPACT](2507.03828-impact-importance-aware-activation-space-reconstruction.md).
+* Tensor decompositions: [Rethinking the Role of Tensor Decompositions in Post-Training LLM Compression](2606.03465-rethinking-the-role-of-tensor-decompositions-in-post-training-llm-comp.md) (rethinking their role), [Saten](2505.14871-saten-sparse-augmented-tensor-networks-for-post-training-compression-o.md).
+* Training-side: [CR-Net](2509.18993-cr-net-scaling-parameter-efficient-training-with-cross-layer-low-rank.md), [Low-Rank Prehab](2512.01980-low-rank-prehab-preparing-neural-networks-for-svd-compression.md) (prepare networks before SVD).
+* Delta compression of fine-tunes: [D-QRELO](2604.16940-d-qrelo-training-and-data-free-delta-compression-for-large-language-mo.md).
+
+**Recommendation.**
+* *Runtime builders:* only invest in low-rank serving if you target edge memory tiers or combine it with quantization
+  (Q + LR). Then you need FlashSVD-style fused factor kernels, or the savings disappear.
+* *Model builders:* post-hoc SVD is a last resort after quantization and pruning + distillation. If you want low-rank
+  efficiency, train it natively (Spectron) or use MLA/low-rank attention designs from the start.
+
 ## 🏆 Best of the best by impact score (top 10)
 
 1. **[SVD-LLM V2: Optimizing Singular Value Truncation for Large Language Model Compression](2503.12340-svd-llm-v2-optimizing-singular-value-truncation-for-large-language-mod.md)** (2025-03) — This work introduces SVD-LLM V2, a SVD-based LLM compression method that optimizes singular value truncation in SVD compression with two techniques, and shows SVD-LLM V2 outperforms state-of-the-art SVD-based LLM …  

@@ -6,6 +6,82 @@ Removing layers/blocks/heads/channels, depth pruning, width pruning (Minitron-st
 
 📖 Written overview of this area: [../../../overviews/compression.md](../../../overviews/compression.md)
 
+## 🔬 Analyst notes: hand ranking and verdict
+
+_Written after reading the abstracts, and the full text where available, of this category's papers. The hand ranking weighs technical merit and usefulness for a runtime or model builder, not just citations. The automatic impact ranking follows below._
+
+**Verdict.** Structured pruning (width: heads/channels/SSM groups; depth: layers/blocks) gives **real, kernel-free speedups**.
+It only works well as **prune → distill** with a meaningful token budget. The winning industrial recipe is NVIDIA's
+**Minitron / Puzzle** line:
+* activation-based importance for width (heads, FFN channels, embedding dim, Mamba groups) plus depth;
+* then **logit distillation** from the parent on ~1–10% of pretraining tokens;
+* for MoE/hybrids, NAS-style per-block choices (Puzzle).
+
+This produces production models (Nemotron-H 8B → 4B with up to 40× fewer tokens than training from scratch;
+Puzzle-75B-A9B from a larger hybrid MoE). DarwinLM shows the pruning search should be **training-aware**.
+
+**The big 2025–26 caveat: training-free pruning breaks generation and reasoning.**
+* [Demystifying When Pruning Works](2603.24652-demystifying-when-pruning-works-via-representation-hierarchies.md) (ICML'26) explains why: logit perturbations are amplified by softmax
+  and accumulate over decode steps. Multiple-choice and retrieval survive; generation does not.
+* Removing even 1–2 layers can collapse test-time scaling on long reasoning ([When Fewer Layers Break More Chains](2510.22228-when-fewer-layers-break-more-chains-layer-pruning-harms-test-time-scal.md), [On the Limits of Layer Pruning for Generative Reasoning in Large Language Models](2602.01997-on-the-limits-of-layer-pruning-for-generative-reasoning-in-large-langu.md)).
+  Plain SFT does not repair it.
+* Recovery must be **on-policy**: [ShortOPD](2607.13124-shortopd-recovering-pruned-llms-with-short-to-long-on-policy-distillat.md) uses short-to-long on-policy distillation from the unpruned
+  teacher and gets 1.6–4.4× over SFT/KD/SeqKD recovery.
+* When the token budget is small, pruning a big parent beats training a small model from scratch
+  ([Small LLMs](2606.14150-small-llms-pruning-vs-training-from-scratch.md)).
+
+**Phase-specific pruning is a new runtime angle.** [POP](2602.03295-pop-prefill-only-pruning-for-efficient-large-model-inference.md) prunes for prefill only, using independent KV
+projections to keep the cache consistent: 1.37× faster prefill. [PDTrim](2509.04467-pdtrim-targeted-pruning-for-prefill-decode-disaggregation-in-inference.md) removes different blocks for the
+prefill and decode instances of a PD-disaggregated deployment. [FFN Fusion](2503.18908-ffn-fusion-rethinking-sequential-computation-in-large-language-models.md) runs consecutive FFNs **in
+parallel**, as used in Llama-Nemotron Ultra 253B: 1.71× latency.
+
+### Cost table
+
+| Method | Setting | Budget | H100-h | Basis |
+| --- | --- | --- | ---: | --- |
+| [ReplaceMe](2505.02819-replaceme-network-simplification-via-depth-pruning-and-transformer-blo.md) (NeurIPS'25) | Depth prune 25% + linear replacement, training-free | calibration only | **<1** | reported (no healing) |
+| [LinearPatch](2505.24680-a-simple-linear-patch-revives-layer-pruned-large-language-models.md) (NeurIPS'25) | Layer pruning + Hadamard/scaling patch | 5K samples, 30 min on 1 GPU | **~0.5** | reported |
+| [DarwinLM](2502.07780-darwinlm-evolutionary-structured-pruning-of-large-language-models.md) (COLM'26) | Evolutionary training-aware search + post-training | 5× less data than Sheared-LLaMA | **~520** | reported: 40×H100 × 13 h |
+| [ShortOPD](2607.13124-shortopd-recovering-pruned-llms-with-short-to-long-on-policy-distillat.md) | Recovery by on-policy distillation | 8.5 h vs 35.9 h for fixed-horizon OPD | **tens–hundreds** | reported wall-clock (node) |
+| [Minitron-SSM](2504.11409-minitron-ssm-efficient-hybrid-language-model-compression-through-group.md) | Nemotron-H 8B → 4B (width + depth + SSM groups) + KD | up to 40× fewer tokens than from scratch | **~2–7K** | estimate (≈150–400B tokens at 4B) |
+| [Puzzle-75B-A9B](2607.04371-nemotron-labs-3-puzzle-75b-a9b-compressing-hybrid-moe-llms.md) | Hybrid MoE NAS-pruning + distillation | undisclosed | large | production |
+
+### Hand ranking
+
+| # | Paper | Type | Key idea | Result |
+| ---: | --- | --- | --- | --- |
+| 1 | [Minitron-SSM](2504.11409-minitron-ssm-efficient-hybrid-language-model-compression-through-group.md) (NVIDIA) | Width + depth + SSM + KD | Group-aware Mamba pruning (keeps SSM head structure) + Minitron KD retraining | Nemotron-H 8B → 4B, beats similarly sized models, **2× faster**, up to 40× fewer tokens |
+| 2 | [DarwinLM](2502.07780-darwinlm-evolutionary-structured-pruning-of-large-language-models.md) (COLM'26) | Training-aware search | Evolutionary search over non-uniform structured sparsity; offspring get short, increasing training before selection | State of the art on Llama-2-7B / Llama-3.1-8B / Qwen-2.5-14B; beats Sheared-LLaMA with 5× less data |
+| 3 | [FFN Fusion](2503.18908-ffn-fusion-rethinking-sequential-computation-in-large-language-models.md) (NVIDIA) | Depth parallelization | Identify runs of FFNs with low inter-dependency and execute them **in parallel** (fewer sequential steps) | Ultra-253B-Base from 405B: 1.71× latency, 35× lower per-token cost; complements quantization |
+| 4 | [ShortOPD](2607.13124-shortopd-recovering-pruned-llms-with-short-to-long-on-policy-distillat.md) | Recovery | On-policy distillation from the dense teacher with short-to-long rollout horizons | ~9× the unrecovered score; 1.6–4.4× standard recovery; ¼ the time of fixed-horizon OPD |
+| 5 | [Demystifying When Pruning Works](2603.24652-demystifying-when-pruning-works-via-representation-hierarchies.md) (ICML'26) | Analysis | Embedding/logit spaces robust, probability space fragile → generation errors compound | Explains why perplexity/MC results mislead |
+| 6 | [Nemotron-Labs-3-Puzzle-75B-A9B](2607.04371-nemotron-labs-3-puzzle-75b-a9b-compressing-hybrid-moe-llms.md) | MoE/hybrid NAS pruning | Puzzle-style block-level choices incl. expert and Mamba pruning | Deployment-optimized hybrid MoE that keeps parent accuracy |
+| 7 | [ReplaceMe](2505.02819-replaceme-network-simplification-via-depth-pruning-and-transformer-blo.md) (NeurIPS'25) | Training-free depth pruning | Replace pruned blocks with an estimated linear transform merged into the previous layer | ~90% performance at 25% depth pruning with no healing |
+| 8 | [POP: Prefill-Only Pruning](2602.03295-pop-prefill-only-pruning-for-efficient-large-model-inference.md) | Stage-aware | Prune only for prefill; full model for decode; independent KV projections for cache integrity | Up to 1.37× prefill speedup at minimal loss (Llama-3.1, Qwen3-VL, Gemma-3) |
+| 9 | [Layer pruning harms test-time scaling](2510.22228-when-fewer-layers-break-more-chains-layer-pruning-harms-test-time-scal.md) | Analysis | Long-CoT performance collapses after removing 1–2 layers; SFT recovery fails | **Do not depth-prune reasoning models without on-policy recovery** |
+| 10 | [Pangu Light](2505.20155-pangu-light-weight-re-initialization-for-pruning-and-accelerating-llms.md) | Width + depth + re-init | Weight re-initialization after pruning (CLAP / SLNP) + Post-RMSNorm absorption | Pangu Light-32B beats Qwen3-32B in accuracy and throughput on Ascend |
+| 11 | [A Free Lunch: retraining after pruning](2510.14444-a-free-lunch-in-llm-compression-revisiting-retraining-after-pruning.md) | Recovery study | Reconstruct at the block/sub-block level, not per matrix; simple criteria become competitive with scale | Cheap post-pruning adaptation is practical |
+| 12 | [Small LLMs: pruning vs training from scratch](2606.14150-small-llms-pruning-vs-training-from-scratch.md) | Study | Compare pruned parents vs scratch at matched tokens | With limited tokens, pruning wins; fine-grained pruning keeps its advantage |
+
+**Also useful.**
+* Training-free width pruning: [SlimLLM](2505.22689-slimllm-accurate-structured-pruning-for-large-language-models.md) (ICML'25), [NIRVANA](2509.14230-nirvana-structured-pruning-reimagined-for-large-language-model-compres.md), [2SSP](2501.17771-2ssp-a-two-stage-framework-for-structured-pruning-of-llms.md),
+  [Týr-the-Pruner](2503.09657-t-r-the-pruner-structural-pruning-llms-via-global-sparsity-distributio.md) (NeurIPS'25), [AMP](2504.21174-efficient-llms-with-amp-attention-heads-and-mlp-pruning.md).
+* Dynamic / input-aware pruning: [Probe Pruning](2502.15618-probe-pruning-accelerating-llms-through-dynamic-pruning-via-model-prob.md) (ICLR'25), [Instruction-Following Pruning](2501.02086-instruction-following-pruning-for-large-language-models.md)
+  (ICML'25), [PuDDing](2502.04348-prompt-based-depth-pruning-of-large-language-models.md) (ICML'25), [SEAP](2503.07605-seap-training-free-sparse-expert-activation-pruning-unlock-the-brainpo.md), [SkipGPT](2506.04179-skipgpt-dynamic-layer-pruning-reinvented-with-token-awareness-and-modu.md), [WIDE](2607.28418-wide-boosting-adaptive-llm-inference-via-token-level-dynamic-width-pru.md).
+* Depth pruning: [Prune&Comp](2507.18212-prune-comp-free-lunch-for-layer-pruned-llms-via-iterative-pruning-with.md), [sliding-window merging](2502.19159-sliding-window-merging-for-compacting-patch-redundant-layers-in-llms.md), [Layer as Puzzle Pieces](2510.15304-layer-as-puzzle-pieces-compressing-large-language-models-through-layer.md), [GPTailor](2506.20480-gptailor-large-language-model-pruning-through-layer-cutting-and-stitch.md).
+* Reasoning-aware pruning: [From LLMs to LRMs](2601.18091-from-llms-to-lrms-rethinking-pruning-for-reasoning-centric-models.md), [Revisiting the Effectiveness of LLM Pruning for Test-Time Scaling](2604.25098-revisiting-the-effectiveness-of-llm-pruning-for-test-time-scaling.md), [Think Before You Prune](2511.18864-think-before-you-prune-selective-self-generated-calibration-for-prunin.md), [Think Before You Prune](2512.02185-think-before-you-prune-self-reflective-structured-pruning-for-reasonin.md).
+* Head pruning via sinks: [BOS sink heads](2601.06787-garbage-attention-in-large-language-models-bos-sink-heads-and-sink-awa.md).
+* Recovery: [PASER](2502.12594-paser-post-training-data-selection-for-efficient-pruned-large-language.md), [OverRep](2609.06974-train-overcomplete-deploy-compact-scaling-recovery-capacity-for-struct.md).
+* Language case study: [Bielik-Minitron-7B](2603.11881-bielik-minitron-7b-compressing-large-language-models-via-structured-pr.md).
+* SSM pruning: [On Pruning State-Space LLMs](2502.18886-on-pruning-state-space-llms.md), [Mamba-Shedder](2501.17088-mamba-shedder-post-transformer-compression-for-efficient-selective-str.md), [SparseSSM](2506.09613-sparsessm-efficient-selective-structured-state-space-models-can-be-pru.md).
+
+**Recommendation.**
+* *Model builders.* To make a smaller sibling, use Minitron-style width-first pruning of the big model + logit KD on
+  **≥50–100B tokens**, then on-policy distillation for reasoning. Avoid depth pruning of reasoning models.
+* *Runtime builders.* Structured pruning needs no special kernels, but **non-uniform layer shapes** (per-layer head and
+  FFN counts, Puzzle-style heterogeneous blocks) must be supported. Phase-specific weights (POP/PDTrim) fit naturally
+  into PD disaggregation. FFN Fusion needs a graph-level "parallel FFN" op.
+
 ## 🏆 Best of the best by impact score (top 10)
 
 1. **[DarwinLM: Evolutionary Structured Pruning of Large Language Models](2502.07780-darwinlm-evolutionary-structured-pruning-of-large-language-models.md)** (2026-07) — DarwinLM builds upon an evolutionary search process, generating multiple offspring models in each generation through mutation, and selecting the fittest for survival, achieving state-of-the-art performance for …  

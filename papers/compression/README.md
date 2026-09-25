@@ -1,6 +1,6 @@
 # Compression: pruning, sparsity, low-rank, distillation
 
-**584 papers** across 6 sub-categories. [Back to index](../../README.md)
+**585 papers** across 6 sub-categories. [Back to index](../../README.md)
 
 📖 **Read first:** [written overview & recommendations](../../overviews/compression.md)
 
@@ -10,7 +10,7 @@
 | [Structured pruning (layers, heads, width, experts)](structured-pruning/README.md) | 149 | [DarwinLM: Evolutionary Structured Pruning of Large Language Models](structured-pruning/2502.07780-darwinlm-evolutionary-structured-pruning-of-large-language-models.md) |
 | [Activation / contextual sparsity](activation-sparsity/README.md) | 33 | [SoLA: Leveraging Soft Activation Sparsity and Low-Rank Decomposition for Large Language Mo](activation-sparsity/2604.03258-sola-leveraging-soft-activation-sparsity-and-low-rank-decomposition-fo.md) |
 | [Low-rank decomposition & weight factorization](low-rank-decomposition/README.md) | 82 | [SVD-LLM V2: Optimizing Singular Value Truncation for Large Language Model Compression](low-rank-decomposition/2503.12340-svd-llm-v2-optimizing-singular-value-truncation-for-large-language-mod.md) |
-| [Knowledge distillation (LLM → smaller LLM)](knowledge-distillation/README.md) | 246 | [Self-Distillation Enables Continual Learning](knowledge-distillation/2601.19897-self-distillation-enables-continual-learning.md) |
+| [Knowledge distillation (LLM → smaller LLM)](knowledge-distillation/README.md) | 247 | [Self-Distillation Enables Continual Learning](knowledge-distillation/2601.19897-self-distillation-enables-continual-learning.md) |
 | [Model compression — general & surveys](_general/README.md) | 36 | [70% Size, 100% Accuracy: Lossless LLM Compression for Efficient GPU Inference via Dynamic-](_general/2504.11651-70-size-100-accuracy-lossless-llm-compression-for-efficient-gpu-infere.md) |
 
 ## Top 25 across the whole area

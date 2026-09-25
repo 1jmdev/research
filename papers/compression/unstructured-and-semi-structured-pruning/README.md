@@ -6,6 +6,68 @@ Weight-level pruning of LLMs (SparseGPT, Wanda successors), semi-structured 2:4 
 
 📖 Written overview of this area: [../../../overviews/compression.md](../../../overviews/compression.md)
 
+## 🔬 Analyst notes: hand ranking and verdict
+
+_Written after reading the abstracts, and the full text where available, of this category's papers. The hand ranking weighs technical merit and usefulness for a runtime or model builder, not just citations. The automatic impact ranking follows below._
+
+**Verdict.** Weight sparsity is the weakest compression lever for LLM inference in 2025–26. Quantization gives more
+memory and speed per accuracy point, and the two only partly compose. What changed:
+
+* **2:4 is too aggressive for reasoning models.** Qwen3 drops from 54% to 15% on a reasoning benchmark at one-shot 2:4
+  ([SlideSparse](2603.05232-slidesparse-fast-and-flexible-2n-2-2n-structured-sparsity.md)). Milder patterns recover accuracy while keeping hardware speedups:
+  * **(2N−2):2N**, e.g. 6:8 via SlideSparse, reaching **1.33× measured** of a 4/3 ceiling;
+  * **8:16** ([From 2](2507.03052-from-2-4-to-8-16-sparsity-patterns-in-llms-for-outliers-and-weights-wi.md));
+  * **mixed sparse + dense GEMM** splits ([SpenseGPT](2606.10445-spensegpt-practical-one-shot-pruning-enabling-sparse-and-dense-gemms-f.md): first one-shot 2:4 with a real 1.2× end-to-end
+    decode speedup on B200 FP8).
+* **Unstructured 50% is finally worth something on GPUs.** It needs kernels built for *low* sparsity:
+  [MACKO](2511.13061-macko-sparse-matrix-vector-multiplication-for-low-sparsity.md) SpMV (1.5× memory, 1.2–1.5× faster than dense at 50%) and [Accelerating GPU Inference of Large Language Models with Moderately Unstructured Sparse Weight Matrices](2607.08786-accelerating-gpu-inference-of-large-language-models-with-moderately-un.md) (sparse tensor
+  cores + CUDA cores, beats dense on HBM GPUs). CPU decode benefits too ([SparAMX](2502.12444-sparamx-accelerating-compressed-llms-token-generation-on-amx-powered-c.md) on AMX).
+* **Better one-shot masks.**
+  * [Wanda++](2503.04992-wanda-pruning-large-language-models-via-regional-gradients.md): regional gradients, 7B in <10 min;
+  * [DenoiseRotator](2505.23049-denoiserotator-enhance-pruning-robustness-for-llms-via-importance-conc.md) (NeurIPS'25): rotations *concentrate importance* before pruning, closing 58% of the
+    2:4 gap on Llama-3-70B;
+  * [ARMOR](2510.05528-armor-high-performance-semi-structured-pruning-via-adaptive-matrix-fac.md) (ICLR'26): 2:4 core wrapped by small block-diagonal factors.
+* **Learned masks / sparsity-aware training** are the way to *near-lossless* 2:4:
+  * [ProxSparse](2502.00258-proxsparse-regularized-learning-of-semi-structured-sparsity-masks-for.md) (ICML'25): proximal mask learning;
+  * [CAST](2509.25996-cast-continuous-and-differentiable-semi-structured-sparsity-aware-trai.md): 2:4 Llama-2-7B at +0.09 PPL with 2% of pretraining tokens, ≈1.2K H100-h.
+* **Evaluate beyond perplexity.** On [ACBench](2505.19433-can-compressed-llms-truly-act-an-empirical-evaluation-of-agentic-capab.md) (ICML'25), even 4-bit models keep tool use but lose
+  10–15% on real-world agentic applications. [Beyond FLOPs](2606.09080-beyond-flops-benchmarking-real-inference-acceleration-of-llm-pruning-u.md) maps which pruning type actually speeds up
+  prefill vs decode.
+
+### Hand ranking
+
+| # | Paper | Kind | Key idea | Result / cost |
+| ---: | --- | --- | --- | --- |
+| 1 | [SlideSparse](2603.05232-slidesparse-fast-and-flexible-2n-2-2n-structured-sparsity.md) | Pattern + kernels | (2N−2):2N sparsity executed on 2:4 sparse tensor cores via sliding windows; integrated in vLLM across FP4/INT8/FP8/BF16 | 6:8 reaches 1.33× (≈ the 4/3 bound) and keeps reasoning accuracy that 2:4 destroys |
+| 2 | [DenoiseRotator](2505.23049-denoiserotator-enhance-pruning-robustness-for-llms-via-importance-conc.md) (NeurIPS'25) | One-shot, plug-in | Learn orthogonal rotations that concentrate importance, then prune with SparseGPT/Wanda | 2:4 Llama-3-70B perplexity gap −58% (8.1 → 3.4) |
+| 3 | [CAST](2509.25996-cast-continuous-and-differentiable-semi-structured-sparsity-aware-trai.md) | Sparsity-aware training | Continuous, differentiable 2:4 training + sparse-model scaling law | Near-lossless 2:4 Llama-2-7B with 2% of pretraining tokens (~1.2K H100-h est.) |
+| 4 | [MACKO](2511.13061-macko-sparse-matrix-vector-multiplication-for-low-sparsity.md) | Kernel | Storage format + SpMV for 30–90% unstructured sparsity | First real memory and speed win at 50% (1.5× on Llama-2-7B) |
+| 5 | [ARMOR](2510.05528-armor-high-performance-semi-structured-pruning-via-adaptive-matrix-fac.md) (ICLR'26) | One-shot 2:4 | Factorize W ≈ A·(2:4 core)·B with small block-diagonal wrappers | Beats state-of-the-art 2:4 while keeping 2:4 speed and memory |
+| 6 | [SpenseGPT](2606.10445-spensegpt-practical-one-shot-pruning-enabling-sparse-and-dense-gemms-f.md) | One-shot hybrid | Choose which GEMMs run sparse vs dense | 1.2× end-to-end decode on B200 FP8 at preserved accuracy (Qwen3-32B) |
+| 7 | [ProxSparse](2502.00258-proxsparse-regularized-learning-of-semi-structured-sparsity-masks-for.md) (ICML'25) | Learned 2:4 mask | Regularized mask learning with a proximal solver; no weight updates | Best learned semi-structured masks across 7 models |
+| 8 | [Wanda++](2503.04992-wanda-pruning-large-language-models-via-regional-gradients.md) (ACL'25) | One-shot | Regional (block-level) gradients + regional optimization | Up to 32% better perplexity than Wanda; <10 min for 7B on one H100 |
+| 9 | [ACBench](2505.19433-can-compressed-llms-truly-act-an-empirical-evaluation-of-agentic-capab.md) (ICML'25) | Evaluation | Agentic capabilities under quantization and pruning | 4-bit quantization keeps workflow/tool use (1–3% drop) but real-world agentic tasks drop 10–15%; pruning compared on the same suite |
+| 10 | [Sparse-BitNet](2603.05168-sparse-bitnet-1-58-bit-llms-are-naturally-friendly-to-semi-structured.md) | Sparsity × ternary | 1.58-bit models tolerate N:M sparsity better than FP models | Joint ternary + N:M training; up to 1.30× with a custom sparse tensor core |
+| 11 | [Moderately unstructured SpMM](2607.08786-accelerating-gpu-inference-of-large-language-models-with-moderately-un.md) (DAC'26) | Kernel | Hybrid sparse-tensor-core + CUDA-core execution at ~50% | 1.64× over SpInfer kernel, 1.41× end-to-end over FlashLLM |
+| 12 | [Beyond FLOPs](2606.09080-beyond-flops-benchmarking-real-inference-acceleration-of-llm-pruning-u.md) | Benchmark | GEMM-centric taxonomy of pruning and its *real* acceleration | Where each pruning family is Pareto-optimal in prefill vs decode |
+
+**Also useful.**
+* Mask learning: [Reservoir of Importance](2608.23048-reservoir-of-importance-learning-semi-structured-sparsity-with-differe.md), [SparseForge](2605.06402-sparseforge-efficient-semi-structured-llm-sparsification-via-annealing.md), [A Proximal Operator for Inducing 2](2501.18015-a-proximal-operator-for-inducing-2-4-sparsity.md) (proximal 2:4), [PATCH](2509.23410-patch-learnable-tile-level-hybrid-sparsity-for-llms.md)
+  (tile-level hybrid sparsity).
+* One-shot variants: [ROSE](2603.05878-rose-reordered-sparsegpt-for-more-accurate-one-shot-large-language-mod.md), [SwiftPrune](2501.16376-swiftprune-hessian-free-weight-pruning-for-large-language-models.md), [STADE](2503.22451-stade-standard-deviation-as-a-pruning-metric.md), [Symmetric Pruning of Large Language Models](2501.18980-symmetric-pruning-of-large-language-models.md),
+  [F-Wanda](2608.00481-f-wanda-fisher-reweighted-post-training-pruning-for-sustainable-deploy.md), [PALS](2607.07557-pals-percentile-aware-layerwise-sparsity-for-llm-pruning.md) (layerwise ratios).
+* Joint pruning + quantization: [AWP](2506.10205-awp-activation-aware-weight-pruning-and-quantization-with-projected-gr.md) (ICML'25), [Progressive Binarization with Semi-Structured Pruning for LLMs](2502.01705-progressive-binarization-with-semi-structured-pruning-for-llms.md) (binarization + N:M).
+* Flat minima: [SAFE](2506.06866-safe-finding-sparse-and-flat-minima-to-improve-pruning.md) (ICML'25).
+* Calibration data: [Averaged Evaluation Masks Capability Trade-Offs](2606.03328-averaged-evaluation-masks-capability-trade-offs-multi-source-calibrati.md) (multi-source calibration matters at high sparsity).
+* Mamba: [Efficient Unstructured Pruning of Mamba State-Space Models for Resource-Constrained Environments](2505.08299-efficient-unstructured-pruning-of-mamba-state-space-models-for-resourc.md).
+
+**Recommendation.**
+* *Runtime:* support 2:4 **and** 6:8/8:16 sparse GEMMs with FP8/FP4 operands and per-GEMM sparse/dense selection. For
+  batch-1 decode, a low-sparsity SpMV (MACKO-style) is the only way unstructured 50% pays off. Don't expect more than
+  ~1.2–1.5× end to end.
+* *Model builders:* if you want sparsity, **train for it** (CAST/ProxSparse, 1–5% of pretraining tokens) and prefer
+  milder N:M. Stack it on quantization only after checking agentic evaluations.
+
 ## 🏆 Best of the best by impact score (top 10)
 
 1. **[Can Compressed LLMs Truly Act? An Empirical Evaluation of Agentic Capabilities in LLM Compression](2505.19433-can-compressed-llms-truly-act-an-empirical-evaluation-of-agentic-capab.md)** (2025-06) — The Agent Compression Benchmark (ACBench) is introduced, the first comprehensive benchmark for evaluating how compression impacts LLMs' agentic abilities and ERank, Top-k Ranking Correlation and Energy are introduced to …  
