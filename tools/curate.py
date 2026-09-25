@@ -101,12 +101,11 @@ def cmd_next(n):
 def cmd_apply(text):
     batch = [l.split("\t") for l in open(LAST).read().splitlines() if l]
     ids = {i for i, _ in batch}
-    drops, recodes = set(), {}
+    drops, recodes, keep = set(), {}, None
     for line in text.splitlines():
         line = line.strip()
-        if line.startswith("K:"):  # keep-only list: every other paper in the batch is dropped
-            keep = set(line[2:].split())
-            drops.update(ids - keep)
+        if line.startswith("K:"):  # keep-only list (may span several K: lines): the rest of the batch is dropped
+            keep = (keep or set()) | set(line[2:].split())
         elif line.startswith("D:"):
             drops.update(line[2:].split())
         elif line.startswith("R:"):
@@ -114,7 +113,9 @@ def cmd_apply(text):
                 i, c = tok.split(":")
                 assert c in CODES, f"unknown code {c}"
                 recodes[i] = c
-    unknown = (drops | set(recodes)) - ids
+    if keep is not None:
+        drops.update(ids - keep)
+    unknown = (drops | set(recodes) | (keep or set())) - ids
     assert not unknown, f"ids not in batch: {sorted(unknown)}"
     with open(CURATION, "a") as f:
         for i, code in batch:

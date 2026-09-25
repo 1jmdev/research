@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Build the categorized markdown knowledge base from harvested + enriched data.
 
-Inputs  (env overridable):  CANDIDATES (data/candidates.jsonl), ENRICH_DIR/{s2,hf}.json, DIGEST_DIR/<id>.json
+Inputs  (env overridable):  CANDIDATES (data/candidates.jsonl), CURATION (data/curation.tsv),
+                             ENRICH_DIR/{s2,hf}.json, DIGEST_DIR/<id>.json
+When CURATION exists, only papers kept in manual review are published, under the reviewed category.
 Outputs: papers/<category>/<leaf>/<id>-<slug>.md, README.md per folder, data/papers.csv
 """
 import csv
@@ -18,9 +20,11 @@ from collections import defaultdict
 sys.path.insert(0, os.path.dirname(__file__))
 from taxonomy import CATEGORIES, CAT_INDEX, classify, detect_bits  # noqa: E402
 from fulltext import compute_from_sentence  # noqa: E402
+from curate import CODES  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CANDIDATES = os.environ.get("CANDIDATES", os.path.join(ROOT, "data", "candidates.jsonl"))
+CURATION = os.environ.get("CURATION", os.path.join(ROOT, "data", "curation.tsv"))
 ENR = os.environ.get("ENRICH_DIR", os.path.join(ROOT, "data"))
 DIG = os.environ.get("DIGEST_DIR", os.path.join(ROOT, "data", "digests"))
 OUT = os.path.join(ROOT, "papers")
@@ -177,14 +181,32 @@ def impact(p):
 
 
 # ------------------------------------------------------------------ load
+def load_curation():
+    """Manual review decisions (tools/curate.py): id -> category folder, or None if dropped."""
+    if not os.path.exists(CURATION):
+        return {}
+    dec = {}
+    for line in open(CURATION):
+        parts = line.rstrip("\n").split("\t")
+        if len(parts) >= 3:
+            dec[parts[0]] = CODES[parts[2]] if parts[1] == "K" else None
+    return dec
+
+
 def load():
     s2 = load_json(os.path.join(ENR, "s2.json"))
     hf = load_json(os.path.join(ENR, "hf.json"))
+    cur = load_curation()
     out = []
     for line in open(CANDIDATES):
         r = json.loads(line)
         pid = r["id"]
         primary, secondary, sc = r["primary"], r["secondary"], r["scores"]
+        if cur:
+            if not cur.get(pid):  # dropped in review, or never reviewed
+                continue
+            primary = cur[pid]
+            secondary = [c for c in secondary if c != primary]
         s = s2.get(pid) or {}
         h = hf.get(pid) or {}
         dig = None
