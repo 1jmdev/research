@@ -6,6 +6,85 @@ Tensor/pipeline/sequence/context parallelism, communication overlap, multi-node 
 
 📖 Written overview of this area: [../../../overviews/serving-systems.md](../../../overviews/serving-systems.md)
 
+## 🔬 Analyst notes: hand ranking and verdict
+
+_Written after reading the abstracts, and the full text where available, of this category's papers. The hand ranking weighs technical merit and usefulness for a runtime or model builder, not just citations. The automatic impact ranking follows below._
+
+**Verdict.** This bucket covers parallelism for both **inference** and **training** (180 papers). The shared theme is
+*hiding or removing communication*.
+
+**Inference:**
+* **Compute–communication overlap for TP/EP**:
+  * [Comet](2502.19811-comet-fine-grained-computation-communication-overlapping-for-mixture-o.md) (ByteDance): fine-grained MoE overlap, 1.96× per MoE layer, deployed on 10K-GPU clusters,
+    millions of GPU-h saved;
+  * [TokenWeave](2505.11329-tokenweave-efficient-compute-communication-overlap-for-distributed-llm.md) (Microsoft): token-split overlap for small low-latency batches, sometimes faster than the
+    same model with *no* communication;
+  * [DMA-offloaded](2511.06605-dma-latte-expanding-the-reach-of-dma-offloads-to-latency-bound-ml-comm.md) collectives;
+  * **device-initiated point-to-point**: [fabric-lib](2510.27656-fabric-lib-rdma-point-to-point-communication-for-llm-systems.md) (Perplexity), KV transfer and MoE dispatch on
+    EFA/CX-7.
+* **Architecture that removes sync points**: [Ladder-residual](2501.06589-ladder-residual-parallelism-aware-architecture-for-accelerating-large.md) overlaps the TP all-reduce with the next
+  block's compute; Llama-3.1-8B converted with 3B tokens. [Sync-Point Drop](2502.20727-spd-sync-point-drop-for-efficient-tensor-parallelism-of-large-language.md) does something similar.
+* **Parallelism that adapts to load**:
+  * [Shift Parallelism](2509.16495-shift-parallelism-low-latency-high-throughput-llm-inference-for-dynami.md) (Snowflake): switch between TP (low latency) and a KV-compatible sequence
+    parallelism (high throughput) on the fly;
+  * [Seesaw](2503.06433-seesaw-high-throughput-llm-inference-via-model-re-sharding.md): re-shard between prefill and decode, 1.36–1.78× over vLLM;
+  * [PipeLive](2604.12171-pipelive-efficient-live-in-place-pipeline-parallelism-reconfiguration.md): live PP reconfiguration.
+* **Multi-million-token decode**: [Helix Parallelism](2507.07120-helix-parallelism-rethinking-sharding-strategies-for-interactive-multi.md) (NVIDIA) shards KV over sequence for attention and
+  reuses the same GPUs as TP for FFN. 1.5× lower token latency and 32× larger batches for DeepSeek-R1 on Blackwell.
+* **Determinism**: [deterministic inference across TP sizes](2511.17826-deterministic-inference-across-tensor-parallel-sizes-that-eliminates-t.md) gives bitwise-identical logits between vLLM
+  (TP>1) and FSDP training, which removes the RL training/inference mismatch.
+
+**Training:**
+* **Long context**:
+  * [Core Attention Disaggregation](2510.18121-efficient-long-context-language-model-training-by-core-attention-disag.md) (DistCA): stateless attention on dedicated servers, 1.35× at 512K;
+  * [ByteScale](2502.21231-bytescale-efficient-scaling-of-llm-training-with-a-2048k-context-lengt.md): 2M-token context on >12K GPUs, up to 7.89×;
+  * [DCP](2510.10620-dcp-addressing-input-dynamism-in-long-context-training-via-dynamic-con.md), [Untied Ulysses](2602.21196-untied-ulysses-memory-efficient-context-parallelism-via-headwise-chunk.md), [Arctic Long Sequence Training](2506.13996-arctic-long-sequence-training-scalable-and-efficient-training-for-mult.md);
+  * linear attention: [LASP-2](2502.07563-lasp-2-rethinking-sequence-parallelism-for-linear-attention-and-its-hy.md), [ZeCO](2507.01004-zeco-zero-communication-overhead-sequence-parallelism-for-linear-atten.md) (All-Scan, 1M tokens on 64 GPUs ≈ 16K on one).
+* **MoE**: [MoE Parallel Folding](2504.14960-moe-parallel-folding-heterogeneous-parallelism-mappings-for-efficient.md) (Megatron-Core) gives different parallel layouts to attention and MoE
+  layers; 49.3% MFU on Mixtral-8×22B. See also [Scalable Training of Mixture-of-Experts Models with Megatron Core](2603.07685-scalable-training-of-mixture-of-experts-models-with-megatron-core.md).
+* **Scale and reliability**:
+  * [Collective communication for 100K+ GPUs](2510.20171-collective-communication-for-100k-gpus.md) (Meta, Llama 4);
+  * [FT-HSDP](2602.00277-training-llms-with-fault-tolerant-hsdp-on-100-000-gpus.md): effective training time at 100K GPUs from 44% to 80%;
+  * [Mycroft](2509.03018-mycroft-tracing-dependencies-in-collective-communication-towards-relia.md): collective-communication tracing.
+* **Low-communication / decentralized**: [SparseLoCo](2508.15706-overcoming-the-communication-performance-tradeoff-in-llm-pretraining.md) (top-k + 2-bit pseudo-gradients beats DiLoCo),
+  [NoLoCo](2506.10911-noloco-no-all-reduce-low-communication-training-method-for-large-model.md) (no all-reduce), [Decoupled DiLoCo](2604.21428-decoupled-diloco-for-resilient-distributed-pre-training.md), [CrossPipe](2507.00217-crosspipe-towards-optimal-pipeline-schedules-for-cross-datacenter-trai.md) (cross-DC
+  pipelines).
+* **Post-training**: [ODC](2601.19362-revisiting-parameter-server-in-llm-post-training.md) (ICLR'26) replaces FSDP collectives with parameter-server-style point-to-point
+  for imbalanced RL batches, +36%.
+
+### Hand ranking
+
+| # | Paper | Side | Key idea | Result |
+| ---: | --- | --- | --- | --- |
+| 1 | [Comet](2502.19811-comet-fine-grained-computation-communication-overlapping-for-mixture-o.md) | MoE (train + infer) | Data-dependency analysis → fine-grained overlap of expert GEMMs with all-to-all | 1.96× per MoE layer, 1.71× end to end; production at 10K-GPU scale |
+| 2 | [Helix Parallelism](2507.07120-helix-parallelism-rethinking-sharding-strategies-for-interactive-multi.md) (NVIDIA) | Inference, ultra-long | KV-parallel attention + TP FFN on the same GPUs with a temporal pipeline | Up to 1.5× lower TTL; 32× larger batches for DeepSeek-R1 on Blackwell |
+| 3 | [Deterministic inference across TP sizes](2511.17826-deterministic-inference-across-tensor-parallel-sizes-that-eliminates-t.md) | Inference/RL | TP-invariant, batch-invariant kernels | Bitwise identical vLLM ↔ FSDP; zero RL train/infer mismatch |
+| 4 | [TokenWeave](2505.11329-tokenweave-efficient-compute-communication-overlap-for-distributed-llm.md) | Inference TP | Split tokens into overlapping waves; fused all-reduce + RMSNorm using few SMs | Up to 1.28× lower latency, 1.19× throughput; sometimes beats the no-communication baseline |
+| 5 | [Core Attention Disaggregation](2510.18121-efficient-long-context-language-model-training-by-core-attention-disag.md) | Training long context | Move parameter-free core attention to balanced attention servers | 1.35× at 512K on 512 H200; removes DP/PP stragglers |
+| 6 | [Shift Parallelism](2509.16495-shift-parallelism-low-latency-high-throughput-llm-inference-for-dynami.md) | Inference | Dynamic switch TP ↔ KV-invariant SP depending on load | Better latency–throughput trade-off than TP or DP on dynamic traffic |
+| 7 | [MoE Parallel Folding](2504.14960-moe-parallel-folding-heterogeneous-parallelism-mappings-for-efficient.md) | MoE training | Decouple attention and MoE parallel mappings; token dispatcher for both dropping modes | 49.3% MFU (Mixtral-8×22B), 39% (Qwen2-57B-A14B) on H100 |
+| 8 | [Ladder-residual](2501.06589-ladder-residual-parallelism-aware-architecture-for-accelerating-large.md) | Architecture | Route residuals so TP communication overlaps with the next block | ~30% faster TP inference at 70B; retrofit Llama-3.1-8B with 3B tokens |
+| 9 | [FT-HSDP on 100K GPUs](2602.00277-training-llms-with-fault-tolerant-hsdp-on-100-000-gpus.md) | Training reliability | Fault-tolerant all-reduce; replicas drop and rejoin asynchronously | Effective training time 44% → 80% |
+| 10 | [SparseLoCo](2508.15706-overcoming-the-communication-performance-tradeoff-in-llm-pretraining.md) | Low-comm training | Top-k sparsified + 2-bit pseudo-gradients with error feedback in DiLoCo | Beats DiLoCo in quality and compression (178M–2B, MoE) |
+| 11 | [ByteScale](2502.21231-bytescale-efficient-scaling-of-llm-training-with-a-2048k-context-lengt.md) | Long-context training | Dynamic hybrid DP×CP for mixed long/short data + balance scheduler | Up to 7.89× at 256K–2048K context, 12K GPUs |
+| 12 | [fabric-lib](2510.27656-fabric-lib-rdma-point-to-point-communication-for-llm-systems.md) | Communication | Portable RDMA point-to-point (CX-7 + EFA) for KV transfer, weight updates and MoE | 400 Gbps; MoE decode latency better than DeepEP on CX-7 |
+
+**Also useful.**
+* Pipeline: [PipeOffload](2503.01328-pipeoffload-improving-scalability-of-pipeline-parallelism-with-memory.md), [SlimPipe](2504.14519-slimpipe-memory-thrifty-and-efficient-pipeline-parallelism-for-long-co.md), [One-Step Gradient Delay is Not a Barrier for Large-Scale Asynchronous Pipeline Parallel LLM Pretraining](2606.30634-one-step-gradient-delay-is-not-a-barrier-for-large-scale-asynchronous.md) (asynchronous PP),
+  [Nesterov Method for Asynchronous Pipeline Parallel Optimization](2505.01099-nesterov-method-for-asynchronous-pipeline-parallel-optimization.md) (Nesterov for async PP).
+* Balance: [WLB-LLM](2503.17924-wlb-llm-workload-balanced-4d-parallelism-for-large-language-model-trai.md), [Mist](2503.19050-mist-efficient-distributed-training-of-large-language-models-via-memor.md).
+* Multimodal training: [Cornstarch](2503.11367-efficient-distributed-mllm-training-with-cornstarch.md) (ICML'26), [OrchMLLM](2503.23830-orchmllm-orchestrate-multimodal-data-with-batch-post-balancing-to-acce.md).
+* Topology: [Efficient Pre-Training of LLMs via Topology-Aware Communication Alignment on More Than 9600 GPUs](2509.15940-efficient-pre-training-of-llms-via-topology-aware-communication-alignm.md) (topology-aware alignment on 9,600 GPUs).
+* Inference prefetch: [PRESERVE](2501.08192-preserve-prefetching-model-weights-and-kv-cache-in-distributed-llm-ser.md).
+* Long-context inference: [APB](2502.12085-apb-accelerating-distributed-long-context-inference-by-passing-compres.md).
+
+**Runtime checklist.**
+* Overlap TP all-reduce with compute (TokenWeave-style or Ladder-residual models).
+* Runtime switching between TP and SP/DP.
+* Helix-style KV-sequence sharding for million-token decode.
+* **Deterministic, TP-invariant kernels** as an option for RL.
+* Portable point-to-point RDMA for KV/MoE traffic.
+
 ## 🏆 Best of the best by impact score (top 10)
 
 1. **[Comet: Fine-grained Computation-communication Overlapping for Mixture-of-Experts](2502.19811-comet-fine-grained-computation-communication-overlapping-for-mixture-o.md)** (2025-03) — Leveraging data dependency analysis and task rescheduling, COMET achieves precise fine-grained overlapping of communication and computation, and effectively eliminates fine-grained communication bottlenecks and enhances …  

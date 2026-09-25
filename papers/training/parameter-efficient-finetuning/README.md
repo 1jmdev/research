@@ -48,6 +48,7 @@ Sorted cheapest first by the *smallest* compute figure found in the paper. Range
 
 | Paper | Min H100-h | Max H100-h | GPU seen | Evidence |
 | --- | ---: | ---: | --- | --- |
+| [Learning Rate Matters: Vanilla LoRA May Suffice for LLM Fine-tuning](2602.04998-learning-rate-matters-vanilla-lora-may-suffice-for-llm-fine-tuning.md) | 0.03 | 0.03 | A6000 | Critically, Hessian estimation for LoRA adapters of a single layer requires only around 10 minutes on a single RTX A6000.… |
 | [Drag-and-Drop LLMs: Zero-Shot Prompt-to-Weights](2506.16406-drag-and-drop-llms-zero-shot-prompt-to-weights.md) | 31 | 31 | A100 | While LoRA allows to maintain the number of trainable parameters and storage overhead small by keeping the model frozen, the wall-clock cost remains very high: … |
 | [LoRA meets Riemannion: Muon Optimizer for Parametrization-independent Low-Rank A](2507.12142-lora-meets-riemannion-muon-optimizer-for-parametrization-independent-l.md) | 2.0k | 2.0k | unspecified | We ran all the experiments within \sim 2000 GPU hours.… |
 
@@ -177,7 +178,7 @@ Sorted cheapest first by the *smallest* compute figure found in the paper. Range
 
 | Paper | Primary category | Score |
 | --- | --- | ---: |
-| [Phi-4-Mini Technical Report: Compact yet Powerful Multimodal Language Models via Mixture-of-LoRAs](../../models-and-architectures/technical-reports/2503.01743-phi-4-mini-technical-report-compact-yet-powerful-multimodal-language-m.md) | Model technical reports (open & frontier models) | 18.67 |
+| [Phi-4-Mini Technical Report: Compact yet Powerful Multimodal Language Models via Mixture-of-LoRAs](../../models-and-architectures/technical-reports/2503.01743-phi-4-mini-technical-report-compact-yet-powerful-multimodal-language-m.md) | Model technical reports (open & frontier models) | 19.17 |
 | [The Path Not Taken: RLVR Provably Learns Off the Principals](../rl-for-reasoning/2511.08567-the-path-not-taken-rlvr-provably-learns-off-the-principals.md) | Reinforcement learning for LLM reasoning (GRPO, RLVR) | 11.43 |
 | [QeRL: Beyond Efficiency -- Quantization-enhanced Reinforcement Learning for LLMs](../rl-for-reasoning/2510.11696-qerl-beyond-efficiency-quantization-enhanced-reinforcement-learning-fo.md) | Reinforcement learning for LLM reasoning (GRPO, RLVR) | 11.09 |
 | [Tina: Tiny Reasoning Models via LoRA](../rl-for-reasoning/2504.15777-tina-tiny-reasoning-models-via-lora.md) | Reinforcement learning for LLM reasoning (GRPO, RLVR) | 8.95 |

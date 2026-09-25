@@ -128,6 +128,7 @@ Sorted cheapest first by the *smallest* compute figure found in the paper. Range
 | Paper | Min H100-h | Max H100-h | GPU seen | Evidence |
 | --- | ---: | ---: | --- | --- |
 | [ARWKV: Pretrain is not what we need, an RNN-Attention-Based Language Model Born ](2501.15570-arwkv-pretrain-is-not-what-we-need-an-rnn-attention-based-language-mod.md) | 166 | 166 | MI300X | We work with QRWK 32B † https://huggingface.co/recursal/QRWKV6-32B-Instruct-Preview-v0.1 based on RWKV-6 architecture, another approach that reduces the entire … |
+| [RAD: Redundancy-Aware Distillation for Hybrid Models via Self-Speculative Decodi](2505.22135-rad-redundancy-aware-distillation-for-hybrid-models-via-self-speculati.md) | 184 | 184 | A100 | The training settings for the hybrid models are as follows (training takes 2-3 days on 8×A100 GPUs): Using the base model Llama3.2-3B-Instruct as the teacher \m… |
 
 ## Full ranking
 

@@ -29,7 +29,7 @@ _Written after reading the abstracts, and the full text where available, of this
   * [MoEBlaze](2601.05296-moeblaze-breaking-the-memory-wall-for-efficient-moe-training-on-modern.md) (memory wall).
 * **Parallelism and communication**:
   * [MegaScale-MoE](2505.11432-megascale-moe-large-scale-communication-efficient-training-of-mixture.md): 352B MoE on 1,440 Hopper GPUs at 1.41M tok/s, 1.88× Megatron-LM;
-  * Megatron-Core MoE and MoE Parallel Folding (see [`serving-systems/distributed-inference-and-parallelism`](../../serving-systems/parallelism-and-distributed/README.md));
+  * Megatron-Core MoE and MoE Parallel Folding (see [`serving-systems/distributed-inference-and-parallelism`](../../serving-systems/distributed-inference-and-parallelism/README.md));
   * load-adaptive expert re-layout: [LAER-MoE](2602.11686-laer-moe-load-adaptive-expert-re-layout-for-efficient-mixture-of-exper.md), [SYMI](2504.19925-symi-efficient-mixture-of-experts-training-via-model-and-optimizer-sta.md), [Themis](2502.02581-themis-efficient-sparse-model-training-through-fully-sharded-sparse-da.md);
   * all-to-all load balancing: [RailS](2510.19262-rails-load-balancing-for-all-to-all-communication-in-distributed-mixtu.md).
 * **Memory**:

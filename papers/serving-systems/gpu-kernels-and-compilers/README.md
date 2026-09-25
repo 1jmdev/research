@@ -6,6 +6,79 @@ GEMM/GEMV kernels, low-bit kernels, kernel fusion, Triton/CUDA generation, compi
 
 📖 Written overview of this area: [../../../overviews/serving-systems.md](../../../overviews/serving-systems.md)
 
+## 🔬 Analyst notes: hand ranking and verdict
+
+_Written after reading the abstracts, and the full text where available, of this category's papers. The hand ranking weighs technical merit and usefulness for a runtime or model builder, not just citations. The automatic impact ranking follows below._
+
+**Verdict.** Two stories run in parallel here. Attention kernels themselves (FlashAttention-3/4, FlashInfer, FlashMLA)
+live in [`attention/kernels-and-io-aware`](../../attention/kernels-and-io-aware/README.md).
+
+**1. Mega-kernels and deeper fusion are the biggest runtime win for low-batch decode.** Launch overhead and inter-kernel
+HBM round trips dominate at batch 1–16. Options:
+* [MPK / Mirage Persistent Kernel](2512.22219-mpk-a-compiler-and-runtime-for-mega-kernelizing-tensor-programs.md): compile the whole model into SM-level task graphs run in one
+  persistent kernel; up to 1.7× lower end-to-end latency.
+* [FlashFormer](2505.22758-flashformer-whole-model-kernels-for-efficient-low-batch-inference.md): a whole-transformer kernel.
+* [ClusterFusion](2508.18850-clusterfusion-expanding-operator-fusion-scope-for-llm-inference-via-cl.md): fuse QKV-proj + attention + out-proj via thread-block-cluster collectives; 1.61×
+  end-to-end on H100. [ClusterFusion++](2604.23553-clusterfusion-expanding-cluster-level-fusion-to-full-transformer-block.md) covers the full block.
+* Dynamic shapes: [Event Tensor](2604.13327-event-tensor-a-unified-abstraction-for-compiling-dynamic-megakernel.md), [Ada-MK](2605.11581-ada-mk-adaptive-megakernel-optimization-via-automated-dag-based-search.md), [Fleet](2604.15379-fleet-hierarchical-task-based-abstraction-for-megakernels-on-multi-die.md) (multi-die).
+* MoE: [MonoMoE](2609.04244-monomoe-an-efficient-fused-mega-kernel-for-quantized-moe-decoding.md) (quantized MoE decode mega-kernel).
+
+**2. LLMs now write competitive kernels, but benchmarks are leaky.**
+* [KernelBench](2502.10517-kernelbench-can-llms-write-efficient-gpu-kernels.md) (ICML'25) defined the task.
+* RL-trained kernel models reach expert level on many operators:
+  * [CUDA-L1](2507.14111-cuda-l1-improving-cuda-optimization-via-contrastive-reinforcement-lear.md): contrastive RL, 1.42× median over KernelBench baselines;
+  * [CUDA Agent](2602.24286-cuda-agent-large-scale-agentic-rl-for-high-performance-cuda-kernel-gen.md): large-scale agentic RL; faster than torch.compile on 100/100/92% of L1/L2/L3 tasks;
+  * [Dr. Kernel](2602.05885-dr-kernel-reinforcement-learning-done-right-for-triton-kernel-generati.md) (Triton, unbiased multi-turn RL);
+  * [AutoTriton](2507.05687-autotriton-automatic-triton-programming-with-reinforcement-learning-in.md), [TritonRL](2510.17891-tritonrl-training-llms-to-think-and-code-triton-without-cheating.md).
+* Evolutionary agents beat hand-tuned SOTA on the hardest targets: [AVO](2603.24517-avo-agentic-variation-operators-for-autonomous-evolutionary-search.md) (7 days of autonomous evolution
+  beats cuDNN by 3.5% and **FlashAttention-4 by 10.5%** on B200), [CUDA-L2](2512.02551-cuda-l2-surpassing-cublas-performance-for-matrix-multiplication-throug.md) (HGEMM +19% over cuBLAS),
+  [AlphaEvolve](2506.13131-alphaevolve-a-coding-agent-for-scientific-and-algorithmic-discovery.md) (Google's stack).
+* **Correctness is the weak spot.** Allclose-on-one-shape oracles pass wrong kernels: [The Correctness
+  Illusion](2606.20128-the-correctness-illusion-in-llm-generated-gpu-kernels.md), and [How Much of a Real Workload Can LLM-Generated GPU Kernels Actually Reach?](2609.21058-how-much-of-a-real-workload-can-llm-generated-gpu-kernels-actually-rea.md) found a "283×" kernel that wrote 0.3% of its output. Use multi-shape, scale-invariant
+  checks and equivalence checking ([Equivalence Checking of ML GPU Kernels](2511.12638-equivalence-checking-of-ml-gpu-kernels.md)).
+
+**3. New tile-level DSLs and compilers make hand-writing easier:**
+* [TileLang](2504.17577-tilelang-a-composable-tiled-programming-model-for-ai-systems.md): decouples scheduling from dataflow; used for DeepSeek kernels;
+* [Tilus](2504.12984-tilus-a-tile-level-gpgpu-programming-language-for-low-precision-comput.md): arbitrary low-bit types;
+* [Tawa](2510.14719-tawa-automatic-warp-specialization-for-modern-gpus-with-asynchronous-r.md): automatic warp specialization; matches CUTLASS FA3;
+* [Hexcute](2504.16214-hexcute-a-compiler-framework-for-automating-layout-synthesis-in-gpu-pr.md): layout synthesis; [Nautilus](2604.14825-nautilus-an-auto-scheduling-tensor-compiler-for-efficient-tiled-gpu-ke.md): auto-scheduling;
+* [Evaluating CUDA Tile for AI Workloads on Hopper and Blackwell GPUs](2604.23466-evaluating-cuda-tile-for-ai-workloads-on-hopper-and-blackwell-gpus.md): evaluation of NVIDIA CUDA Tile.
+
+### Hand ranking
+
+| # | Paper | Kind | Key idea | Result |
+| ---: | --- | --- | --- | --- |
+| 1 | [MPK: Mega-Kernelizing Tensor Programs](2512.22219-mpk-a-compiler-and-runtime-for-mega-kernelizing-tensor-programs.md) | Compiler + runtime | Tensor program → SM-level task graph; decentralized in-kernel scheduler in one persistent kernel | Up to 1.7× lower end-to-end latency; near hardware limits |
+| 2 | [AVO: agentic variation operators](2603.24517-avo-agentic-variation-operators-for-autonomous-evolutionary-search.md) (NVIDIA) | Agentic evolution | Agent as the variation operator in evolutionary search, with micro-architecture reasoning | MHA kernels beating cuDNN (+3.5%) and FlashAttention-4 (+10.5%) on B200; transfers to GQA |
+| 3 | [CUDA Agent](2602.24286-cuda-agent-large-scale-agentic-rl-for-high-performance-cuda-kernel-gen.md) | Agentic RL | Scalable data synthesis + skill-augmented dev environment (verify + profile) + stable long-horizon RL | Faster than torch.compile on 100/100/92% of KernelBench L1/L2/L3; ~40% above frontier proprietary models on L3 |
+| 4 | [ClusterFusion](2508.18850-clusterfusion-expanding-operator-fusion-scope-for-llm-inference-via-cl.md) | Fusion | Cluster-level collectives (DSMEM) to fuse QKV-proj → attention → out-proj | 1.61× average end-to-end latency on H100 |
+| 5 | [TileLang](2504.17577-tilelang-a-composable-tiled-programming-model-for-ai-systems.md) | DSL | Composable tiled programming, scheduling primitives separate from dataflow | State-of-the-art kernels with far less code; basis of many 2025 kernels |
+| 6 | [CUDA-L1](2507.14111-cuda-l1-improving-cuda-optimization-via-contrastive-reinforcement-lear.md) | RL | Contrastive RL from speedup rewards only | 1.42× median, up to 120× over KernelBench references; ~2.8× vs torch.compile |
+| 7 | [CUDA-L2](2512.02551-cuda-l2-surpassing-cublas-performance-for-matrix-multiplication-throug.md) | RL for GEMM | RL-driven search over HGEMM configurations | +19.2% over cuBLAS and +11.4% over cuBLASLt autotuning (offline) |
+| 8 | [The Correctness Illusion](2606.20128-the-correctness-illusion-in-llm-generated-gpu-kernels.md) / [How much of a real workload?](2609.21058-how-much-of-a-real-workload-can-llm-generated-gpu-kernels-actually-rea.md) | Verification | Fixed-shape allclose checks accept wrong kernels; scale-invariant oracles | **Mandatory reading before trusting AI-generated kernels** |
+| 9 | [Tawa](2510.14719-tawa-automatic-warp-specialization-for-modern-gpus-with-asynchronous-r.md) | Compiler | Automatic warp specialization with asynchronous references (Hopper/Blackwell) | 1.1× over cuBLAS GEMM; matches CUTLASS FA3 |
+| 10 | [KernelBench](2502.10517-kernelbench-can-llms-write-efficient-gpu-kernels.md) (ICML'25) | Benchmark | 250 PyTorch → CUDA tasks with the fast_p metric | The standard benchmark (use with the fixes above) |
+| 11 | [FlashInfer-Bench](2601.00227-flashinfer-bench-building-the-virtuous-cycle-for-ai-driven-llm-systems.md) | Benchmark → deployment | Real LLM-serving kernel tasks + a path to deploy AI-written kernels in FlashInfer | Closes the loop from agent to production |
+| 12 | [FlashFormer](2505.22758-flashformer-whole-model-kernels-for-efficient-low-batch-inference.md) | Whole-model kernel | Entire forward pass in one kernel for low-batch inference | Speedups across sizes and quantizations |
+
+**Also useful.**
+* Cross-vendor: [CASS](2505.16968-cass-nvidia-to-amd-transpilation-with-data-models-and-benchmark.md) (CUDA → HIP transpilation), [KForge](2511.13274-kforge-program-synthesis-for-diverse-ai-hardware-accelerators.md), [MaxKernel](2609.04523-maxkernel-agentic-kernel-generation-for-tpus.md) (TPU),
+  [AscendKernelGen](2601.07160-ascendkernelgen-a-systematic-study-of-llm-based-kernel-generation-for.md).
+* Benchmarks: [TritonBench](2502.14752-tritonbench-benchmarking-large-language-model-capabilities-for-generat.md), [MultiKernelBench](2507.17773-multikernelbench-a-multi-platform-benchmark-for-kernel-generation.md), [KernelBenchX](2605.04956-kernelbenchx-a-comprehensive-benchmark-for-evaluating-llm-generated-gp.md),
+  [FastKernels](2605.23215-fastkernels-benchmarking-gpu-kernel-generation-in-production.md) (production), [PTXBench](2608.17379-ptxbench-benchmark-and-adapt-llms-for-gpu-kernel-optimization-with-arc.md).
+* Agent frameworks: [Astra](2509.07506-astra-a-multi-agent-system-for-gpu-kernel-performance-optimization.md) (from SGLang kernels), [CudaForge](2511.01884-cudaforge-an-agent-framework-with-hardware-feedback-for-cuda-kernel-op.md), [STARK](2510.16996-stark-strategic-team-of-agents-for-refining-kernels.md),
+  [GEAK](2507.23194-geak-introducing-triton-kernel-ai-agent-evaluation-benchmarks.md) (AMD).
+* Kernels for sampling: [SonicSampler](2607.20475-sonicsampler-unified-tile-aware-kernels-for-llm-sampling-and-speculati.md) (fused sampling + speculative verification).
+* Low-bit engines: [TurboMind](2508.15601-lmdeploy-accelerates-mixed-precision-llm-inference-with-turbomind.md), [RSR-core](2603.27462-rsr-core-a-high-performance-engine-for-low-bit-matrix-vector-multiplic.md).
+* SASS scheduling: [CuAsmRL](2501.08071-cuasmrl-optimizing-gpu-sass-schedules-via-deep-reinforcement-learning.md).
+
+**Runtime recommendation.**
+* For latency-critical decode, move to **persistent mega-kernels** (MPK-style) or at least cluster-level fusion of the
+  attention block and CUDA-graph everything.
+* Write new kernels in TileLang/Triton/CuTe DSL.
+* Use agentic RL/evolution (CUDA Agent, AVO-style) to squeeze hot kernels per GPU generation, but gate every generated
+  kernel with **multi-shape, scale-invariant correctness tests** and equivalence checks.
+
 ## 🏆 Best of the best by impact score (top 10)
 
 1. **[CUDA-L1: Improving CUDA Optimization via Contrastive Reinforcement Learning](2507.14111-cuda-l1-improving-cuda-optimization-via-contrastive-reinforcement-lear.md)** (2026-08) — CUDA-L1 is introduced, an automated reinforcement learning framework for CUDA optimization that employs a novel contrastive RL algorithm that can transform an initially poor-performing LLM into an effective CUDA …  
@@ -68,9 +141,9 @@ Citations lag, so new work is under-ranked above. These are the most-upvoted or 
 | 20 | [StitchCUDA: An Automated Multi-Agents End-to-End GPU Programing Framework with Rubric-based Agentic Reinforcem](2603.02637-stitchcuda-an-automated-multi-agents-end-to-end-gpu-programing-framewo.md) | 2026-08-10 | 6.45 | 11 | 0 |  | [✓](https://github.com/UMN-APEX-Lab/StitchCUDA) | StitchCUDA is proposed, a multi-agent framework for end-to-end GPU program generation, with three specialized agents: a Planner to orchestrate whole system … |
 | 21 | [MPK: A Compiler and Runtime for Mega-Kernelizing Tensor Programs](2512.22219-mpk-a-compiler-and-runtime-for-mega-kernelizing-tensor-programs.md) | 2026-06-10 | 6.12 | 15 | 0 |  | [✓](https://github.com/mirage-project/mirage) | Our evaluation shows that MPK significantly outperforms existing kernel-per-operator LLM serving systems, achieving up to 1.7$\times$ lower end-to-end … |
 | 22 | [TritonRL: Training LLMs to Think and Code Triton Without Cheating](2510.17891-tritonrl-training-llms-to-think-and-code-triton-without-cheating.md) | 2026-02-09 | 5.79 | 29 | 0 |  |  | This work introduces TritonRL, a domain-specialized 8B-scale LLM for Triton programming, trained via a novel reinforcement learning (RL) framework, and … |
-| 23 | [CUDA-LLM: LLMs Can Write Efficient CUDA Kernels](2506.09092-cuda-llm-llms-can-write-efficient-cuda-kernels.md) | 2025-06-10 | 5.59 | 40 | 0 |  |  | This work proposes a novel framework called Feature Search and Reinforcement (FSR), which jointly optimizes compilation and functional correctness, as well as … |
-| 24 | [STARK: Strategic Team of Agents for Refining Kernels](2510.16996-stark-strategic-team-of-agents-for-refining-kernels.md) | 2025-10-19 | 5.18 | 25 | 0 |  |  | This work introduces an LLM agentic framework for GPU kernel optimization that systematically explores the design space through multi-agent collaboration, … |
-| 25 | [Equivalence Checking of ML GPU Kernels](2511.12638-equivalence-checking-of-ml-gpu-kernels.md) | 2026-08-16 | 5.13 | 8 | 0 |  |  | The first equivalence checker for GPU kernels is presented and used to formally verify the correctness of machine learning (ML) kernels optimized by hand, by … |
+| 23 | [Equivalence Checking of ML GPU Kernels](2511.12638-equivalence-checking-of-ml-gpu-kernels.md) | 2026-08-16 | 5.63 | 8 | 0 |  | [✓](https://github.com/NVIDIA/Megatron-LM) | The first equivalence checker for GPU kernels is presented and used to formally verify the correctness of machine learning (ML) kernels optimized by hand, by … |
+| 24 | [CUDA-LLM: LLMs Can Write Efficient CUDA Kernels](2506.09092-cuda-llm-llms-can-write-efficient-cuda-kernels.md) | 2025-06-10 | 5.59 | 40 | 0 |  |  | This work proposes a novel framework called Feature Search and Reinforcement (FSR), which jointly optimizes compilation and functional correctness, as well as … |
+| 25 | [STARK: Strategic Team of Agents for Refining Kernels](2510.16996-stark-strategic-team-of-agents-for-refining-kernels.md) | 2025-10-19 | 5.18 | 25 | 0 |  |  | This work introduces an LLM agentic framework for GPU kernel optimization that systematically explores the design space through multi-agent collaboration, … |
 | 26 | [MultiKernelBench: A Multi-Platform Benchmark for Kernel Generation](2507.17773-multikernelbench-a-multi-platform-benchmark-for-kernel-generation.md) | 2025-07-26 | 5.07 | 35 | 0 |  | [✓](https://github.com/wzzll123/MultiKernelBench) | This work introduces MultiKernelBench, the first comprehensive, multi-platform benchmark for LLM-based DL kernel generation, and proposes a simple yet … |
 | 27 | [DICE: Diffusion Large Language Models Excel at Generating CUDA Kernels](2602.11715-dice-diffusion-large-language-models-excel-at-generating-cuda-kernels.md) | 2026-06-16 | 4.99 | 4 | 7 |  | [✓](https://github.com/deadlykitten4/DICE) | This work constructs CuKe, an augmented supervised fine-tuning dataset optimized for high-performance CUDA kernels, and proposes a bi-phase curated … |
 | 28 | [VQ-LLM: High-performance Code Generation for Vector Quantization Augmented LLM Inference](2503.02236-vq-llm-high-performance-code-generation-for-vector-quantization-augmen.md) | 2025-06-30 | 4.94 | 24 | 0 | International Symposium on High-Performa |  | This work designs and implements VQ-LLM, an efficient fused VQ kernel generation framework and designs an efficient computation engine that optimizes memory … |
@@ -248,6 +321,7 @@ Citations lag, so new work is under-ranked above. These are the most-upvoted or 
 | [Learning When to Attend: Conditional Memory Access for Long-Context LLMs](../../attention/long-context-and-position/2603.17484-learning-when-to-attend-conditional-memory-access-for-long-context-llm.md) | Long context, context extension & positional encoding | 3.16 |
 | [MDN: Parallelizing Stepwise Momentum for Delta Linear Attention](../../attention/linear-attention/2605.05838-mdn-parallelizing-stepwise-momentum-for-delta-linear-attention.md) | Linear attention & kernelized attention | 3.15 |
 | [Scalable Training of Mixture-of-Experts Models with Megatron Core](../distributed-inference-and-parallelism/2603.07685-scalable-training-of-mixture-of-experts-models-with-megatron-core.md) | Distributed inference & parallelism (TP/PP/SP/CP/EP) | 3.14 |
+| [Systems and Algorithms for Convolutional Multi-Hybrid Language Models at Scale](../../attention/hybrid-architectures/2503.01868-systems-and-algorithms-for-convolutional-multi-hybrid-language-models.md) | Hybrid architectures (attention + SSM/linear layers) | 3.13 |
 | [STAR-KV: Low-Rank KV Cache Compression via Soft Thresholding for Adaptive Rank Control](../../kv-cache/low-rank-and-latent/2606.08382-star-kv-low-rank-kv-cache-compression-via-soft-thresholding-for-adapti.md) | KV cache low-rank / latent / head compression | 3.12 |
 | [BitDecoding: Unlocking Tensor Cores for Long-Context LLMs with Low-Bit KV Cache](../../kv-cache/quantization/2503.18773-bitdecoding-unlocking-tensor-cores-for-long-context-llms-with-low-bit.md) | KV cache quantization | 3.11 |
 | [LP-Spec: Leveraging LPDDR PIM for Efficient LLM Mobile Speculative Inference with Architecture-Dataflow Co-Opt](../hardware-accelerators/2508.07227-lp-spec-leveraging-lpddr-pim-for-efficient-llm-mobile-speculative-infe.md) | Hardware accelerators (ASIC, FPGA, PIM, NPU, photonic) | 3.05 |
@@ -259,7 +333,6 @@ Citations lag, so new work is under-ranked above. These are the most-upvoted or 
 | [DCC: Data-Centric Compilation of Machine Learning Kernels for Processing-In-Memory Architectures](../hardware-accelerators/2511.15503-dcc-data-centric-compilation-of-machine-learning-kernels-for-processin.md) | Hardware accelerators (ASIC, FPGA, PIM, NPU, photonic) | 2.72 |
 | [Faster Than Flash: Exploiting Attention Sparsity for Efficient Long-Context Decoding](../../attention/sparse-attention/2609.00097-faster-than-flash-exploiting-attention-sparsity-for-efficient-long-con.md) | Sparse attention (trainable & training-free) | 2.72 |
 | [An Inquiry into Datacenter TCO for LLM Inference with FP8](../energy-and-cost/2502.01070-an-inquiry-into-datacenter-tco-for-llm-inference-with-fp8.md) | Energy, carbon & cost of LLM inference/training | 2.67 |
-| [Systems and Algorithms for Convolutional Multi-Hybrid Language Models at Scale](../../attention/hybrid-architectures/2503.01868-systems-and-algorithms-for-convolutional-multi-hybrid-language-models.md) | Hybrid architectures (attention + SSM/linear layers) | 2.63 |
 | [MACKO: Sparse Matrix-Vector Multiplication for Low Sparsity](../../compression/unstructured-and-semi-structured-pruning/2511.13061-macko-sparse-matrix-vector-multiplication-for-low-sparsity.md) | Unstructured & N:M (2:4) pruning | 2.58 |
 | [Unveiling the Potential of Quantization with MXFP4: Strategies for Quantization Error Reduction](../../quantization/4-bit-floating-point/2603.08713-unveiling-the-potential-of-quantization-with-mxfp4-strategies-for-quan.md) | 4-bit floating point / microscaling (FP4, MXFP4, NVFP4) | 2.51 |
 | [Scaling Attention via Feature Sparsity](../../attention/sparse-attention/2603.22300-scaling-attention-via-feature-sparsity.md) | Sparse attention (trainable & training-free) | 2.49 |

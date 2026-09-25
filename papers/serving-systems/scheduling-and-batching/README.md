@@ -6,6 +6,79 @@ Continuous batching, request scheduling, preemption, SLO-aware serving, LLM rout
 
 📖 Written overview of this area: [../../../overviews/serving-systems.md](../../../overviews/serving-systems.md)
 
+## 🔬 Analyst notes: hand ranking and verdict
+
+_Written after reading the abstracts, and the full text where available, of this category's papers. The hand ranking weighs technical merit and usefulness for a runtime or model builder, not just citations. The automatic impact ranking follows below._
+
+**Verdict.** Continuous batching + chunked prefill + paged KV + prefix caching (vLLM / SGLang / LightLLM baseline) is
+solved. Throughput-optimality is even proven for Sarathi-style and SGLang-style schedulers
+([throughput-optimal scheduling](2504.07347-throughput-optimal-scheduling-algorithms-for-llm-inference-and-ai-agen.md)). The 2025–26 frontier moved **up the stack**:
+
+1. **Agents are programs, not requests.** Schedule by *program* (the whole multi-call trajectory):
+   * [Autellix](2502.13965-autellix-an-efficient-serving-engine-for-llm-agents-as-general-program.md): program-level preemption, 4–15× throughput at equal latency vs vLLM;
+   * [Continuum](2511.02230-continuum-efficient-and-robust-multi-turn-llm-agent-scheduling-with-kv.md): keep an agent's KV cache pinned with a **time-to-live across tool calls**, >8× lower
+     job completion time on SWE-Bench/BFCL/OpenHands;
+   * [ThunderAgent](2602.13692-thunderagent-a-simple-fast-and-program-aware-agentic-inference-system.md): program-aware; 1.5–3.6× serving and 1.8–3.9× RL-rollout throughput;
+   * [SAGA](2605.00528-saga-workflow-atomic-scheduling-for-ai-agent-inference-on-gpu-clusters.md): workflow-atomic scheduling;
+   * [CONCUR](2601.22705-concur-high-throughput-agentic-batch-inference-of-llm-via-congestion-b.md): congestion control on the number of active agents so KV doesn't thrash; 4.09× batch agentic
+     throughput;
+   * [PASTE](2603.18897-parallelizing-tool-execution-and-llm-generation-for-low-latency-agent.md): run tool execution speculatively in parallel with generation, −43.5% task time.
+2. **Goodput under SLOs, not raw throughput.**
+   * [Past-Future scheduler](2507.10150-past-future-scheduler-for-llm-serving-under-sla-guarantees.md) (ASPLOS; LightLLM): predicts future KV demand from past output-length
+     distributions, 2–3× goodput;
+   * [SLOs-Serve](2504.08784-slos-serve-optimized-serving-of-multi-slo-llms.md): multi-SLO, 2.2× per-GPU capacity;
+   * [Scorpio](2505.23022-scorpio-serving-right-requests-at-the-right-time-for-heterogeneous-slo.md): TTFT/TPOT guards with deadline reordering and admission control;
+   * [JITServe](2504.20068-jitserve-slo-aware-llm-serving-with-imprecise-request-information.md).
+3. **Output-length uncertainty is the core scheduling input.** Lengths are heavy-tailed, and log-t fits them.
+   [TIE](2604.00499-scheduling-llm-inference-with-uncertainty-aware-output-length-predicti.md) schedules on a tail-inflated expectation: 2.31× lower per-token latency online, 1.42× offline
+   throughput.
+4. **Specialized engines for special workloads.**
+   * [PrefillOnly](2505.07203-prefillonly-an-inference-engine-for-prefill-only-workloads-in-large-la.md): classification/embedding-style requests keep only the last layer's KV and use exact
+     JCT → SRJF; 4× QPS.
+   * [Pie](2510.24051-pie-a-programmable-serving-system-for-emerging-llm-applications.md) (SOSP'25): *programmable* serving; app logic as WebAssembly "inferlets" controlling KV and
+     generation; 1.3–3.4× on agentic workflows.
+   * [MinT](2605.13779-mint-managed-infrastructure-for-training-and-serving-millions-of-llms.md): million-scale LoRA catalogs over 1T-class bases.
+5. **Evaluate correctly.** [On evaluating LLM serving systems](2507.09019-on-evaluating-performance-of-llm-inference-serving-systems.md) catalogues benchmarking anti-patterns (wrong
+   metrics, unrealistic arrivals, ignoring the prefill/decode split).
+
+### Hand ranking
+
+| # | Paper | Focus | Key idea | Result |
+| ---: | --- | --- | --- | --- |
+| 1 | [Autellix](2502.13965-autellix-an-efficient-serving-engine-for-llm-agents-as-general-program.md) | Agentic | Program-level scheduling (preempt/prioritize LLM calls by the program's completed work) | 4–15× program throughput at equal latency vs vLLM |
+| 2 | [Continuum](2511.02230-continuum-efficient-and-robust-multi-turn-llm-agent-scheduling-with-kv.md) | Agentic multi-turn | KV cache TTL across tool calls + program-level FCFS | >8× lower average JCT on SWE-Bench/BFCL/OpenHands (8B–355B) |
+| 3 | [Past-Future scheduler / LightLLM](2507.10150-past-future-scheduler-for-llm-serving-under-sla-guarantees.md) (ASPLOS) | SLA goodput | Predict future peak KV memory from historical output-length distribution | 2–3× goodput under heavy load |
+| 4 | [ThunderAgent](2602.13692-thunderagent-a-simple-fast-and-program-aware-agentic-inference-system.md) | Agentic + RL rollouts | LLM Programs abstraction managing KV, sandbox state and tool assets together | 1.5–3.6× serving, 1.8–3.9× RL rollout, 4.2× disk savings |
+| 5 | [Pie](2510.24051-pie-a-programmable-serving-system-for-emerging-llm-applications.md) (SOSP'25) | Programmability | WebAssembly inferlets own KV and decoding logic inside the server | 3–12% overhead on standard tasks; 1.3–3.4× on agentic workflows |
+| 6 | [SLOs-Serve](2504.08784-slos-serve-optimized-serving-of-multi-slo-llms.md) | Multi-SLO | DP-based token allocation across prefill/decode per SLO class + multi-replica routing | 2.2× per-GPU capacity |
+| 7 | [TIE: uncertainty-aware length scheduling](2604.00499-scheduling-llm-inference-with-uncertainty-aware-output-length-predicti.md) | Length prediction | Heavy-tailed (log-t) length distributions + tail-inflated expectation | 2.31× lower per-token latency; 1.42× offline throughput |
+| 8 | [PrefillOnly](2505.07203-prefillonly-an-inference-engine-for-prefill-only-workloads-in-large-la.md) | Special engine | Store only the last layer's KV for single-token outputs; exact JCT → SRJF | Up to 4× QPS without P99 inflation |
+| 9 | [CONCUR](2601.22705-concur-high-throughput-agentic-batch-inference-of-llm-via-congestion-b.md) | Agentic batch | Cache-aware congestion control of concurrent agents | 4.09× (Qwen3-32B) and 1.9× (DeepSeek-V3) batch throughput |
+| 10 | [Throughput-optimal scheduling](2504.07347-throughput-optimal-scheduling-algorithms-for-llm-inference-and-ai-agen.md) | Theory | Fluid-limit analysis of batched LLM queues incl. agent DAGs | Sarathi/SGLang-style are throughput-optimal; vanilla vLLM/FasterTransformer are not |
+| 11 | [PASTE](2603.18897-parallelizing-tool-execution-and-llm-generation-for-low-latency-agent.md) | Agentic | Speculative tool execution in parallel with LLM generation + joint scheduling | −43.5% task completion time |
+| 12 | [Online scheduling with KV constraints](2502.07115-online-scheduling-for-llm-inference-with-kv-cache-constraints.md) | Theory + algorithm | Hindsight-optimal integer program + online algorithm with guarantees | Beats heuristics on Llama2-70B traces |
+
+**Also useful.**
+* Prefix-aware scheduling: [LLM Query Scheduling with Prefix Reuse and Latency Constraints](2502.04677-llm-query-scheduling-with-prefix-reuse-and-latency-constraints.md) (NP-hardness under RadixAttention), [Locality-aware Fair Scheduling in LLM Serving](2501.14312-locality-aware-fair-scheduling-in-llm-serving.md) (locality-aware fair
+  scheduling), [Simple is Better](2603.15202-simple-is-better-multiplication-may-be-all-you-need-for-llm-request-sc.md).
+* Load balancing across instances: [Astrolabe](2508.03611-astrolabe-balancing-load-in-llm-serving-with-randomized-prediction-gui.md), [SkyWalker](2505.24095-skywalker-a-locality-aware-cross-region-load-balancer-for-llm-inferenc.md) (cross-region),
+  [A Universal Load Balancing Principle and Its Application to Large Language Model Serving](2601.17855-a-universal-load-balancing-principle-and-its-application-to-large-lang.md).
+* Multi-LoRA: [P-LoRA](2512.20210-predictive-lora-a-proactive-and-fragmentation-aware-serverless-inferen.md), [Serving Heterogeneous LoRA Adapters in Distributed LLM Inference Systems](2511.22880-serving-heterogeneous-lora-adapters-in-distributed-llm-inference-syste.md).
+* Co-location and autoscaling: [HyGen](2501.14808-hygen-efficient-llm-serving-via-elastic-online-offline-request-co-loca.md) (online + offline co-location), [Chiron](2501.08090-hierarchical-autoscaling-for-large-language-model-serving-with-chiron.md).
+* Streaming: [TokenFlow](2510.02758-tokenflow-responsive-llm-text-streaming-serving-under-request-burst-vi.md).
+* Reasoning-model serving study: [Reasoning Language Model Inference Serving Unveiled](2510.18672-reasoning-language-model-inference-serving-unveiled-an-empirical-study.md).
+* Code interpreters: [Executing as You Generate](2604.00491-executing-as-you-generate-hiding-execution-latency-in-llm-code-interpr.md) (execute as you generate).
+* Queueing theory: [A Queueing-Theoretic Framework for Stability Analysis of LLM Inference with KV Cache Memory Constraints](2605.04595-a-queueing-theoretic-framework-for-stability-analysis-of-llm-inference.md), [Optimal Scheduling Algorithms for LLM Inference](2508.01002-optimal-scheduling-algorithms-for-llm-inference-theory-and-practice.md).
+
+**Runtime checklist.**
+* Program/session IDs in the API.
+* **KV pinning with TTL** across tool calls, and prefix-aware routing across replicas.
+* Admission control and deadline-aware ordering per SLO class.
+* A length-distribution predictor (not a point estimate).
+* A concurrency limiter for agentic batch jobs.
+* A prefill-only fast path.
+* Hooks to run tool calls speculatively.
+
 ## 🏆 Best of the best by impact score (top 10)
 
 1. **[Continuum: Efficient and Robust Multi-Turn LLM Agent Scheduling with KV Cache Time-to-Live](2511.02230-continuum-efficient-and-robust-multi-turn-llm-agent-scheduling-with-kv.md)** (2026-09) — Continnum, a serving system to optimize job completion time for multi-turn agent workloads by introducing time-to-live mechanism for KV cache retention, and when combined with program-level first-come-first-serve …  

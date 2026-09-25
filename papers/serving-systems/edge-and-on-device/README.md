@@ -6,6 +6,72 @@ LLMs on phones, laptops, embedded devices, consumer GPUs and CPUs.
 
 📖 Written overview of this area: [../../../overviews/serving-systems.md](../../../overviews/serving-systems.md)
 
+## 🔬 Analyst notes: hand ranking and verdict
+
+_Written after reading the abstracts, and the full text where available, of this category's papers. The hand ranking weighs technical merit and usefulness for a runtime or model builder, not just citations. The automatic impact ranking follows below._
+
+**Verdict.** On-device inference in 2025–26 is about three things.
+
+1. **Using the whole SoC.** Heterogeneous GPU+NPU(+CPU) execution beats single-accelerator engines by large margins:
+   * [HeteroInfer](2501.14794-characterizing-mobile-soc-for-accelerating-heterogeneous-llm-inference.md) (SOSP'25): 1.34–6× over GPU-only and NPU-only engines;
+   * [Agent.xpu](2506.24045-agent-xpu-efficient-scheduling-of-agentic-llm-workloads-on-heterogeneo.md): concurrent reactive and proactive agent flows on NPU+iGPU; ≥91% lower reactive latency;
+   * NPUs need **hardware-aware quantization**: [mobile-NPU test-time scaling](2509.23324-scaling-llm-test-time-compute-with-mobile-npu-on-smartphones.md) uses tile-aligned group
+     quantization + LUT softmax (up to 19× GEMM speedup), so small models with test-time scaling beat larger ones;
+   * NPU-first model design: [AutoNeural](2512.02924-autoneural-co-designing-vision-language-models-for-npu-inference.md).
+2. **Kernels that actually realize the memory savings.** [Memory-bound but not bandwidth-limited](2605.30571-memory-bound-but-not-bandwidth-limited-the-physical-ai-inference-gap-i.md): at
+   batch 1, many INT4 paths barely beat BF16 (NF4 59 ms vs 62 ms BF16), and only tuned INT4 kernels reach the floor
+   (ExLlamaV2 17 ms). **Kernel quality > quantization format** on edge.
+   * Engines: [MNN-LLM](2506.10443-mnn-llm-a-generic-inference-engine-for-fast-large-language-model-deplo.md) (up to 8.6× over mainstream mobile frameworks; DRAM-Flash hybrid storage),
+     llama.cpp / MLX ([Apple Silicon runtime comparison](2511.05502-production-grade-local-llm-inference-on-apple-silicon-a-comparative-st.md); [Native LLM and MLLM Inference at Scale on Apple Silicon](2601.19139-native-llm-and-mllm-inference-at-scale-on-apple-silicon.md): native continuous batching +
+     content-hash vision prefix caching on M4 Max).
+3. **Device–cloud collaboration.**
+   * [MinionS](2502.15964-minions-cost-efficient-collaboration-between-on-device-and-cloud-langu.md) (Hazy Research): the local model executes decomposed subtasks over document chunks, and
+     the cloud model plans. **5.7× lower cost at 97.9% of cloud quality**.
+   * Edge-drafted speculative decoding: [SLED](2506.09397-sled-a-speculative-llm-decoding-framework-for-efficient-edge-serving.md), [Fast and Cost-effective Speculative Edge-Cloud Decoding with Early Exits](2505.21594-fast-and-cost-effective-speculative-edge-cloud-decoding-with-early-exi.md) (early-exit target), [DSD](2511.21669-dsd-a-distributed-speculative-decoding-solution-for-edge-cloud-agile-l.md),
+     [SpecEdge](../scheduling-and-batching/2505.17052-specedge-scalable-edge-assisted-serving-framework-for-interactive-llms.md).
+   * Home clusters: [prima.cpp](2504.08791-prima-cpp-fast-30-70b-llm-inference-on-heterogeneous-and-low-resource.md) runs 70B across consumer devices; 32B at 26 tok/s with speculation.
+
+Model design for edge is its own lever: [hardware co-design scaling laws](2602.10377-hardware-co-design-scaling-laws-via-roofline-modelling-for-on-device-l.md) (roofline + loss model, 19.4%
+lower PPL at Qwen2.5-0.5B latency on Jetson Orin); small models in
+[`models-and-architectures/small-language-models`](../../models-and-architectures/small-language-models/README.md);
+MoE on phones in [`mixture-of-experts/architecture-and-routing`](../../mixture-of-experts/architecture-and-routing/README.md)
+(MobileMoE).
+
+### Hand ranking
+
+| # | Paper | Kind | Key idea | Result |
+| ---: | --- | --- | --- | --- |
+| 1 | [HeteroInfer: characterizing mobile SoCs](2501.14794-characterizing-mobile-soc-for-accelerating-heterogeneous-llm-inference.md) (SOSP'25) | Engine | Profile GPU/NPU/memory behaviour → layer-level and tensor-level heterogeneous parallelism | 1.34–6.02× over GPU-only and NPU-only engines; negligible interference |
+| 2 | [Minions / MinionS](2502.15964-minions-cost-efficient-collaboration-between-on-device-and-cloud-langu.md) | Local–cloud protocol | Remote model decomposes; local model runs many parallel subtasks over chunks | 5.7× lower cost at 97.9% of remote-only quality |
+| 3 | [Memory-bound but not bandwidth-limited](2605.30571-memory-bound-but-not-bandwidth-limited-the-physical-ai-inference-gap-i.md) | Measurement | Batch-1 decode on L4-class GPUs vs the memory floor per quantization path | Only tuned int4 kernels realize the savings. **Profile the kernel, not the format** |
+| 4 | [MNN-LLM](2506.10443-mnn-llm-a-generic-inference-engine-for-fast-large-language-model-deplo.md) | Mobile engine | Instruction-set-aware weight layout, DRAM-Flash hybrid storage, multicore balance, mixed precision | Up to 8.6× faster than mainstream mobile LLM frameworks |
+| 5 | [Test-time scaling on mobile NPUs](2509.23324-scaling-llm-test-time-compute-with-mobile-npu-on-smartphones.md) | NPU | Tile-aligned group quantization + LUT nonlinearities on Snapdragon NPUs | 19× mixed-precision GEMM; small model + TTS beats bigger models |
+| 6 | [Agent.xpu](2506.24045-agent-xpu-efficient-scheduling-of-agentic-llm-workloads-on-heterogeneo.md) | Agentic on SoC | Operator–accelerator affinity; preemptive scheduling of reactive vs proactive flows | 1.2–4.9× proactive throughput; ≥91% lower reactive latency |
+| 7 | [prima.cpp](2504.08791-prima-cpp-fast-30-70b-llm-inference-on-heterogeneous-and-low-resource.md) | Home cluster | Piped-ring parallelism + heterogeneity-aware scheduler (Halda) over consumer devices | 70B at 674 ms/token; 32B + speculation at 26 tok/s |
+| 8 | [Hardware co-design scaling laws](2602.10377-hardware-co-design-scaling-laws-via-roofline-modelling-for-on-device-l.md) | Model design | Joint loss-vs-architecture law + roofline latency; search 1,942 architectures on Jetson | −19.4% perplexity at equal latency vs Qwen2.5-0.5B |
+| 9 | [Native LLM/MLLM inference on Apple Silicon](2601.19139-native-llm-and-mllm-inference-at-scale-on-apple-silicon.md) | Engine | MLX-native continuous batching + content-hashed image prefix cache | 525 tok/s on M4 Max; 28× faster repeated image queries |
+| 10 | [S2-MoE](2608.15018-s2-moe-enabling-efficient-self-speculative-decoding-for-mixture-of-exp.md) | MoE on edge | Self-speculative decoding for MoE in llama.cpp with reuse-aware expert gating | Up to 5.3× (≈2× average) over AR decoding |
+| 11 | [AutoNeural](2512.02924-autoneural-co-designing-vision-language-models-for-npu-inference.md) | NPU co-design | NPU-friendly VLM (MobileNet-style vision + SSM/Transformer LM) for stable INT4/8/16 | Real-time on Qualcomm SA8295P; 4× longer context |
+
+**Also useful.**
+* Profiling and benchmarks: [lm-Meter](2510.06126-lm-meter-unveiling-runtime-inference-latency-for-on-device-language-mo.md), [RooflineBench](2602.11506-rooflinebench-a-benchmarking-framework-for-on-device-llms-via-roofline.md), [SiliconBench](2609.19169-siliconbench-speed-memory-and-fidelity-for-llm-serving-on-unified-memo.md),
+  [Are We There Yet? A Measurement Study of Efficiency for LLM Applications on Mobile Devices](2504.00002-are-we-there-yet-a-measurement-study-of-efficiency-for-llm-application.md) (mobile measurement study), [Forecasting LLM Inference Performance via Hardware-Agnostic Analytical Modeling](2508.00904-forecasting-llm-inference-performance-via-hardware-agnostic-analytical.md) (hardware-agnostic performance forecasting).
+* Multi-tenant LoRA on edge: [EdgeLoRA](2507.01438-edgelora-an-efficient-multi-tenant-llm-serving-system-on-edge-devices.md).
+* Energy: [Camel](2508.09173-camel-energy-aware-llm-inference-on-resource-constrained-devices.md) (GPU frequency + batch tuning).
+* Distributed edge: [Jupiter](2504.08242-jupiter-fast-and-resource-efficient-collaborative-inference-of-generat.md), [CoFormer](2508.20375-coformer-collaborating-with-heterogeneous-edge-devices-for-scalable-tr.md).
+* Edge VLMs: [AndesVL](2510.11496-andesvl-technical-report-an-efficient-mobile-side-multimodal-large-lan.md), [HyperVL](2512.14052-hypervl-an-efficient-and-dynamic-multimodal-large-language-model-for-e.md).
+* Small-batch runtime state: [Execution-State Capsules](2606.20537-execution-state-capsules-graph-bound-execution-state-checkpoint-and-re.md) (execution-state capsules).
+* Survey: [Collaborative Inference and Learning between Edge SLMs and Cloud LLMs](2507.16731-collaborative-inference-and-learning-between-edge-slms-and-cloud-llms.md) (edge–cloud collaboration).
+
+**Runtime checklist for edge.**
+* Per-SoC backends: CPU (NEON/AMX/SME), GPU (Metal/Vulkan/OpenCL), NPU (QNN/ANE).
+* Layer-level heterogeneous scheduling.
+* NPU-aligned group quantization.
+* **Batch-1 GEMV kernels benchmarked against the memory floor.**
+* Flash-backed weights with DRAM caching.
+* Local speculative drafting with optional cloud verification.
+* Prefix caching for images and system prompts.
+
 ## 🏆 Best of the best by impact score (top 10)
 
 1. **[AutoNeural: Co-Designing Vision-Language Models for NPU Inference](2512.02924-autoneural-co-designing-vision-language-models-for-npu-inference.md)** (2026-07) — The proposed AutoNeural is an NPU-native VLM architecture co-designed for integer-only inference that reduces quantization error of vision encoder by up to 7x and end-to-end latency by 14x compared to conventional …  

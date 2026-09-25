@@ -6,6 +6,61 @@ Custom silicon and near-memory computing for LLMs, hardware/software co-design.
 
 📖 Written overview of this area: [../../../overviews/serving-systems.md](../../../overviews/serving-systems.md)
 
+## 🔬 Analyst notes: hand ranking and verdict
+
+_Written after reading the abstracts, and the full text where available, of this category's papers. The hand ranking weighs technical merit and usefulness for a runtime or model builder, not just citations. The automatic impact ranking follows below._
+
+**Verdict.** This is mostly architecture research (200+ papers: PIM, FPGA, ASIC, wafer-scale, photonics). For a
+*software* runtime builder it is useful in three ways:
+
+1. **What the hardware roadmap rewards.** Decode is bandwidth- and capacity-bound, so future gains come from memory,
+   not FLOPs.
+   * [Challenges and research directions for LLM inference hardware](2601.05047-challenges-and-research-directions-for-large-language-model-inference.md) lists High-Bandwidth Flash (10×
+     capacity at HBM-like bandwidth), processing-near-memory / 3D memory-logic stacking, and low-latency interconnect.
+   * [Insights into DeepSeek-V3](2505.09343-insights-into-deepseek-v3-scaling-challenges-and-reflections-on-hardwa.md) (ISCA'25): hardware lessons from MLA, MoE, FP8 training and a multi-plane
+     network. Asks for finer-grained scaling in tensor cores, scale-up/scale-out convergence and low-latency fabrics.
+2. **Production non-NVIDIA serving.** [CloudMatrix384](2506.12708-serving-large-language-models-on-huawei-cloudmatrix384.md) (384 Ascend 910 NPUs on a unified bus) serves
+   DeepSeek-R1 at 6,688 prefill / 1,943 decode tok/s per NPU (<50 ms TPOT) with INT8. Useful as a design reference for
+   peer-to-peer all-to-all plus disaggregated pools.
+3. **Low-bit and LUT hardware validates ternary/2-bit model design.** LUT/ternary accelerators ([TENET](2509.13765-tenet-an-efficient-sparsity-aware-lut-centric-architecture-for-ternary.md),
+   [TerEffic](2502.16473-tereffic-highly-efficient-ternary-llm-inference-on-fpga.md), [LUT-LLM](2511.06174-lut-llm-efficient-large-language-model-inference-with-memory-based-com.md), [FIGLUT](2503.06862-figlut-an-energy-efficient-accelerator-design-for-fp-int-gemm-using-lo.md)) show 4–21× energy efficiency over A100 for
+   ternary or LUT-quantized models, and TENET-ASIC is 2.7× faster. This matters if you build BitNet-style models (see
+   [`quantization/1-bit-and-ternary`](../../quantization/1-bit-and-ternary/README.md)).
+
+Also notable:
+* PIM for decode: [CENT](2502.07578-pim-is-all-you-need-a-cxl-enabled-gpu-free-system-for-large-language-m.md) (CXL PIM, GPU-free, 5.2× tokens per dollar), [PAPI](2502.15470-papi-exploiting-dynamic-parallelism-in-large-language-model-decoding-w.md) (dynamic
+  GPU↔PIM kernel mapping), [Pimba](2507.10178-pimba-a-processing-in-memory-acceleration-for-post-transformer-large-l.md) (PIM for SSM + attention with MX arithmetic).
+* Wafer-scale inference: [WaferLLM](2502.04563-waferllm-large-language-model-inference-at-wafer-scale.md) (OSDI'25, 10–20× over A100 clusters), [MoEntwine](2510.25258-moentwine-unleashing-the-potential-of-wafer-scale-chips-for-large-scal.md).
+* Blackwell microbenchmarks: [Microbenchmarking NVIDIA's Blackwell Architecture](2512.02189-microbenchmarking-nvidia-s-blackwell-architecture-an-in-depth-architec.md) (FP4/FP6 tensor-core characterization vs H200).
+
+### Hand ranking (runtime-relevant first)
+
+| # | Paper | Kind | Key point | Result |
+| ---: | --- | --- | --- | --- |
+| 1 | [Insights into DeepSeek-V3](2505.09343-insights-into-deepseek-v3-scaling-challenges-and-reflections-on-hardwa.md) (ISCA'25) | Co-design retrospective | MLA, MoE, FP8 and multi-plane network choices made *because* of H800 limits | Blueprint of hardware asks from a frontier lab |
+| 2 | [Serving LLMs on CloudMatrix384](2506.12708-serving-large-language-models-on-huawei-cloudmatrix384.md) (Huawei) | Production system | Peer-to-peer serving (disaggregated prefill/decode/cache) over a UB supernode; large-scale EP; INT8 | 1,943 decode tok/s/NPU at <50 ms TPOT; 538 tok/s/NPU at 15 ms |
+| 3 | [Challenges for LLM inference hardware](2601.05047-challenges-and-research-directions-for-large-language-model-inference.md) | Position | Memory capacity/bandwidth and latency are the constraints; HBF, PNM, 3D stacking, fast interconnect | Where hardware is heading; plan runtimes for tiered memory |
+| 4 | [Microbenchmarking Blackwell](2512.02189-microbenchmarking-nvidia-s-blackwell-architecture-an-in-depth-architec.md) | Characterization | Tensor-core, memory and precision behaviour of B200 (FP4/FP6/FP8) | 1.55× GPT-1.3B training vs H200; 32% better energy efficiency |
+| 5 | [WaferLLM](2502.04563-waferllm-large-language-model-inference-at-wafer-scale.md) (OSDI'25) | Wafer-scale | Mesh-aware GEMM/GEMV and parallelism for hundreds of thousands of cores | 10–20× over A100 clusters running SGLang/vLLM |
+| 6 | [CENT: PIM is all you need](2502.07578-pim-is-all-you-need-a-cxl-enabled-gpu-free-system-for-large-language-m.md) | CXL-PIM | GPU-free decode on CXL memory with PIM; pipeline and tensor parallelism across devices | 2.3× throughput, 2.9× less energy, 5.2× tokens per dollar vs GPUs |
+| 7 | [TENET](2509.13765-tenet-an-efficient-sparsity-aware-lut-centric-architecture-for-ternary.md) | Ternary ASIC/FPGA | Sparse ternary LUT core + dynamic activation N:M sparsity | 21.1× energy efficiency (ASIC) and 2.7× lower latency vs A100 |
+| 8 | [Pimba](2507.10178-pimba-a-processing-in-memory-acceleration-for-post-transformer-large-l.md) | PIM for SSM/attention | Shared state-update engine with MX arithmetic for post-transformer models | Up to 4.1× over GPU, 2.1× over GPU+PIM |
+| 9 | [PAPI](2502.15470-papi-exploiting-dynamic-parallelism-in-large-language-model-decoding-w.md) | Heterogeneous PIM | Runtime-dynamic mapping of decode kernels to PIM or compute units | 1.8× over a heterogeneous accelerator; 11.1× over PIM-only |
+| 10 | [LUT-LLM](2511.06174-lut-llm-efficient-large-language-model-inference-with-memory-based-com.md) | FPGA | Memory-based (table lookup) inference with a conversion recipe | Qwen3-1.7B: 1.1–3.3× faster, 3–6.6× more energy-efficient than GPU |
+| 11 | [RPU: reasoning processing unit](2602.18568-rpu-a-reasoning-processing-unit.md) | Architecture | Bandwidth-first chip for long reasoning decode | Simulated 45× lower latency vs H100 at iso-TDP (Llama-3-405B) |
+
+**Also useful.**
+* FPGA: [LightMamba](2502.15260-lightmamba-efficient-mamba-acceleration-on-fpga-with-quantization-and.md), [TeLLMe](2504.16266-tellme-an-energy-efficient-ternary-llm-accelerator-for-prefilling-and.md), [Hummingbird](2507.03308-hummingbird-a-smaller-and-faster-large-language-model-accelerator-on-e.md), [SpecMamba](2509.19873-specmamba-accelerating-mamba-inference-on-fpga-with-speculative-decodi.md).
+* Near-memory MoE: [HD-MoE](2509.09420-hd-moe-hybrid-and-dynamic-parallelism-for-mixture-of-expert-llms-with.md).
+* Attention in hardware: [SystolicAttention](2507.11331-systolicattention-fusing-flashattention-within-a-single-systolic-array.md), [STARC](2505.05772-sparse-attention-remapping-with-clustering-for-efficient-llm-decoding.md) (sparse attention on PIM).
+* Reliability: [ReaLM](2503.24053-realm-reliable-and-efficient-large-language-model-inference-with-stati.md) (statistical ABFT).
+* Datacenter design: [Scaling Intelligence](2506.15006-scaling-intelligence-designing-data-centers-for-next-gen-language-mode.md), [UB-Mesh](2503.20377-ub-mesh-a-hierarchically-localized-nd-fullmesh-datacenter-network-arch.md).
+* Edge KV on eDRAM: [Kelle](2510.16040-kelle-co-design-kv-caching-and-edram-for-efficient-llm-serving-in-edge.md).
+
+**Runtime takeaway.** Design the runtime around **memory tiers** (HBM → CXL/DRAM → HBF/SSD), bandwidth-bound decode
+kernels and pluggable backends (Ascend/AMD/wafer-scale). Keep a ternary/LUT path, because emerging hardware rewards it
+most.
+
 ## 🏆 Best of the best by impact score (top 10)
 
 1. **[Insights into DeepSeek-V3: Scaling Challenges and Reflections on Hardware for AI Architectures](2505.09343-insights-into-deepseek-v3-scaling-challenges-and-reflections-on-hardwa.md)** (2025-12) — An in-depth analysis of the DeepSeek-V3/R1 model architecture and its AI infrastructure is presented, highlighting key innovations such as Multi-head Latent Attention (MLA) for enhanced memory efficiency, Mixture of …  

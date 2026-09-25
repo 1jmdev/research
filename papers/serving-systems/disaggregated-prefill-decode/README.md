@@ -6,6 +6,72 @@ Splitting prefill and decode across instances/hardware, chunked prefill, attenti
 
 📖 Written overview of this area: [../../../overviews/serving-systems.md](../../../overviews/serving-systems.md)
 
+## 🔬 Analyst notes: hand ranking and verdict
+
+_Written after reading the abstracts, and the full text where available, of this category's papers. The hand ranking weighs technical merit and usefulness for a runtime or model builder, not just citations. The automatic impact ranking follows below._
+
+**Verdict.** Prefill–decode (PD) disaggregation (DistServe / Splitwise / Mooncake, 2024) is now the default for large
+deployments. The 2025–26 work refines **where the boundary goes** and **when not to disaggregate**:
+
+1. **Disaggregate further: attention vs FFN (AFD).** [Step-3](2507.19427-step-3-is-large-yet-affordable-model-system-co-design-for-cost-effecti.md) co-designs the model (MFA attention, 38B
+   active) with AFD. It reaches **4,039 tok/s/GPU at 50 ms TPOT** on Hopper vs DeepSeek-V3's 2,324 in the same setup.
+   Provisioning theory in [Analytical Provisioning for Attention-FFN Disaggregated LLM Serving under Stochastic Workloads](2601.21351-analytical-provisioning-for-attention-ffn-disaggregated-llm-serving-un.md); design-space limits in [How Far Can Disaggregation Go? A Design-Space Exploration of Attention-FFN Disaggregation for Efficient MoE LLM Serving](2605.28302-how-far-can-disaggregation-go-a-design-space-exploration-of-attention.md) and the MoE AFD notes.
+2. **Disaggregate less: hybrid/elastic.** A fixed split wastes capacity when TTFT/TPOT SLOs or loads shift:
+   * [TaiChi](2508.01989-prefill-decode-aggregation-or-disaggregation-unifying-both-for-goodput.md): unify aggregation and disaggregation with differentiated instances, up to +77% goodput;
+   * [semi-PD](2504.19867-semi-pd-towards-efficient-llm-serving-via-phase-wise-disaggregated-com.md): disaggregated compute, unified storage, so no KV migration;
+   * intra-GPU multiplexing: [MuxWise](2504.14489-towards-high-goodput-llm-serving-with-prefill-decode-multiplexing.md) (2.2× goodput), [Nexus](2507.06608-nexus-proactive-intra-gpu-disaggregation-of-prefill-and-decode-in-llm.md),
+     [DuetServe](2511.04791-duetserve-harmonizing-prefill-and-decode-for-llm-serving-via-adaptive.md) (SM partitioning only when needed);
+   * [DynaServe](2504.09285-dynaserve-unified-and-elastic-execution-for-dynamic-disaggregated-llm.md): split a request at any token boundary.
+3. **Multi-turn and agentic changes the prefill picture.** *Append-prefill* (reusing cached KV) is 10× less disruptive
+   than full prefill, so run it on the decode node ([PPD](2603.13358-not-all-prefills-are-equal-ppd-disaggregation-for-multi-turn-llm-servi.md), −68% turn-2+ TTFT). Schedule by conversation, not
+   turn ([ConServe](2606.01839-observation-not-prediction-conversation-level-disaggregated-scheduling.md)).
+4. **KV transfer is the tax.**
+   * Selective or mixed-precision KV transfer: [SmartGen](2607.28150-smartgen-seamless-disaggregated-llm-inference-with-selective-kv-cache.md), [SpectrumKV](2606.08635-spectrumkv-per-token-mixed-precision-kv-cache-transfer-for-prefill-dec.md).
+   * Compute directly on compressed KV: [HACK](2502.03589-hack-homomorphic-acceleration-via-compression-of-the-key-value-cache-f.md), up to −70.9% JCT.
+   * **Cross-datacenter prefill** is viable for hybrid models with small KV ([Prefill-as-a-Service](2604.15039-prefill-as-a-service-kvcache-of-next-generation-models-could-go-cross.md): 1T
+     hybrid, +54% throughput, −64% P90 TTFT).
+5. **Autoscaling the pools together.**
+   * [HeteroScale](2508.19559-taming-the-chaos-coordinated-autoscaling-for-heterogeneous-and-disaggr.md) (ByteDance, tens of thousands of GPUs): one robust metric jointly scales prefill and
+     decode pools; +26.6 pts GPU utilization, hundreds of thousands of GPU-h saved daily.
+   * [TokenScale](2512.03416-tokenscale-timely-and-accurate-autoscaling-for-disaggregated-llm-servi.md): "token velocity" as a leading indicator + convertible decoders.
+6. **Multimodal EPD** (encode–prefill–decode): [EPD disaggregation](2501.05460-efficiently-serving-large-multimodal-models-using-epd-disaggregation.md) (ICML'25) and
+   [vLLM-Omni](2602.02204-vllm-omni-fully-disaggregated-serving-for-any-to-any-multimodal-models.md) for any-to-any models (−91% JCT).
+
+### Hand ranking
+
+| # | Paper | Axis | Key idea | Result |
+| ---: | --- | --- | --- | --- |
+| 1 | [Step-3: model-system co-design](2507.19427-step-3-is-large-yet-affordable-model-system-co-design-for-cost-effecti.md) (StepFun) | AFD + architecture | Multi-matrix factorization attention + attention–FFN disaggregation designed together for decode cost | 4,039 tok/s/GPU at 50 ms TPOT (4K, FP8, no MTP) vs 2,324 for DeepSeek-V3 |
+| 2 | [HeteroScale](2508.19559-taming-the-chaos-coordinated-autoscaling-for-heterogeneous-and-disaggr.md) (ByteDance) | Autoscaling | Production study of autoscaling signals → a single metric that scales P and D pools in balance on heterogeneous GPUs | +26.6 pts utilization across tens of thousands of GPUs |
+| 3 | [Prefill-as-a-Service](2604.15039-prefill-as-a-service-kvcache-of-next-generation-models-could-go-cross.md) | Cross-datacenter PD | Externalize prefill for small-KV hybrid models with congestion-aware scheduling | 1T hybrid: +54% throughput, −64% P90 TTFT; ~15% gain at equal cost |
+| 4 | [TaiChi](2508.01989-prefill-decode-aggregation-or-disaggregation-unifying-both-for-goodput.md) | Hybrid PD | Differentiated prefill-heavy/decode-heavy instances + latency-shifting schedulers; aggregation ↔ disaggregation by SLO | Up to +77% goodput |
+| 5 | [MuxWise](2504.14489-towards-high-goodput-llm-serving-with-prefill-decode-multiplexing.md) | Intra-GPU multiplexing | Bubble-less prefill/decode multiplexing + contention-tolerant estimator + SLO-aware dispatch | 2.20× average (3.06× max) peak goodput |
+| 6 | [PPD: not all prefills are equal](2603.13358-not-all-prefills-are-equal-ppd-disaggregation-for-multi-turn-llm-servi.md) | Multi-turn | Route append-prefills to decode nodes; full prefills to prefill nodes | −68% turn-2+ TTFT; relieves KV transfer congestion |
+| 7 | [semi-PD](2504.19867-semi-pd-towards-efficient-llm-serving-via-phase-wise-disaggregated-com.md) | Architecture | Phase-wise disaggregated *compute* over unified *storage* (no KV copy) + SLO-aware partitioning | 1.27–2.58× lower latency (DeepSeek); 1.55–1.72× more SLO-compliant requests |
+| 8 | [TokenScale](2512.03416-tokenscale-timely-and-accurate-autoscaling-for-disaggregated-llm-servi.md) | Autoscaling | Token velocity metric + convertible decoders that absorb prefill bursts | SLO attainment 50–88% → 80–96% at 4–14% lower cost |
+| 9 | [Adrenaline](2503.20552-injecting-adrenaline-into-llm-serving-boosting-resource-utilization-an.md) | Attention offload | Offload part of decode attention to under-used prefill GPUs | 1.68× throughput |
+| 10 | [EPD disaggregation](2501.05460-efficiently-serving-large-multimodal-models-using-epd-disaggregation.md) (ICML'25) | Multimodal | Separate encode from prefill; cache multimodal tokens; intra-request encoder parallelism | Up to 22× larger batches; −71% TTFT |
+| 11 | [vLLM-Omni](2602.02204-vllm-omni-fully-disaggregated-serving-for-any-to-any-multimodal-models.md) | Any-to-any | Stage graph where each stage (LLM or diffusion) is served independently with connectors | Up to −91.4% JCT |
+| 12 | [HACK](2502.03589-hack-homomorphic-acceleration-via-compression-of-the-key-value-cache-f.md) | KV transfer | Homomorphic compute on quantized KV (skip dequantization) | Up to −70.9% JCT vs a disaggregated baseline |
+
+**Also useful.**
+* Scheduling theory: [LLM Serving Optimization with Variable Prefill and Decode Lengths](2508.06133-llm-serving-optimization-with-variable-prefill-and-decode-lengths.md) (variable prefill/decode lengths; NP-hard; Sorted-F),
+  [Large-Scale LLM Inference with Heterogeneous Workloads](2602.02987-large-scale-llm-inference-with-heterogeneous-workloads-prefill-decode.md) (asymptotically optimal), [The Price of Anarchy in Disaggregated Inference](2606.17081-the-price-of-anarchy-in-disaggregated-inference.md) (price of anarchy between pools).
+* Heterogeneous hardware: [HexGen-2](2502.07903-hexgen-2-disaggregated-generative-inference-of-llms-in-heterogeneous-e.md), [HBM Is Not All You Need](2606.29986-hbm-is-not-all-you-need-efficient-disaggregated-llm-serving-across-mem.md) (memory-heterogeneous accelerators), [Cost-Efficient Multimodal LLM Inference via Cross-Tier GPU Heterogeneity](2603.12707-cost-efficient-multimodal-llm-inference-via-cross-tier-gpu-heterogenei.md).
+* Hybrid Mamba models: [DUET](2603.15530-duet-disaggregated-hybrid-mamba-transformer-llms-with-prefill-and-deco.md).
+* KV state transfer: [Semantic Cache Distillation](2606.07684-semantic-cache-distillation-efficient-state-transfer-via-reuse-and-sel.md) (semantic cache distillation).
+* Pipelines: [TD-Pipe](2506.10470-td-pipe-temporally-disaggregated-pipeline-parallelism-architecture-for.md).
+* Multi-round: [AMPD](2602.14516-efficient-multi-round-llm-inference-over-disaggregated-serving.md) (ICML'26).
+* Multimodal: [HydraInfer](2505.12658-hydrainfer-hybrid-disaggregated-scheduling-for-multimodal-large-langua.md), [RServe](2509.24381-rserve-overlapping-encoding-and-prefill-for-efficient-lmm-inference.md).
+
+**Runtime checklist.**
+* Support aggregated, disaggregated and intra-GPU-multiplexed modes, switchable by SLO.
+* Route append-prefill locally.
+* Stream KV layer by layer, mixed-precision and selective.
+* Keep the KV pool shared with prefix caching (Mooncake-style store).
+* Autoscale P and D pools jointly from one leading indicator.
+* For MoE at scale, add AFD with ping-pong micro-batches.
+
 ## 🏆 Best of the best by impact score (top 10)
 
 1. **[Step-3 is Large yet Affordable: Model-system Co-design for Cost-effective Decoding](2507.19427-step-3-is-large-yet-affordable-model-system-co-design-for-cost-effecti.md)** (2025-07) — Step-3 significantly reduces theoretical decoding costs compared with models like DeepSeek-V3 and Qwen3 MoE 235B, with the gains widening at longer context, and sets a new Pareto frontier for LLM decoding.  

@@ -6,6 +6,63 @@ Measuring and reducing energy/carbon/$ cost of LLMs.
 
 📖 Written overview of this area: [../../../overviews/serving-systems.md](../../../overviews/serving-systems.md)
 
+## 🔬 Analyst notes: hand ranking and verdict
+
+_Written after reading the abstracts, and the full text where available, of this category's papers. The hand ranking weighs technical merit and usefulness for a runtime or model builder, not just citations. The automatic impact ranking follows below._
+
+**Verdict.** Energy work splits into **measurement** (how many joules per token or query, and why) and **control** (DVFS,
+placement, routing). The findings that matter for runtimes:
+
+* **Decode is insensitive to GPU clock.** Decode is 77–91% of inference time and memory-bound, so dropping the SM
+  clock saves a lot: [Characterizing LLM Inference Energy-Performance Tradeoffs across Workloads and GPU Scaling](2501.08219-characterizing-llm-inference-energy-performance-tradeoffs-across-workl.md) reports −42% energy for 1–6% more latency. Phase-aware DVFS is almost free money:
+  * [GreenLLM](2508.16449-greenllm-slo-aware-dynamic-frequency-scaling-for-energy-efficient-llm.md): −34% energy on Alibaba/Azure traces at no throughput loss;
+  * [VoltanaLLM](2509.04827-voltanallm-energy-efficient-and-slo-aware-disaggregated-llm-serving-vi.md): U-shaped energy–frequency curve; per-iteration frequency;
+  * [DualScale](2602.18755-dualscale-energy-efficient-disaggregated-llm-serving-via-phase-aware-p.md) (PD-disaggregated);
+  * [PowerSlider](2608.21719-powerslider-exploiting-phase-asymmetry-for-llm-serving-under-demand-re.md) (demand response with flexible SLOs).
+* **Low precision saves energy only when compute-bound**; batching helps most in memory-bound phases ([Understanding Efficiency](2601.22362-understanding-efficiency-quantization-batching-and-serving-strategies.md)).
+  GPU choice matters per model ([Watt Counts](2604.09048-watt-counts-energy-aware-benchmark-for-sustainable-llm-inference-on-he.md)).
+* **Measure the right unit.**
+  * [Intelligence per Watt](2511.07885-intelligence-per-watt-measuring-intelligence-efficiency-of-local-ai.md) (Stanford): task accuracy per watt for local models; local inference can
+    absorb a large share of queries.
+  * [Cost-of-Pass](2504.13359-cost-of-pass-an-economic-framework-for-evaluating-language-models.md): expected dollar cost of a *correct* answer. Reasoning models win on hard math despite
+    higher per-token cost.
+  * [Beyond Per-Token Pricing](2606.11690-beyond-per-token-pricing-a-concurrency-aware-methodology-for-llm-infra.md): per-token calculators misprice self-hosting by 1/utilization.
+* **Footprint baselines**: [How Hungry is AI?](2505.09598-how-hungry-is-ai-benchmarking-energy-water-and-carbon-footprint-of-llm.md) (per-query energy, water and carbon across 30 models; the
+  most energy-intensive models use >29 Wh per long prompt) and [Holistically Evaluating the Environmental Impact of Creating Language Models](2503.05804-holistically-evaluating-the-environmental-impact-of-creating-language.md) (full lifecycle of training a model
+  family; 493 t CO₂).
+* **Test-time compute has an energy bill**: [The Energy Cost of Reasoning](2505.14733-the-energy-cost-of-reasoning-analyzing-energy-usage-in-llms-with-test.md), [Beyond Test-Time Compute Strategies](2603.20224-beyond-test-time-compute-strategies-advocating-energy-per-token-in-llm.md) (energy-per-token), [Sample Count Is Not Enough](2609.19499-sample-count-is-not-enough-candidate-generation-strategy-shapes-the-en.md)
+  (candidate-generation schedule matters).
+
+### Hand ranking
+
+| # | Paper | Kind | Key idea | Result |
+| ---: | --- | --- | --- | --- |
+| 1 | [GreenLLM](2508.16449-greenllm-slo-aware-dynamic-frequency-scaling-for-energy-efficient-llm.md) | Control | Length-based queues + separate prefill/decode DVFS with hysteresis to hold tail TBT | −34% energy vs default DVFS; no throughput loss |
+| 2 | [Energy–performance trade-offs across GPU scaling](2501.08219-characterizing-llm-inference-energy-performance-tradeoffs-across-workl.md) | Measurement | Decode dominates and is frequency-insensitive | −42% energy for +1–6% latency via down-clocking |
+| 3 | [Intelligence per Watt](2511.07885-intelligence-per-watt-measuring-intelligence-efficiency-of-local-ai.md) | Metric | Accuracy per watt across local model–accelerator pairs on real queries | Local LMs answer most real single-turn queries; large headroom in local accelerators |
+| 4 | [Cost-of-Pass](2504.13359-cost-of-pass-an-economic-framework-for-evaluating-language-models.md) | Economics | Expected cost to obtain a correct answer; compare to human-expert cost | Picks the right model class per task; most inference-time tricks rarely pay for themselves |
+| 5 | [VoltanaLLM](2509.04827-voltanallm-energy-efficient-and-slo-aware-disaggregated-llm-serving-vi.md) | Control | Phase-specific iteration-level frequency + state-space request routing in PD serving | Exploits U-shaped energy–frequency sweet spots |
+| 6 | [How Hungry is AI?](2505.09598-how-hungry-is-ai-benchmarking-energy-water-and-carbon-footprint-of-llm.md) | Footprint | Energy, water and carbon per query from public API performance + infrastructure factors | >65× spread between models; scaled footprints for reference |
+| 7 | [TokenPowerBench](2512.03024-tokenpowerbench-benchmarking-the-power-consumption-of-llm-inference.md) | Benchmark | Phase-attributed power per request without special meters | Reproducible energy benchmarking |
+| 8 | [EcoServe](2502.05043-ecoserve-designing-carbon-aware-ai-inference-systems.md) | Carbon | Carbon-aware provisioning using offline batch share and hardware heterogeneity | Lower operational + embodied carbon |
+| 9 | [Quantization, batching and serving in LLM energy use](2601.22362-understanding-efficiency-quantization-batching-and-serving-strategies.md) | Measurement | When do lower precision and batching save energy on H100? | Precision helps only when compute-bound; batching helps memory-bound phases |
+| 10 | [Concurrency-aware cost estimation](2606.11690-beyond-per-token-pricing-a-concurrency-aware-methodology-for-llm-infra.md) | Economics | Little's law-based cost model with utilization | Per-token calculators understate self-hosting cost by 1/U |
+
+**Also useful.**
+* Energy models: [SweetSpot](2602.05695-sweetspot-an-analytical-model-for-predicting-energy-efficiency-of-llm.md), [The 1/W Law](2603.17280-the-1-w-law-an-analytical-study-of-context-length-routing-topology-and.md) (the 1/W law), [Quantifying the Energy Consumption and Carbon Emissions of LLM Inference via Simulations](2507.11417-quantifying-the-energy-consumption-and-carbon-emissions-of-llm-inferen.md) (simulation + grid co-simulation).
+* Diagnosis: [Where do the joules go?](2601.22076-where-do-the-joules-go-diagnosing-inference-energy-consumption.md), [From Prompts to Power](2511.05597-from-prompts-to-power-measuring-the-energy-footprint-of-llm-inference.md).
+* MoE power: [PALS](2605.21427-pals-power-aware-llm-serving-for-mixture-of-experts-models.md).
+* Mobile DVFS: [Dissecting the Impact of Mobile DVFS Governors on LLM Inference Performance and Energy Efficiency](2507.02135-dissecting-the-impact-of-mobile-dvfs-governors-on-llm-inference-perfor.md).
+* Edge VLMs: [Seeing is Free, Speaking is Not](2607.09520-seeing-is-free-speaking-is-not-uncovering-the-true-energy-bottleneck-i.md) (power is constant; time is what varies).
+* Heterogeneous GPUs: [FREESH](2511.00807-freesh-fair-resource-and-energy-efficient-scheduling-for-llm-serving-o.md).
+* Position: [Position](2605.11733-position-llm-inference-should-be-evaluated-as-energy-to-token-producti.md) (evaluate inference as energy-to-token production).
+
+**Runtime checklist.**
+* Per-phase DVFS: low clocks for decode, high for prefill, tuned against the TBT SLO.
+* Energy counters per request (TokenPowerBench-style).
+* Route easy queries to small/local models by cost-of-pass.
+* Report **J/token and $/correct answer** next to tok/s.
+
 ## 🏆 Best of the best by impact score (top 10)
 
 1. **[Intelligence per Watt: Measuring Intelligence Efficiency of Local AI](2511.07885-intelligence-per-watt-measuring-intelligence-efficiency-of-local-ai.md)** (2026-09) — It is demonstrated that local inference can meaningfully redistribute demand from centralized infrastructure for a substantial subset of queries, with intelligence per watt (IPW), task accuracy per unit of power, as a …  

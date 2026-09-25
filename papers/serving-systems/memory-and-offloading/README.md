@@ -6,6 +6,68 @@ Weight/activation offloading, memory-bandwidth-bound optimizations, SSD/flash-ba
 
 📖 Written overview of this area: [../../../overviews/serving-systems.md](../../../overviews/serving-systems.md)
 
+## 🔬 Analyst notes: hand ranking and verdict
+
+_Written after reading the abstracts, and the full text where available, of this category's papers. The hand ranking weighs technical merit and usefulness for a runtime or model builder, not just citations. The automatic impact ranking follows below._
+
+**Verdict.** GPU memory management has moved past PagedAttention into three directions.
+(KV-specific offloading lives in [`kv-cache/offloading-and-hierarchical-storage`](../../kv-cache/offloading-and-hierarchical-storage/README.md).)
+
+1. **Heterogeneous caches in one pool.** Modern models mix full attention, sliding window, SSM state, cross-attention
+   and vision embeddings, each with different page sizes and lifetimes. [Jenga](2503.18292-jenga-effective-memory-management-for-serving-llm-with-heterogeneity.md) (SOSP'25) uses a two-level
+   allocator (LCM page size) + per-layer-type caching; up to 79.6% better memory utilization and 4.92× (1.8× average)
+   throughput in vLLM. It is the basis of vLLM's hybrid KV manager. For hybrid Mamba models, see asymmetric paging
+   ([Asymmetric Virtual Memory Paging for Hybrid Mamba-Transformer Inference](2605.22416-asymmetric-virtual-memory-paging-for-hybrid-mamba-transformer-inferenc.md)).
+2. **Elastic memory across models and phases.**
+   * [Prism](2505.04021-prism-cost-efficient-multi-llm-serving-via-gpu-memory-ballooning.md) (OSDI'26): *GPU memory ballooning* (kvcached) reclaims KV memory across co-served models;
+     production on 10K+ GPUs.
+   * [eLLM](../scheduling-and-batching/2506.15155-ellm-elastic-memory-management-framework-for-efficient-llm-serving.md): unifies activation and KV memory.
+   * [Elastic KV Cache for LLM Serving](2608.23658-elastic-kv-cache-for-llm-serving-a-working-reclamation-mechanism-and-w.md): elastic KV reserve, and why chunked prefill already closes most of the gap.
+   * [vToken](2608.13263-vtoken-token-level-virtualization-for-reclaimable-kv-caches.md): token-level reclaimable KV.
+3. **New memory tiers.**
+   * CPU/host offload with SLO guarantees: [Select-N](2502.08182-memory-offloading-for-large-language-model-inference-with-latency-slo.md), [APEX](2506.03296-apex-asynchronous-parallel-cpu-gpu-execution-for-online-llm-inference.md).
+   * Head-wise offload for extreme context: [HeadInfer](2502.12574-headinfer-memory-efficient-llm-inference-by-head-wise-offloading.md), 4M tokens with an 8B model on a 24 GB GPU.
+   * Peer-GPU caching: [Harvest](2602.00328-harvest-opportunistic-peer-to-peer-gpu-caching-for-llm-inference.md).
+   * CXL: [Composable CXL Memory as a Kubernetes-Native Shared Memory for LLM Serving](2609.10790-composable-cxl-memory-as-a-kubernetes-native-shared-memory-for-llm-ser.md) (Kubernetes-native composable CXL).
+   * **High-Bandwidth Flash (HBF)**: [FlashAccel](2607.10186-flashaccel-leveraging-high-bandwidth-flash-hbf-for-high-throughput-llm.md) (+2.49× throughput per GPU with six HBF stacks). But
+     [HBF Sucks?](2608.11668-hbf-sucks-a-full-stack-characterization-of-high-bandwidth-flash-for-kv.md) shows a drop-in HBF KV tier can make the *faster* device give a slower system (write
+     wear, thermal limits). Use it for weights and reused KV, not transient KV.
+   * Agentic idle windows: [MORI](2606.00866-idleness-is-relative-exploiting-tool-call-idle-windows-for-offloading.md) offloads KV of agents waiting on tools, measured on Claude Code traces:
+     +20–71% throughput.
+
+Training-side counterpart: [MegaTrain](2604.05091-megatrain-full-precision-training-of-100b-parameter-large-language-mod.md) trains 120B-parameter models at full precision on **one H200 + 1.5 TB
+host memory** via streamed stateless layer templates; 1.84× ZeRO-3 offload.
+
+### Hand ranking
+
+| # | Paper | Kind | Key idea | Result |
+| ---: | --- | --- | --- | --- |
+| 1 | [Jenga](2503.18292-jenga-effective-memory-management-for-serving-llm-with-heterogeneity.md) (SOSP'25) | Heterogeneous KV/embedding memory | LCM-page two-level allocator + layer-type-specific caching and eviction | Up to +79.6% memory utilization, 4.92× (1.8× average) throughput in vLLM |
+| 2 | [Prism](2505.04021-prism-cost-efficient-multi-llm-serving-via-gpu-memory-ballooning.md) (OSDI'26) | Multi-model | GPU memory ballooning (kvcached) for dynamic cross-model sharing | Production across 10K+ GPUs; open-source driver |
+| 3 | [HeadInfer](2502.12574-headinfer-memory-efficient-llm-inference-by-head-wise-offloading.md) | Offload | Head-wise KV offload to CPU with roofline-guided overlap | Llama-3-8B at 1M tokens: 207 → 17 GB GPU memory; 4M tokens on an RTX 4090 |
+| 4 | [MORI](2606.00866-idleness-is-relative-exploiting-tool-call-idle-windows-for-offloading.md) | Agentic offload | Offload by relative idleness during tool calls, with a movable GPU/CPU partition | +20–71% throughput, −18–43% TTFT on Claude Code traces |
+| 5 | [HBF Sucks?](2608.11668-hbf-sucks-a-full-stack-characterization-of-high-bandwidth-flash-for-kv.md) | Characterization | Full-stack HBF study for KV-centric serving (H100/B200) | Drop-in HBF KV tier: 2–5.5× worse latency; selective placement makes it worthwhile |
+| 6 | [FlashAccel](2607.10186-flashaccel-leveraging-high-bandwidth-flash-hbf-for-high-throughput-llm.md) | HBF architecture | HBF stacks inside HBM GPUs with layouts for weights and KV + an HBF-aware storage layer | 2.49× throughput per GPU, 1.93× energy efficiency at 100 ms latency |
+| 7 | [MegaTrain](2604.05091-megatrain-full-precision-training-of-100b-parameter-large-language-mod.md) | Training offload | Stream weights/gradients per layer from host with stateless layer templates | 120B training on a single H200; 1.84× ZeRO-3 offload at 14B |
+| 8 | [Asynchronous KV prefetching](2504.06319-accelerating-llm-inference-throughput-via-asynchronous-kv-cache-prefet.md) | Kernel | Prefetch KV into L2 during compute, hiding HBM latency | 2.15× attention-kernel efficiency; 1.97× end to end vs FA3 (H20) |
+| 9 | [NDP-DIMM augmentation](2502.16963-make-llm-inference-affordable-to-everyone-augmenting-gpu-memory-with-n.md) | Consumer GPU | Hot neurons on GPU, cold neurons on near-data-processing DIMMs | Affordable large-model inference on one consumer GPU |
+| 10 | [Asymmetric paging for hybrid Mamba-Transformers](2605.22416-asymmetric-virtual-memory-paging-for-hybrid-mamba-transformer-inferenc.md) | Hybrid models | Different virtual-memory policies for KV (grows) vs SSM state (fixed) | Correct and efficient paging for Jamba-style models |
+
+**Also useful.**
+* Offloaded inference on consumer devices: [PIPO](2504.03664-pipo-pipelined-offloading-for-efficient-inference-on-consumer-devices.md), [PipeMax](2605.02189-pipemax-enhancing-offline-llm-inference-on-commodity-gpu-servers.md), [MOM](2504.12526-mom-memory-efficient-offloaded-mini-sequence-inference-for-long-contex.md).
+* Host–GPU bandwidth: [MultiPath memory access](2512.16056-multipath-memory-access-breaking-host-gpu-bandwidth-bottlenecks-in-llm.md), [BOOST](2609.13592-boost-concurrent-access-to-host-memory-and-hbm-to-accelerate-llm-infer.md), [DAK](2604.26074-dak-direct-access-enabled-gpu-memory-offloading-with-optimal-efficienc.md).
+* Supernodes: [HyperOffload](2602.00748-hyperoffload-graph-driven-hierarchical-memory-management-for-large-lan.md).
+* LPDDR accelerators: [ODMA](2512.09427-odma-on-demand-memory-allocation-strategy-for-llm-serving-on-lpddr-cla.md).
+* Lossless transfer compression: [Invariant Bit Packing](2605.30728-reducing-the-gpu-memory-bottleneck-with-lossless-compression-for-ml-ex.md), [Ecco](2505.06901-ecco-improving-memory-bandwidth-and-capacity-for-llms-via-entropy-awar.md).
+* RAG on one GPU: [RAGDoll](2504.15302-ragdoll-efficient-offloading-based-online-rag-system-on-a-single-gpu.md).
+
+**Runtime checklist.**
+* A **hybrid KV manager** (Jenga-style) for mixed layer types.
+* Ballooning/elastic KV for multi-model co-serving.
+* Tiered placement (HBM → host DRAM/CXL → HBF/SSD) with reuse-aware and write-budgeted policies.
+* Idle-window offload for agent sessions.
+* L2 prefetch in attention kernels.
+
 ## 🏆 Best of the best by impact score (top 10)
 
 1. **[Prism: Cost-Efficient Multi-LLM Serving via GPU Memory Ballooning](2505.04021-prism-cost-efficient-multi-llm-serving-via-gpu-memory-ballooning.md)** (2026-06) — Prism is developed, a memory-centric LLM co-serving framework that applies memory ballooning to reclaim memory across models and support both forms of sharing under a single scheme, observing that elastic memory …  
@@ -26,14 +88,13 @@ Weight/activation offloading, memory-bandwidth-bound optimizations, SSD/flash-ba
    _score 4.11 · ISCA 2025 · 20 cites_
 9. **[Idleness is Relative: Exploiting Tool-Call Idle Windows for Offloading in Agentic Systems with MORI](2606.00866-idleness-is-relative-exploiting-tool-call-idle-windows-for-offloading.md)** (2026-05) — MORI ranks all active programs by idleness, assigns the busiest to GPU HBM and the most idle to CPU DRAM, dynamically shifts the partition boundary to match hardware capacity, and enforces admission control at each …  
    _score 3.64 · 6 cites_
-10. **[Accelerating LLM Inference Throughput via Asynchronous KV Cache Prefetching](2504.06319-accelerating-llm-inference-throughput-via-asynchronous-kv-cache-prefet.md)** (2025-11) — This paper proposes an L2 Cache-oriented asynchronous KV Cache prefetching method to break through the memory bandwidth bottleneck in LLM inference through computation-load overlap, providing a scalable latency-hiding …  
-   _score 3.29 · AAAI Conference on Artificial Intelligence (National Confere · 8 cites_
+10. **[HBF Sucks? A Full-Stack Characterization of High-Bandwidth Flash for KV-Centric LLM Serving](2608.11668-hbf-sucks-a-full-stack-characterization-of-high-bandwidth-flash-for-kv.md)** (2026-09) — HBF sucks as an SSD replacement for transient KV, but earns its place in LLM serving when used selectively with reuse-aware placement, write budgeting, and thermal coordination.  
+   _score 3.55 · 3 cites · [code](https://github.com/pku-lemonade/TokenSim)_
 
 ## 🆕 Recent papers to watch (last 90 days)
 
 Citations lag, so new work is under-ranked above. These are the most-upvoted or most-cited papers from the last three months.
 
-- **[HBF Sucks? A Full-Stack Characterization of High-Bandwidth Flash for KV-Centric LLM Serving](2608.11668-hbf-sucks-a-full-stack-characterization-of-high-bandwidth-flash-for-kv.md)** (2026-09-14; 0▲, 3 cites) — HBF sucks as an SSD replacement for transient KV, but earns its place in LLM serving when used selectively with reuse-aware placement, write budgeting, and thermal coordination.
 - **[Potential Applications of HBF in LLM Serving Systems](2608.13127-potential-applications-of-hbf-in-llm-serving-systems.md)** (2026-08-14; 0▲, 3 cites) — High-Bandwidth Flash can improve MoE serving by enabling more expert replicas and can improve multi-model serving by reducing model loading and supporting hot-model replication …
 - **[FLINT: Efficiently Leveraging High Bandwidth Flash for Capacity-Scalable LLM Inference Acceleration](2608.25062-flint-efficiently-leveraging-high-bandwidth-flash-for-capacity-scalabl.md)** (2026-08-25; 0▲, 1 cites) — FLINT is proposed, a workload-driven HBF substrate for capacity-scalable LLM inference that integrates HBF as a memory-capacity tier alongside HBM while addressing three adoption …
 - **[HBFlex: A Flexible Memory System for Bridging Fine-Grained LLM States and Coarse-Grained HBF Parallel Execution](2609.18675-hbflex-a-flexible-memory-system-for-bridging-fine-grained-llm-states-a.md)** (2026-09-16; 0▲, 1 cites) — HBF memory system HBFlex, a full-HBF memory system with coordinated optimizations for KV reads, writes, and reclamation, is presented, benefiting from higher HBF bandwidth and …
@@ -41,6 +102,7 @@ Citations lag, so new work is under-ranked above. These are the most-upvoted or 
 - **[Elastic KV Cache for LLM Serving:A Working Reclamation Mechanism, and Why Chunked Prefill Already Closes the Gap](2608.23658-elastic-kv-cache-for-llm-serving-a-working-reclamation-mechanism-and-w.md)** (2026-08-24; 0▲, 0 cites) — The authors' elastic KV cache lends the reserve to the KV pool during decode and returns it before prefill, driven by the scheduler's one-step-ahead view of the next batch, driven …
 - **[Composable CXL Memory as a Kubernetes-Native Shared Memory for LLM Serving](2609.10790-composable-cxl-memory-as-a-kubernetes-native-shared-memory-for-llm-ser.md)** (2026-09-09; 0▲, 0 cites) — A DRA driver is presented that makes composable CXL memory a schedulable cluster resource, and the resulting shared-memory tier for cross-node KV-cache reuse in LLM serving is …
 - **[BOOST: Concurrent Access to Host Memory and HBM to Accelerate LLM Inference](2609.13592-boost-concurrent-access-to-host-memory-and-hbm-to-accelerate-llm-infer.md)** (2026-09-11; 0▲, 0 cites) — The key insight in BOOST is to use kernel access patterns to make page allocation and runtime data management wave-aware, and applies modulo-based page placement that eliminates …
+- **[LLM Inference in a Flash!](2609.16161-llm-inference-in-a-flash.md)** (2026-09-14; 0▲, 0 cites) — This work designs an end-to-end integer-only quantization approach to eliminate expensive floating-point computations on Flash compute-in-memory devices, and designs a …
 
 ## Full ranking
 
@@ -55,8 +117,8 @@ Citations lag, so new work is under-ranked above. These are the most-upvoted or 
 | 7 | [Jenga: Effective Memory Management for Serving LLM with Heterogeneity](2503.18292-jenga-effective-memory-management-for-serving-llm-with-heterogeneity.md) | 2025-03-24 | 4.13 | 33 | 0 | Symposium on Operating Systems Principle |  | Jenga is presented, a memory allocation framework for heterogeneous LLMs that employs an attention-property-aware allocator, leveraging the least common … |
 | 8 | [Ecco: Improving Memory Bandwidth and Capacity for LLMs via Entropy-aware Cache Compression](2505.06901-ecco-improving-memory-bandwidth-and-capacity-for-llms-via-entropy-awar.md) | 2025-05-11 | 4.11 | 20 | 0 | ISCA 2025 |  | Evo combines group-wise and non-uniform quantization with pre-defined shared k-means patterns and Huffman coding to exploit the inherent entropy … |
 | 9 | [Idleness is Relative: Exploiting Tool-Call Idle Windows for Offloading in Agentic Systems with MORI](2606.00866-idleness-is-relative-exploiting-tool-call-idle-windows-for-offloading.md) | 2026-05-30 | 3.64 | 6 | 0 |  |  | MORI ranks all active programs by idleness, assigns the busiest to GPU HBM and the most idle to CPU DRAM, dynamically shifts the partition boundary to match … |
-| 10 | [Accelerating LLM Inference Throughput via Asynchronous KV Cache Prefetching](2504.06319-accelerating-llm-inference-throughput-via-asynchronous-kv-cache-prefet.md) | 2025-11-08 | 3.29 | 8 | 0 | AAAI Conference on Artificial Intelligen |  | This paper proposes an L2 Cache-oriented asynchronous KV Cache prefetching method to break through the memory bandwidth bottleneck in LLM inference through … |
-| 11 | [HBF Sucks? A Full-Stack Characterization of High-Bandwidth Flash for KV-Centric LLM Serving](2608.11668-hbf-sucks-a-full-stack-characterization-of-high-bandwidth-flash-for-kv.md) | 2026-09-14 | 3.05 | 3 | 0 |  |  | HBF sucks as an SSD replacement for transient KV, but earns its place in LLM serving when used selectively with reuse-aware placement, write budgeting, and … |
+| 10 | [HBF Sucks? A Full-Stack Characterization of High-Bandwidth Flash for KV-Centric LLM Serving](2608.11668-hbf-sucks-a-full-stack-characterization-of-high-bandwidth-flash-for-kv.md) | 2026-09-14 | 3.55 | 3 | 0 |  | [✓](https://github.com/pku-lemonade/TokenSim) | HBF sucks as an SSD replacement for transient KV, but earns its place in LLM serving when used selectively with reuse-aware placement, write budgeting, and … |
+| 11 | [Accelerating LLM Inference Throughput via Asynchronous KV Cache Prefetching](2504.06319-accelerating-llm-inference-throughput-via-asynchronous-kv-cache-prefet.md) | 2025-11-08 | 3.29 | 8 | 0 | AAAI Conference on Artificial Intelligen |  | This paper proposes an L2 Cache-oriented asynchronous KV Cache prefetching method to break through the memory bandwidth bottleneck in LLM inference through … |
 | 12 | [Potential Applications of HBF in LLM Serving Systems](2608.13127-potential-applications-of-hbf-in-llm-serving-systems.md) | 2026-08-14 | 2.66 | 3 | 0 |  |  | High-Bandwidth Flash can improve MoE serving by enabling more expert replicas and can improve multi-model serving by reducing model loading and supporting … |
 | 13 | [Memory Offloading for Large Language Model Inference with Latency SLO Guarantees](2502.08182-memory-offloading-for-large-language-model-inference-with-latency-slo.md) | 2025-02-12 | 1.72 | 3 | 0 |  |  | This paper presents Select-N, a latency-SLO-aware memory offloading system for LLM serving that consistently meets SLOs and improves the serving throughput … |
 | 14 | [HBFlex: A Flexible Memory System for Bridging Fine-Grained LLM States and Coarse-Grained HBF Parallel Executio](2609.18675-hbflex-a-flexible-memory-system-for-bridging-fine-grained-llm-states-a.md) | 2026-09-16 | 1.52 | 1 | 0 |  |  | HBF memory system HBFlex, a full-HBF memory system with coordinated optimizations for KV reads, writes, and reclamation, is presented, benefiting from higher … |

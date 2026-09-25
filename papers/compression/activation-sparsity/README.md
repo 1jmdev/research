@@ -86,7 +86,7 @@ vanish as the batch grows. [Polar Sparsity](2505.14884-polar-sparsity-high-throu
 8. **[Accelerating Transformer Inference and Training with 2:4 Activation Sparsity](2503.16672-accelerating-transformer-inference-and-training-with-2-4-activation-sp.md)** (2025-03) — This work exploits the intrinsic sparsity found in Squared-ReLU activations to provide this acceleration with no accuracy loss, and achieves up to 1.3x faster Feed Forward Network (FFNs) in both the forwards and …  
    _score 2.58 · 12 cites_
 9. **[DuoGPT: Training-free Dual Sparsity through Activation-aware Pruning in LLMs](2506.20194-duogpt-training-free-dual-sparsity-through-activation-aware-pruning-in.md)** (2025-11) — DuoGPT is proposed, a unified framework that constructs dual-sparse (spMspV) workloads by combining unstructured weight pruning with activation sparsity by extending the Optimal Brain Compression framework with …  
-   _score 2.26 · NeurIPS 2025 · 6 cites_
+   _score 2.26 · NeurIPS 2025 · 6 cites · ~0.69–75 H100-h_
 10. **[Universal Properties of Activation Sparsity in Modern Large Language Models](2509.00454-universal-properties-of-activation-sparsity-in-modern-large-language-m.md)** (2026-02) — This work introduces a general framework for evaluating sparsity robustness in contemporary LLMs and conducts a systematic investigation of this phenomenon in their feedforward~(FFN) layers, uncovering universal …  
    _score 2.22 · ICLR 2026 · 2 cites_
 
@@ -107,6 +107,7 @@ Sorted cheapest first by the *smallest* compute figure found in the paper. Range
 | Paper | Min H100-h | Max H100-h | GPU seen | Evidence |
 | --- | ---: | ---: | --- | --- |
 | [R-Sparse: Rank-Aware Activation Sparsity for Efficient LLM Inference](2504.19449-r-sparse-rank-aware-activation-sparsity-for-efficient-llm-inference.md) | 0.16 | 0.16 | A6000 | The overhead of the search process is minimal, taking approximately one hour on a single A6000 GPU for the Llama-2-7B model.… |
+| [DuoGPT: Training-free Dual Sparsity through Activation-aware Pruning in LLMs](2506.20194-duogpt-training-free-dual-sparsity-through-activation-aware-pruning-in.md) | 0.69 | 75 | A100 | With an efficient implementation, DuoGPT can calibrate a 70B-parameter LLaMA-3 model in under 130 minutes on a single A100 80GB GPU.… |
 | [La RoSA: Enhancing LLM Efficiency via Layerwise Rotated Sparse Activation](2507.01299-la-rosa-enhancing-llm-efficiency-via-layerwise-rotated-sparse-activati.md) | 6.4 | 6.4 | A100 | The computation of {\mathbf{Q}} is performed on 8x80G A100 GPUs, taking approximately 12 minutes to complete for the LLaMA3 70B model.… |
 
 ## Full ranking

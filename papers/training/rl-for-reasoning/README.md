@@ -42,6 +42,14 @@ Citations lag, so new work is under-ranked above. These are the most-upvoted or 
 - **[From Reasoning to Agentic: Credit Assignment in Reinforcement Learning for Large Language Models](2604.09459-from-reasoning-to-agentic-credit-assignment-in-reinforcement-learning.md)** (2026-08-09; 14▲, 15 cites) — Beyond taxonomy, it is established when restored-state comparisons identify a protocol-specific causal contrast, show that text-only histories can leave even the sign of credit …
 - **[ARLArena: A Unified Framework for Stable Agentic Reinforcement Learning](2602.21534-arlarena-a-unified-framework-for-stable-agentic-reinforcement-learning.md)** (2026-07-04; 26▲, 9 cites) — This paper proposes ARLArena, a stable training recipe and systematic analysis framework that examines training stability in a controlled and reproducible setting and proposes …
 
+## 💻 Compute cost (estimated H100-hours, auto-extracted)
+
+Sorted cheapest first by the *smallest* compute figure found in the paper. Ranges cover all figures the parser found (e.g. per-model-size runs). Verify against the quoted sentence in each paper file.
+
+| Paper | Min H100-h | Max H100-h | GPU seen | Evidence |
+| --- | ---: | ---: | --- | --- |
+| [Reinforcement Learning for Reasoning in Small LLMs: What Works and What Doesn't](2503.16219-reinforcement-learning-for-reasoning-in-small-llms-what-works-and-what.md) | 14 | 14 | A40 | Our study investigates the potential of reinforcement learning (RL) to improve reasoning in small LLMs, focusing on a 1.5-billion-parameter model, DeepSeek-R1-D… |
+
 ## Full ranking
 
 | # | Paper | Date | Score | Cites | HF▲ | Venue | Code | Headline |

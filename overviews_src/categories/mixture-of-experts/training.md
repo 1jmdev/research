@@ -17,7 +17,7 @@
   * [[2601.05296|MoEBlaze]] (memory wall).
 * **Parallelism and communication**:
   * [[2505.11432|MegaScale-MoE]]: 352B MoE on 1,440 Hopper GPUs at 1.41M tok/s, 1.88× Megatron-LM;
-  * Megatron-Core MoE and MoE Parallel Folding (see [`serving-systems/distributed-inference-and-parallelism`](../../serving-systems/parallelism-and-distributed/README.md));
+  * Megatron-Core MoE and MoE Parallel Folding (see [`serving-systems/distributed-inference-and-parallelism`](../../serving-systems/distributed-inference-and-parallelism/README.md));
   * load-adaptive expert re-layout: [[2602.11686|LAER-MoE]], [[2504.19925|SYMI]], [[2502.02581|Themis]];
   * all-to-all load balancing: [[2510.19262|RailS]].
 * **Memory**:

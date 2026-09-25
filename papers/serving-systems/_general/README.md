@@ -6,6 +6,78 @@ Inference-system papers that do not fit narrower buckets; benchmarks of inferenc
 
 📖 Written overview of this area: [../../../overviews/serving-systems.md](../../../overviews/serving-systems.md)
 
+## 🔬 Analyst notes: hand ranking and verdict
+
+_Written after reading the abstracts, and the full text where available, of this category's papers. The hand ranking weighs technical merit and usefulness for a runtime or model builder, not just citations. The automatic impact ranking follows below._
+
+**Verdict.** This is the catch-all serving bucket: routing between models, platforms, simulators, determinism,
+agent-workload studies and surveys. Four themes are actionable.
+
+1. **Numerical nondeterminism is a correctness problem, not a curiosity.**
+   * [Understanding numerical nondeterminism](2506.09501-understanding-and-mitigating-numerical-sources-of-nondeterminism-in-ll.md): under BF16 + greedy decoding, reasoning models vary by **up
+     to 9% accuracy and 9K tokens** of response length across GPU count, type and batch size. The fix is LayerCast:
+     16-bit weights, FP32 compute.
+   * [LLM-42](2601.17768-llm-42-enabling-determinism-in-llm-inference-with-verified-speculation.md): determinism *on demand* via verified speculation (fixed-shape replay of candidate tokens),
+     paying overhead only for traffic that needs it.
+   * [The Silent Hyperparameter](2605.19537-the-silent-hyperparameter-quantifying-the-impact-of-inference-backends.md): the inference backend itself shifts benchmark scores. Report the serving
+     stack.
+   * See also [Deterministic Inference across Tensor Parallel Sizes That Eliminates Training-Inference Mismatch](../distributed-inference-and-parallelism/2511.17826-deterministic-inference-across-tensor-parallel-sizes-that-eliminates-t.md) (TP-invariant determinism for RL).
+2. **Model routing and cascades.**
+   * [UniRoute](2502.08773-universal-model-routing-for-efficient-llm-inference.md) (Google): route to *unseen* LLMs via cluster-based representations with excess-risk
+     bounds.
+   * [vLLM Semantic Router](2510.08731-when-to-reason-semantic-router-for-vllm.md): decide *when to reason*; −47% latency and −48.5% tokens at +10.2 pts on
+     MMLU-Pro.
+   * [OmniRouter](2502.20576-omnirouter-budget-and-performance-controllable-multi-llm-routing.md): budget-constrained global routing.
+   * Survey: [Dynamic Model Routing and Cascading for Efficient LLM Inference](2603.04445-dynamic-model-routing-and-cascading-for-efficient-llm-inference-a-surv.md).
+3. **Agent workloads reshape the front end.**
+   * [TokTier](2607.29678-toktier-exact-stateful-cpu-gpu-tokenization-for-agentic-llm-serving.md): stateful incremental tokenization, because re-tokenizing long agent contexts dominates TTFT
+     tails; −16–34% median TTFT.
+   * [CacheWise](2606.16824-cachewise-understanding-workloads-and-optimizing-kvcache-management-fo.md): tool-metadata-guided KV eviction for coding agents; 2–2.6× fewer evictions, up to 3.5×
+     faster sessions.
+   * [TokenCake](2510.18586-tokencake-a-kv-cache-centric-serving-framework-for-llm-based-multi-age.md): KV-centric multi-agent serving.
+   * Characterization: [From LLM Inference to Agentic Workloads](2608.15127-from-llm-inference-to-agentic-workloads-characterization-and-implicati.md).
+4. **Production platforms and configuration.**
+   * [AIBrix](2504.03648-aibrix-towards-scalable-cost-effective-large-language-model-inference.md) (vLLM control plane): distributed KV, LoRA management, autoscaling; +50% throughput and −70%
+     latency from cross-node KV reuse.
+   * [DeepServe](2501.14417-deepserve-serverless-large-language-model-serving-at-scale.md) (Huawei): serverless at scale on Ascend; NPU-fork scales to 64 instances in seconds.
+   * [AIConfigurator](2601.06288-aiconfigurator-lightning-fast-configuration-optimization-for-multi-fra.md) (NVIDIA): framework-agnostic configuration search in ~30 s; +40–50% over defaults.
+   * Simulators: [LLMServingSim 2.0](2602.23036-llmservingsim-2-0-a-unified-simulator-for-heterogeneous-and-disaggrega.md), [Frontier](2508.03148-frontier-simulating-the-next-generation-of-llm-inference-systems.md), [Revati](2601.00397-revati-transparent-gpu-free-time-warp-emulation-for-llm-serving.md).
+
+### Hand ranking
+
+| # | Paper | Kind | Key idea | Result |
+| ---: | --- | --- | --- | --- |
+| 1 | [Numerical sources of nondeterminism](2506.09501-understanding-and-mitigating-numerical-sources-of-nondeterminism-in-ll.md) | Correctness | Trace accuracy and length drift to reduction-order changes under BF16; LayerCast | Up to 9% accuracy / 9K-token variance removed with FP32 compute on 16-bit weights |
+| 2 | [LLM-42](2601.17768-llm-42-enabling-determinism-in-llm-inference-with-verified-speculation.md) | Determinism | Speculate with fast kernels, verify with fixed-shape reductions, roll back violations | Determinism with overhead proportional to deterministic traffic |
+| 3 | [vLLM Semantic Router: when to reason](2510.08731-when-to-reason-semantic-router-for-vllm.md) | Routing | Classify queries; enable reasoning mode only when it helps | +10.2 pts MMLU-Pro with −47.1% latency and −48.5% tokens |
+| 4 | [UniRoute](2502.08773-universal-model-routing-for-efficient-llm-inference.md) | Routing | Represent each LLM by per-cluster errors → route among unseen models | Theory-backed routing across 30+ unseen LLMs |
+| 5 | [AIBrix](2504.03648-aibrix-towards-scalable-cost-effective-large-language-model-inference.md) | Platform | Cloud-native control plane for vLLM: distributed KV pool, LoRA, autoscaling, diagnostics | +50% throughput, −70% latency via cross-node KV reuse |
+| 6 | [AIConfigurator](2601.06288-aiconfigurator-lightning-fast-configuration-optimization-for-multi-fra.md) | Tuning | Performance models for TRT-LLM/vLLM/SGLang → configuration search without GPUs | +40% dense, +50% MoE vs defaults in ~30 s |
+| 7 | [TokTier](2607.29678-toktier-exact-stateful-cpu-gpu-tokenization-for-agentic-llm-serving.md) | Front end | Exact stateful CPU+GPU incremental tokenization for agent sessions | −16–34% median TTFT; 1,821 req/s at 50 ms P99 with 4 cores + 1 GPU |
+| 8 | [CacheWise](2606.16824-cachewise-understanding-workloads-and-optimizing-kvcache-management-fo.md) | Agent KV | Prefix-aware scheduling + reuse-aware eviction from tool-call metadata | 2–2.6× fewer evictions; up to 3.5× faster sessions |
+| 9 | [Mind the Memory Gap](2503.08311-mind-the-memory-gap-unveiling-gpu-bottlenecks-in-large-batch-llm-infer.md) | Characterization | Large-batch decode is DRAM-bandwidth-bound even at large batches; batching advisor | Free memory for co-located replicas |
+| 10 | [VoxServe](2602.00269-voxserve-streaming-centric-serving-system-for-speech-language-models.md) | Speech LMs | Streaming-centric serving abstraction for speech LMs | 10–20× throughput at comparable latency |
+| 11 | [DeepServe](2501.14417-deepserve-serverless-large-language-model-serving-at-scale.md) (ATC'25) | Serverless | Pre-warmed pods, DRAM pre-loading, NPU-fork, mixed PD-disaggregated/colocated | Scale to 64 instances in seconds; a year in production |
+| 12 | [The Silent Hyperparameter](2605.19537-the-silent-hyperparameter-quantifying-the-impact-of-inference-backends.md) | Reproducibility | Same model and prompts across backends | Backend defaults in logit processing shift scores |
+
+**Also useful.**
+* Surveys: [A Survey on Inference Engines for Large Language Models](2505.01658-a-survey-on-inference-engines-for-large-language-models-perspectives-o.md) (25 inference engines), [Taming the Titans](2504.19720-taming-the-titans-a-survey-of-efficient-llm-inference-serving.md), [A Survey of LLM Inference Systems](2506.21901-a-survey-of-llm-inference-systems.md).
+* Engine bugs: [A First Look at Bugs in LLM Inference Engines](2506.09713-a-first-look-at-bugs-in-llm-inference-engines.md).
+* Cold start: [HydraServe](2502.15524-hydraserve-minimizing-cold-start-latency-for-serverless-llm-serving-in.md).
+* Steering at serving time: [EasySteer](2509.25175-easysteer-a-unified-framework-for-high-performance-and-extensible-llm.md).
+* RAG: [TeleRAG](2502.20969-telerag-efficient-retrieval-augmented-generation-inference-with-lookah.md).
+* Semantic caching: [Semantic Caching for Low-Cost LLM Serving](2508.07675-semantic-caching-for-low-cost-llm-serving-from-offline-learning-to-onl.md).
+* Time budgets: [TimeBill](2512.21859-timebill-time-budgeted-inference-for-large-language-models.md).
+* CPU bottlenecks: [Characterizing CPU-Induced Slowdowns in Multi-GPU LLM Inference](2603.22774-characterizing-cpu-induced-slowdowns-in-multi-gpu-llm-inference.md).
+* Agents building serving systems: [VibeServe](2605.06068-vibeserve-can-ai-agents-build-bespoke-llm-serving-systems.md), [ISO-Bench](2602.19594-iso-bench-can-coding-agents-optimize-real-world-inference-workloads.md).
+
+**Runtime checklist.**
+* An opt-in deterministic mode (fixed reduction order or LLM-42-style verification).
+* FP32-accumulate everywhere for reasoning evals.
+* Routing hooks: model cascade plus a reasoning on/off switch.
+* Stateful tokenization and tool-aware KV eviction for agents.
+* A config search tool and a simulator.
+
 ## 🏆 Best of the best by impact score (top 10)
 
 1. **[Understanding and Mitigating Numerical Sources of Nondeterminism in LLM Inference](2506.09501-understanding-and-mitigating-numerical-sources-of-nondeterminism-in-ll.md)** (2025-10) — This work presents the first systematic investigation into how numerical precision affects reproducibility in LLM inference, and develops a lightweight inference pipeline that stores weights in 16-bit precision but …  

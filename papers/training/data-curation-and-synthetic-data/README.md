@@ -48,6 +48,7 @@ Sorted cheapest first by the *smallest* compute figure found in the paper. Range
 
 | Paper | Min H100-h | Max H100-h | GPU seen | Evidence |
 | --- | ---: | ---: | --- | --- |
+| [Data Repetition Beats Data Scaling in Long-CoT Supervised Fine-Tuning](2602.11149-data-repetition-beats-data-scaling-in-long-cot-supervised-fine-tuning.md) | 24 | 24 | H100 | Each configuration is run on a single H100 94GB GPU for up to 24 hours.… |
 | [Organize the Web: Constructing Domains Enhances Pre-Training Data Curation](2502.10341-organize-the-web-constructing-domains-enhances-pre-training-data-curat.md) | 183 | 360 | H100 | We speed up training by adding torch.compile, making a single training run take 183 NVIDIA H100 hours.… |
 | [RefineX: Learning to Refine Pre-training Data at Scale from Expert-Guided Progra](2507.03253-refinex-learning-to-refine-pre-training-data-at-scale-from-expert-guid.md) | 1.7k | 12k | H800 | Evaluating each baseline requires training a model on its corresponding corpus, consuming approximately 1,728 GPU hours on H800-80G GPUs.… |
 | [Essential-Web v1.0: 24T tokens of organized web data](2506.14111-essential-web-v1-0-24t-tokens-of-organized-web-data.md) | 117k | 117k | MI300X | Inference at this scale requires \approx90k AMD MI300x GPU-hours. 4 The inference job ran on 512 AMD MI300x for about 1 week.… |
@@ -308,7 +309,7 @@ Sorted cheapest first by the *smallest* compute figure found in the paper. Range
 
 | Paper | Primary category | Score |
 | --- | --- | ---: |
-| [Phi-4-Mini Technical Report: Compact yet Powerful Multimodal Language Models via Mixture-of-LoRAs](../../models-and-architectures/technical-reports/2503.01743-phi-4-mini-technical-report-compact-yet-powerful-multimodal-language-m.md) | Model technical reports (open & frontier models) | 18.67 |
+| [Phi-4-Mini Technical Report: Compact yet Powerful Multimodal Language Models via Mixture-of-LoRAs](../../models-and-architectures/technical-reports/2503.01743-phi-4-mini-technical-report-compact-yet-powerful-multimodal-language-m.md) | Model technical reports (open & frontier models) | 19.17 |
 | [Skywork-Reward-V2: Scaling Preference Data Curation via Human-AI Synergy](../rl-for-reasoning/2507.01352-skywork-reward-v2-scaling-preference-data-curation-via-human-ai-synerg.md) | Reinforcement learning for LLM reasoning (GRPO, RLVR) | 17.78 |
 | [AceReason-Nemotron: Advancing Math and Code Reasoning through Reinforcement Learning](../rl-for-reasoning/2505.16400-acereason-nemotron-advancing-math-and-code-reasoning-through-reinforce.md) | Reinforcement learning for LLM reasoning (GRPO, RLVR) | 13.37 |
 | [Scaling Laws for Optimal Data Mixtures](../scaling-laws/2507.09404-scaling-laws-for-optimal-data-mixtures.md) | Scaling laws | 11.76 |
