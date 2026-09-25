@@ -6,6 +6,34 @@ KV cache management, memory allocation, surveys and analysis that do not fit a n
 
 📖 Written overview of this area: [../../../overviews/kv-cache.md](../../../overviews/kv-cache.md)
 
+## 🔬 Analyst notes: hand ranking and verdict
+
+_Written after reading the abstracts, and the full text where available, of this category's papers. The hand ranking weighs technical merit and usefulness for a runtime or model builder, not just citations. The automatic impact ranking follows below._
+
+**Verdict.** This bucket holds cross-cutting KV work: surveys, KV as a *communication medium* between models, streaming
+video KV memory, lossless transfer codecs, and some sobering correctness results.
+
+| # | Paper | Why it matters |
+| ---: | --- | --- |
+| 1 | [Cache-to-Cache (C2C)](2510.03215-cache-to-cache-direct-semantic-communication-between-large-language-mo.md) (ICLR'26) | LLMs **communicate by fusing KV caches** instead of text: a small projector and fuser (~9 GPU-hours to train) beats text-to-text multi-LLM pipelines in both quality and latency. Foundation for multi-model runtimes |
+| 2 | [ReKV](2503.00540-streaming-video-question-answering-with-in-context-video-kv-cache-retr.md) (ICLR'25) | Streaming video QA: sliding-window encoding, KV offloaded to RAM/disk, **in-context KV retrieval** on each question. Training-free |
+| 3 | [The Residual Stream Is All You Need](2603.19664-the-residual-stream-is-all-you-need-on-the-redundancy-of-the-kv-cache.md) | K and V are deterministic projections of the residual stream. Caching one residual vector per token and recomputing K and V is **bit-exact**, a memory/compute trade for compute-rich GPUs (see also XQuant in KV quantization) |
+| 4 | [The Illusion of Equivalence](2604.15409-the-illusion-of-equivalence-systematic-fp16-divergence-in-kv-cached-au.md) | **KV cache ON vs OFF gives different tokens in FP16** (100% divergence on GSM8K, greedy) because of accumulation order. Matters for reproducibility tests and speculative-decoding verification |
+| 5 | [SplitZip](2605.01708-splitzip-ultra-fast-lossless-kv-compression-for-disaggregated-llm-serv.md) | GPU-friendly **lossless** KV compressor for prefill→decode transfer that keeps up with prefill throughput |
+| 6 | [FreeKV](2505.13109-freekv-boosting-kv-cache-retrieval-for-efficient-llm-inference.md) | Speculative KV retrieval off the critical path + fine-grained correction; hybrid CPU/GPU layouts |
+| 7 | [FlexiCache](2511.00868-flexicache-leveraging-temporal-stability-of-attention-heads-for-effici.md) (MLSys'26) | Classify KV heads as temporally stable or unstable: keep all pages for unstable heads and only top-k for stable ones |
+| 8 | [SparseMM](2506.05344-sparsemm-head-sparsity-emerges-from-visual-concept-responses-in-mllms.md) (ICCV'25) | <5% of heads are "visual heads", so give them the KV budget in MLLMs |
+| 9 | [LoopGuard](2604.10044-loopguard-breaking-self-reinforcing-attention-loops-via-dynamic-kv-cac.md) | Attention-based KV policies can **amplify repetition loops**; detect and intervene |
+| 10 | [Rethinking KV compression for serving](2503.24000-rethinking-key-value-cache-compression-techniques-for-large-language-m.md) (MLSys) | Why KV compression rarely ships: throughput with real kernels, longer outputs after compression, and missing benchmarks |
+| 11 | [System-aware KV survey](2607.08057-towards-efficient-large-language-model-serving-a-survey-on-system-awar.md) (ACL'26 F) | Temporal/spatial/structural taxonomy of KV infrastructure |
+| 12 | [KV Pareto](2512.01953-kv-pareto-systems-level-optimization-of-kv-cache-and-model-compression.md) | Joint Pareto of KV quantization, weight quantization and chunked prefill for edge deployment |
+
+**Runtime notes.**
+* Build a KV abstraction that can be **quantized, evicted, offloaded, transferred, translated (C2C) and recomputed from
+  the residual stream** behind one page-table API.
+* Expect numeric non-equivalence across paths, and make your tests tolerant of it (see also
+  [numerical nondeterminism](../../serving-systems/_general/2506.09501-understanding-and-mitigating-numerical-sources-of-nondeterminism-in-ll.md)).
+
 ## 🏆 Best of the best by impact score (top 10)
 
 1. **[Cache-to-Cache: Direct Semantic Communication Between Large Language Models](2510.03215-cache-to-cache-direct-semantic-communication-between-large-language-mo.md)** (2026-03) — The proposed Cache-to-Cache (C2C), a new paradigm for direct semantic communication between LLMs, uses a neural network to project and fuse the source model's KV-cache with that of the target model to enable direct …  
@@ -99,14 +127,14 @@ Citations lag, so new work is under-ranked above. These are the most-upvoted or 
 | [KVCOMM: Online Cross-context KV-cache Communication for Efficient LLM-based Multi-agent Systems](../prefix-caching-and-reuse/2510.12872-kvcomm-online-cross-context-kv-cache-communication-for-efficient-llm-b.md) | Prefix caching & KV reuse (RAG, multi-turn, agents) | 10.11 |
 | [Inference-Time Hyper-Scaling with KV Cache Compression](../eviction-and-token-selection/2506.05345-inference-time-hyper-scaling-with-kv-cache-compression.md) | KV cache eviction / token selection / sparse retrieval | 9.71 |
 | [CAKE: Cascading and Adaptive KV Cache Eviction with Layer Preferences](../eviction-and-token-selection/2503.12491-cake-cascading-and-adaptive-kv-cache-eviction-with-layer-preferences.md) | KV cache eviction / token selection / sparse retrieval | 9.53 |
+| [KVCache Cache in the Wild: Characterizing and Optimizing KVCache Cache at a Large Cloud Provider](../prefix-caching-and-reuse/2506.02634-kvcache-cache-in-the-wild-characterizing-and-optimizing-kvcache-cache.md) | Prefix caching & KV reuse (RAG, multi-turn, agents) | 9.48 |
 | [DualPath: Breaking the Storage Bandwidth Bottleneck in Agentic LLM Inference](../offloading-and-hierarchical-storage/2602.21548-dualpath-breaking-the-storage-bandwidth-bottleneck-in-agentic-llm-infe.md) | KV cache offloading & hierarchical storage | 9.25 |
 | [KVLink: Accelerating Large Language Models via Efficient KV Cache Reuse](../prefix-caching-and-reuse/2502.16002-kvlink-accelerating-large-language-models-via-efficient-kv-cache-reuse.md) | Prefix caching & KV reuse (RAG, multi-turn, agents) | 9.18 |
 | [FastKV: Decoupling of Context Reduction and KV Cache Compression for Prefill-Decoding Acceleration](../eviction-and-token-selection/2502.01068-fastkv-decoupling-of-context-reduction-and-kv-cache-compression-for-pr.md) | KV cache eviction / token selection / sparse retrieval | 9.16 |
-| [KVCache Cache in the Wild: Characterizing and Optimizing KVCache Cache at a Large Cloud Provider](../prefix-caching-and-reuse/2506.02634-kvcache-cache-in-the-wild-characterizing-and-optimizing-kvcache-cache.md) | Prefix caching & KV reuse (RAG, multi-turn, agents) | 8.98 |
 | [KVarN: Variance-Normalized KV-Cache Quantization Mitigates Error Accumulation in Reasoning Tasks](../quantization/2606.03458-kvarn-variance-normalized-kv-cache-quantization-mitigates-error-accumu.md) | KV cache quantization | 8.96 |
+| [PIM Is All You Need: A CXL-Enabled GPU-Free System for Large Language Model Inference](../../serving-systems/hardware-accelerators/2502.07578-pim-is-all-you-need-a-cxl-enabled-gpu-free-system-for-large-language-m.md) | Hardware accelerators (ASIC, FPGA, PIM, NPU, photonic) | 8.84 |
 | [RetroInfer: A Vector Storage Engine for Scalable Long-Context LLM Inference](../offloading-and-hierarchical-storage/2505.02922-retroinfer-a-vector-storage-engine-for-scalable-long-context-llm-infer.md) | KV cache offloading & hierarchical storage | 8.82 |
 | [KeyDiff: Key Similarity-Based KV Cache Eviction for Long-Context LLM Inference in Resource-Constrained Environ](../eviction-and-token-selection/2504.15364-keydiff-key-similarity-based-kv-cache-eviction-for-long-context-llm-in.md) | KV cache eviction / token selection / sparse retrieval | 8.5 |
-| [PIM Is All You Need: A CXL-Enabled GPU-Free System for Large Language Model Inference](../../serving-systems/hardware-accelerators/2502.07578-pim-is-all-you-need-a-cxl-enabled-gpu-free-system-for-large-language-m.md) | Hardware accelerators (ASIC, FPGA, PIM, NPU, photonic) | 8.34 |
 | [Expected Attention: KV Cache Compression by Estimating Attention from Future Queries Distribution](../eviction-and-token-selection/2510.00636-expected-attention-kv-cache-compression-by-estimating-attention-from-f.md) | KV cache eviction / token selection / sparse retrieval | 8.27 |
 | [R-KV: Redundancy-aware KV Cache Compression for Reasoning Models](../eviction-and-token-selection/2505.24133-r-kv-redundancy-aware-kv-cache-compression-for-reasoning-models.md) | KV cache eviction / token selection / sparse retrieval | 8.22 |
 | [CommVQ: Commutative Vector Quantization for KV Cache Compression](../quantization/2506.18879-commvq-commutative-vector-quantization-for-kv-cache-compression.md) | KV cache quantization | 8.03 |

@@ -6,6 +6,45 @@ Compressing KV along the hidden/head dimension: low-rank projection, latent KV (
 
 📖 Written overview of this area: [../../../overviews/kv-cache.md](../../../overviews/kv-cache.md)
 
+## 🔬 Analyst notes: hand ranking and verdict
+
+_Written after reading the abstracts, and the full text where available, of this category's papers. The hand ranking weighs technical merit and usefulness for a runtime or model builder, not just citations. The automatic impact ranking follows below._
+
+**Verdict.** The KV cache has a lot of **channel/rank redundancy**, especially in keys: selection needs only
+O(log N) dimensions, while values need the full width ([Thin Keys, Full Values](2603.04427-thin-keys-full-values-reducing-kv-cache-via-low-dimensional-attention.md)). There are two routes.
+
+* **Post-training** low-rank projection of K (and less of V). This is training-free or lightly calibrated: LeanK,
+  ReCalKV, KQ-SVD, StiefAttention. It typically gives 50–75% K-cache reduction.
+* **Architectural latent KV (MLA).** The strongest result, but it needs training or conversion:
+  * DeepSeek MLA caches a ~512-d latent per token;
+  * conversion methods (TransMLA, MHA2MLA, X-EcoMLA, CARE; see
+    [`model-conversion/attention-conversion`](../../model-conversion/attention-conversion/README.md)) retrofit it
+    into GQA models;
+  * serving it well under tensor parallelism needs TPLA-style sharding.
+
+The sound objective is to preserve the **QKᵀ inner product** (KQ-SVD, SAKI), not the keys themselves. Methods that
+reconstruct K alone are provably suboptimal.
+
+| # | Paper | Kind | Key idea | Result |
+| ---: | --- | --- | --- | --- |
+| 1 | [LeanK](2508.02215-leank-learnable-k-cache-channel-pruning-for-efficient-decoding.md) (MSR, EMNLP'25) | Learned static mask | Two-stage training of a hardware-aligned **K-channel pruning mask** plus a custom decode kernel | −70% K cache, −16–18% V cache, 1.3–1.45× attention speed |
+| 2 | [TPLA](2508.15881-tpla-tensor-parallel-latent-attention-for-efficient-disaggregated-pref.md) | MLA serving | Shard the latent **and** per-head input dimension across TP ranks, then all-reduce; every head still sees the full latent | Makes MLA's small cache survive tensor parallelism; drop-in for MLA checkpoints |
+| 3 | [KQ-SVD](2512.05916-kq-svd-compressing-the-kv-cache-with-provable-guarantees-on-attention.md) | Closed form | Optimal low-rank decomposition of the **attention matrix (K·Qᵀ)**, not of K | Provable fidelity; beats K-only SVD |
+| 4 | [ReCalKV](2505.24357-recalkv-low-rank-kv-cache-compression-via-head-reordering-and-offline.md) | Post-training | Head-similarity reordering + grouped SVD for K; offline calibration for V | High compression with small loss |
+| 5 | [Thin Keys, Full Values](2603.04427-thin-keys-full-values-reducing-kv-cache-via-low-dimensional-attention.md) | Theory + retrofit | Selection needs O(log N) dims; factor W_K by truncated SVD | Retrofits any model without pretraining from scratch |
+| 6 | [LRQK](2510.23649-efficient-low-rank-attention-for-long-context-inference-in-large-langu.md) (NeurIPS'25) | Low-rank proxy + offload | Rank-r Q/K factors give proxy scores; top-k tokens fetched from a GPU/CPU cache | Long context on small GPUs |
+| 7 | [STAR-KV](2606.08382-star-kv-low-rank-kv-cache-compression-via-soft-thresholding-for-adapti.md) | Adaptive rank | Differentiable soft-threshold rank per head/block plus low-rank-aware quantization | 75% KV compression, up to 20× combined |
+| 8 | [OjaKV](2509.21623-ojakv-context-aware-online-low-rank-kv-cache-compression.md) (ACL'26) | Online subspace | **Online Oja updates** of the projection subspace; full rank for first and recent tokens | Robust to distribution shift |
+| 9 | [StiefAttention](2601.21686-don-t-be-so-stief-learning-kv-cache-low-rank-approximation-over-the-st.md) | Post-training | Learn orthonormal bases on the Stiefel manifold minimizing **decoder-layer output** error; rank allocation | Better than SVD proxies |
+| 10 | [SAKI](2608.03228-saki-score-aware-low-rank-key-indexing-with-random-matrix-noise-correc.md) | Index | Score-aware low-rank key index with random-matrix noise correction | Better top-k recall for sparse retrieval |
+
+**Runtime notes.**
+* If you control the architecture, **use MLA** (or GQA + a small head dim for K): it is the only 5–10×
+  KV reduction with no quality loss.
+* Implement the MLA "absorb" path (FlashMLA; see [TyphoonMLA](../../attention/kernels-and-io-aware/2509.21081-typhoonmla-a-mixed-naive-absorb-mla-kernel-for-shared-prefix.md) for shared prefixes) and TPLA sharding.
+* For existing GQA models, low-rank K projection is cheap to add: it is one extra small GEMM fused into the K
+  projection, and it composes with quantization and eviction.
+
 ## 🏆 Best of the best by impact score (top 10)
 
 1. **[LeanK: Learnable K Cache Channel Pruning for Efficient Decoding](2508.02215-leank-learnable-k-cache-channel-pruning-for-efficient-decoding.md)** (2025-08) — This work proposes LeanK, a learning-based method that prunes unimportant key (K) cache channels by leveraging static channel sparsity by learning channel-wise static mask that could satisfy specific sparsity ratio and …  

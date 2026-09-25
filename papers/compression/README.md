@@ -1,17 +1,17 @@
 # Compression: pruning, sparsity, low-rank, distillation
 
-**582 papers** across 6 sub-categories. [Back to index](../../README.md)
+**584 papers** across 6 sub-categories. [Back to index](../../README.md)
 
 📖 **Read first:** [written overview & recommendations](../../overviews/compression.md)
 
 | Sub-category | Papers | #1 paper |
 | --- | ---: | --- |
 | [Unstructured & N:M (2:4) pruning](unstructured-and-semi-structured-pruning/README.md) | 38 | [Can Compressed LLMs Truly Act? An Empirical Evaluation of Agentic Capabilities in LLM Comp](unstructured-and-semi-structured-pruning/2505.19433-can-compressed-llms-truly-act-an-empirical-evaluation-of-agentic-capab.md) |
-| [Structured pruning (layers, heads, width, experts)](structured-pruning/README.md) | 148 | [DarwinLM: Evolutionary Structured Pruning of Large Language Models](structured-pruning/2502.07780-darwinlm-evolutionary-structured-pruning-of-large-language-models.md) |
+| [Structured pruning (layers, heads, width, experts)](structured-pruning/README.md) | 149 | [DarwinLM: Evolutionary Structured Pruning of Large Language Models](structured-pruning/2502.07780-darwinlm-evolutionary-structured-pruning-of-large-language-models.md) |
 | [Activation / contextual sparsity](activation-sparsity/README.md) | 33 | [SoLA: Leveraging Soft Activation Sparsity and Low-Rank Decomposition for Large Language Mo](activation-sparsity/2604.03258-sola-leveraging-soft-activation-sparsity-and-low-rank-decomposition-fo.md) |
-| [Low-rank decomposition & weight factorization](low-rank-decomposition/README.md) | 81 | [SVD-LLM V2: Optimizing Singular Value Truncation for Large Language Model Compression](low-rank-decomposition/2503.12340-svd-llm-v2-optimizing-singular-value-truncation-for-large-language-mod.md) |
+| [Low-rank decomposition & weight factorization](low-rank-decomposition/README.md) | 82 | [SVD-LLM V2: Optimizing Singular Value Truncation for Large Language Model Compression](low-rank-decomposition/2503.12340-svd-llm-v2-optimizing-singular-value-truncation-for-large-language-mod.md) |
 | [Knowledge distillation (LLM → smaller LLM)](knowledge-distillation/README.md) | 246 | [Self-Distillation Enables Continual Learning](knowledge-distillation/2601.19897-self-distillation-enables-continual-learning.md) |
-| [Model compression — general & surveys](_general/README.md) | 36 | [Systematic Outliers in Large Language Models](_general/2502.06415-systematic-outliers-in-large-language-models.md) |
+| [Model compression — general & surveys](_general/README.md) | 36 | [70% Size, 100% Accuracy: Lossless LLM Compression for Efficient GPU Inference via Dynamic-](_general/2504.11651-70-size-100-accuracy-lossless-llm-compression-for-efficient-gpu-infere.md) |
 
 ## Top 25 across the whole area
 
@@ -39,29 +39,29 @@
    Entropy-Aware On-Policy Distillation balances mode-seeking precision with mode-covering robustness without sacrificing on-policy training efficiency, and demonstrates that accounting for teacher …
 12. [DistiLLM-2: A Contrastive Approach Boosts the Distillation of LLMs](knowledge-distillation/2503.07067-distillm-2-a-contrastive-approach-boosts-the-distillation-of-llms.md) — _Knowledge distillation (LLM → smaller LLM)_ · score 12.24 · 70 cites · 34▲  
    The proposed DistiLLM-2 is a contrastive approach that simultaneously increases the likelihood of teacher responses and decreases that of student responses by harnessing this synergy between loss …
-13. [Black-Box On-Policy Distillation of Large Language Models](knowledge-distillation/2511.10643-black-box-on-policy-distillation-of-large-language-models.md) — _Knowledge distillation (LLM → smaller LLM)_ · score 10.95 · 47 cites · 54▲  
+13. [70% Size, 100% Accuracy: Lossless LLM Compression for Efficient GPU Inference via Dynamic-Length Float (DFloat11)](_general/2504.11651-70-size-100-accuracy-lossless-llm-compression-for-efficient-gpu-infere.md) — _Model compression — general & surveys_ · score 11.66 · 32 cites · 30▲  
+   Dynamic-Length Float (DFloat11), a lossless compression framework that reduces LLM and DM size by 30% while preserving outputs that are bit-for-bit identical to the original model, is introduced.
+14. [Black-Box On-Policy Distillation of Large Language Models](knowledge-distillation/2511.10643-black-box-on-policy-distillation-of-large-language-models.md) — _Knowledge distillation (LLM → smaller LLM)_ · score 10.95 · 47 cites · 54▲  
    Generative Adversarial Distillation is introduced, which enables on-policy and black-box distillation and frames the student LLM as a generator and trains a discriminator to distinguish its responses …
-14. [SCOPE: Signal-Calibrated On-Policy Distillation Enhancement with Dual-Path Adaptive Weighting](knowledge-distillation/2604.10688-scope-signal-calibrated-on-policy-distillation-enhancement-with-dual-p.md) — _Knowledge distillation (LLM → smaller LLM)_ · score 10.65 · 33 cites · 27▲  
+15. [SCOPE: Signal-Calibrated On-Policy Distillation Enhancement with Dual-Path Adaptive Weighting](knowledge-distillation/2604.10688-scope-signal-calibrated-on-policy-distillation-enhancement-with-dual-p.md) — _Knowledge distillation (LLM → smaller LLM)_ · score 10.65 · 33 cites · 27▲  
    Signal-Calibrated On-Policy Distillation Enhancement (SCOPE) is proposed, a dual-path adaptive training framework that routes on-policy rollouts by correctness into two complementary supervision …
-15. [Self-Distillation Zero: Self-Revision Turns Binary Rewards into Dense Supervision](knowledge-distillation/2604.12002-self-distillation-zero-self-revision-turns-binary-rewards-into-dense-s.md) — _Knowledge distillation (LLM → smaller LLM)_ · score 10.63 · 49 cites · 12▲  
+16. [Self-Distillation Zero: Self-Revision Turns Binary Rewards into Dense Supervision](knowledge-distillation/2604.12002-self-distillation-zero-self-revision-turns-binary-rewards-into-dense-s.md) — _Knowledge distillation (LLM → smaller LLM)_ · score 10.63 · 49 cites · 12▲  
    Self-Distillation Zero is proposed, a method that is substantially more training sample-efficient than RL and does not require an external teacher or high-quality demonstrations and outperforms …
-16. [DarwinLM: Evolutionary Structured Pruning of Large Language Models](structured-pruning/2502.07780-darwinlm-evolutionary-structured-pruning-of-large-language-models.md) — _Structured pruning (layers, heads, width, experts)_ · score 10.41 · 18 cites · 18▲  
+17. [DarwinLM: Evolutionary Structured Pruning of Large Language Models](structured-pruning/2502.07780-darwinlm-evolutionary-structured-pruning-of-large-language-models.md) — _Structured pruning (layers, heads, width, experts)_ · score 10.41 · 18 cites · 18▲  
    DarwinLM builds upon an evolutionary search process, generating multiple offspring models in each generation through mutation, and selecting the fittest for survival, achieving state-of-the-art …
-17. [Weak-to-Strong Generalization via Direct On-Policy Distillation](knowledge-distillation/2607.05394-weak-to-strong-generalization-via-direct-on-policy-distillation.md) — _Knowledge distillation (LLM → smaller LLM)_ · score 10.27 · 9 cites · 143▲  
+18. [Weak-to-Strong Generalization via Direct On-Policy Distillation](knowledge-distillation/2607.05394-weak-to-strong-generalization-via-direct-on-policy-distillation.md) — _Knowledge distillation (LLM → smaller LLM)_ · score 10.27 · 9 cites · 143▲  
    Direct On-Policy Distillation (Direct-OPD) is proposed, which transfers the teacher's RL-induced policy shift instead of running sparse-reward RL on the target model and consistently leverages weaker …
-18. [On-Policy Context Distillation for Language Models](knowledge-distillation/2602.12275-on-policy-context-distillation-for-language-models.md) — _Knowledge distillation (LLM → smaller LLM)_ · score 10.23 · 139 cites · 0▲  
+19. [On-Policy Context Distillation for Language Models](knowledge-distillation/2602.12275-on-policy-context-distillation-for-language-models.md) — _Knowledge distillation (LLM → smaller LLM)_ · score 10.23 · 139 cites · 0▲  
    This work proposes On-Policy Context Distillation (OPCD), a framework that bridges on-policy distillation with context distillation by training a student model on its own generated trajectories while …
-19. [A Token is Worth over 1,000 Tokens: Efficient Knowledge Distillation through Low-Rank Clone](knowledge-distillation/2505.12781-a-token-is-worth-over-1-000-tokens-efficient-knowledge-distillation-th.md) — _Knowledge distillation (LLM → smaller LLM)_ · score 10.11 · 17 cites · 2▲  
+20. [Rethinking On-Policy Distillation of Large Language Models II: One Training Example](knowledge-distillation/2609.04172-rethinking-on-policy-distillation-of-large-language-models-ii-one-trai.md) — _Knowledge distillation (LLM → smaller LLM)_ · score 10.16 · 4 cites · 101▲  
+   On-policy distillation improves over hundreds of steps from a single query by rapidly covering teacher states, yet student alignment remains slow, indicating the method is algorithm-starved rather …
+21. [A Token is Worth over 1,000 Tokens: Efficient Knowledge Distillation through Low-Rank Clone](knowledge-distillation/2505.12781-a-token-is-worth-over-1-000-tokens-efficient-knowledge-distillation-th.md) — _Knowledge distillation (LLM → smaller LLM)_ · score 10.11 · 17 cites · 2▲  
    Low-Rank Clone (LRC), an efficient pre-training method that constructs SLMs aspiring to behavioral equivalence with strong teacher models, and maximizes knowledge transfer while removing the need for …
-20. [Filter, Then Reweight: Rethinking Optimization Granularity in On-Policy Distillation](knowledge-distillation/2606.02684-filter-then-reweight-rethinking-optimization-granularity-in-on-policy.md) — _Knowledge distillation (LLM → smaller LLM)_ · score 9.93 · 21 cites · 16▲  
+22. [Filter, Then Reweight: Rethinking Optimization Granularity in On-Policy Distillation](knowledge-distillation/2606.02684-filter-then-reweight-rethinking-optimization-granularity-in-on-policy.md) — _Knowledge distillation (LLM → smaller LLM)_ · score 9.93 · 21 cites · 16▲  
    Compared with hard token selection, FiRe-OPD leverages a soft-weighting mechanism to effectively mitigate information loss and enhance optimization stability, thereby achieving finer-grained OPD …
-21. [On-Policy Self-Distillation without Any Supervision](knowledge-distillation/2608.06296-on-policy-self-distillation-without-any-supervision.md) — _Knowledge distillation (LLM → smaller LLM)_ · score 9.89 · 6 cites · 179▲  
+23. [On-Policy Self-Distillation without Any Supervision](knowledge-distillation/2608.06296-on-policy-self-distillation-without-any-supervision.md) — _Knowledge distillation (LLM → smaller LLM)_ · score 9.89 · 6 cites · 179▲  
    U-OPSD first samples multiple rollouts and constructs a pseudo solution by majority vote under a self-consistency threshold, and conditions the model's distribution on the pseudo-solution and …
-22. [Lightning OPD: Efficient Post-Training for Large Reasoning Models with Offline On-Policy Distillation](knowledge-distillation/2604.13010-lightning-opd-efficient-post-training-for-large-reasoning-models-with.md) — _Knowledge distillation (LLM → smaller LLM)_ · score 9.28 · 24 cites · 20▲  
+24. [Lightning OPD: Efficient Post-Training for Large Reasoning Models with Offline On-Policy Distillation](knowledge-distillation/2604.13010-lightning-opd-efficient-post-training-for-large-reasoning-models-with.md) — _Knowledge distillation (LLM → smaller LLM)_ · score 9.28 · 24 cites · 20▲  
    Lightning OPD is proposed, an offline on-policy distillation framework that enforces teacher consistency and eliminates the need for a live teacher server entirely and achieves comparable performance …
-23. [Anti-Self-Distillation for Reasoning RL via Pointwise Mutual Information](knowledge-distillation/2605.11609-anti-self-distillation-for-reasoning-rl-via-pointwise-mutual-informati.md) — _Knowledge distillation (LLM → smaller LLM)_ · score 9.28 · 13 cites · 47▲  
+25. [Anti-Self-Distillation for Reasoning RL via Pointwise Mutual Information](knowledge-distillation/2605.11609-anti-self-distillation-for-reasoning-rl-via-pointwise-mutual-informati.md) — _Knowledge distillation (LLM → smaller LLM)_ · score 9.28 · 13 cites · 47▲  
    Anti-Self-Distillation (AntiSD), which ascends a divergence between student and teacher rather than descending it, and reverses the per-token sign and yields a naturally bounded advantage in one …
-24. [DOPD: Dual On-policy Distillation](knowledge-distillation/2606.30626-dopd-dual-on-policy-distillation.md) — _Knowledge distillation (LLM → smaller LLM)_ · score 9.27 · 8 cites · 114▲  
-   DOPD is proposed, an advantage-aware dual distillation paradigm that dynamically routes token-level supervision between privileged teacher and privileged student policies based on their advantage gap …
-25. [On the Geometry of On-Policy Distillation](knowledge-distillation/2606.07082-on-the-geometry-of-on-policy-distillation.md) — _Knowledge distillation (LLM → smaller LLM)_ · score 8.82 · 9 cites · 75▲  
-   Results suggest that OPD is not merely an intermediate point between SFT and RLVR, but induces its own update geometry in parameter space, which is not merely an intermediate point between SFT and …

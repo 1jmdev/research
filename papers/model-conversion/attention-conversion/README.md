@@ -15,7 +15,7 @@ Retrofitting the attention of a pretrained model: MHA2MLA, TransMLA, X-EcoMLA, G
 3. **[Towards Economical Inference: Enabling DeepSeek's Multi-Head Latent Attention in Any Transformer-based LLMs](2502.14837-towards-economical-inference-enabling-deepseek-s-multi-head-latent-att.md)** (2025-10) — This paper proposes the first data-efficient fine-tuning method for transitioning from MHA to MLA (MHA2MLA), which includes two key components: for partial-RoPE, it removes RoPE from dimensions of queries and keys that …  
    _score 6.07 · Accepted to ACL 2025 · 36 cites · [code](https://github.com/JT-Ushio/MHA2MLA)_
 4. **[SWAA: Sliding Window Attention Adaptation for Efficient and Quality Preserving Long Context Processing](2512.10411-swaa-sliding-window-attention-adaptation-for-efficient-and-quality-pre.md)** (2026-03) — This work proposes Sliding Window Attention Adaptation (SWAA), a plug and play toolkit of recipes that adapts FA models to SWA without costly pretraining, and systematically combines four core strategies to tackle …  
-   _score 4.91 · 2 cites · 21▲ HF · [code](https://github.com/yuyijiong/sliding-window-attention-adaptation)_
+   _score 4.91 · 2 cites · 21▲ HF · [code](https://github.com/yuyijiong/sliding-window-attention-adaptation) · ~14–36 H100-h_
 5. **[GQLA: Group-Query Latent Attention for Hardware-Adaptive Large Language Model Decoding](2605.15250-gqla-group-query-latent-attention-for-hardware-adaptive-large-language.md)** (2026-07) — Group-Query Latent Attention (GQLA), a minimal modification of MLA whose trained weights expose two algebraically equivalent decoding paths over the same parameters: an MQA-absorb path identical to MLA's, and a GQA path …  
    _score 4.3 · 1 cites · 12▲ HF · [code](https://github.com/MuLabPKU/TransArch)_
 6. **[Zebra-Llama: Towards Extremely Efficient Hybrid Models](2505.17272-zebra-llama-towards-extremely-efficient-hybrid-models.md)** (2026-01) — This work introduces a family of 1B, 3B, and 8B hybrid models by combining State Space Models (SSMs) and Multi-head Latent Attention (MLA) layers, using a refined initialization and post-training pipeline to efficiently …  
@@ -35,6 +35,7 @@ Sorted cheapest first by the *smallest* compute figure found in the paper. Range
 
 | Paper | Min H100-h | Max H100-h | GPU seen | Evidence |
 | --- | ---: | ---: | --- | --- |
+| [SWAA: Sliding Window Attention Adaptation for Efficient and Quality Preserving L](2512.10411-swaa-sliding-window-attention-adaptation-for-efficient-and-quality-pre.md) | 14 | 36 | H20 | Training of each SWAA configuration takes approximately 12 hours on an 8*H20 GPU server for Qwen3-4B and 30 hours for Qwen3-30B-A3B.… |
 | [X-EcoMLA: Upcycling Pre-Trained Attention into MLA for Efficient and Extreme KV ](2503.11132-x-ecomla-upcycling-pre-trained-attention-into-mla-for-efficient-and-ex.md) | 91 | 140 | MI300X | The experimental results show that our proposed method can effectively compress the KV cache while preserving the performance on the benchmarks; specifically, f… |
 
 ## Full ranking

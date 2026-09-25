@@ -6,6 +6,46 @@ Sharing or merging KV across layers or heads (CLA, YOCO-style, MiniCache).
 
 📖 Written overview of this area: [../../../overviews/kv-cache.md](../../../overviews/kv-cache.md)
 
+## 🔬 Analyst notes: hand ranking and verdict
+
+_Written after reading the abstracts, and the full text where available, of this category's papers. The hand ranking weighs technical merit and usefulness for a runtime or model builder, not just citations. The automatic impact ranking follows below._
+
+**Verdict.** "Cross-layer sharing" covers two different things.
+
+**(a) Depth-wise sharing inside one model** (YOCO, CLA and descendants).
+* Architectural variants (YOCO++, SkipV1Former, FusedKV, HySparse) need **pretraining** but give 2× or more KV savings.
+  HySparse is the most interesting: full-attention layers act as the **oracle token selector and KV provider** for the
+  sparse layers that follow them.
+* Post-training variants (xKV, CommonKV, Stochastic KV Routing) exploit aligned singular vectors across layers.
+  They reach up to 8× with small loss.
+
+**(b) Sharing KV across requests, agents or models.** This is a systems topic:
+* multi-LoRA agents share the base part of the cache (LRAgent);
+* fuzzy/semantic sharing (SemShareKV, SparseX);
+* cross-model KV translation.
+
+**Security warning.** Any cross-tenant KV sharing is a **timing side channel** ([SafeKV](2508.08438-selective-kv-cache-sharing-to-mitigate-timing-side-channels-in-llm-inf.md)).
+
+| # | Paper | Type | Key idea | Result |
+| ---: | --- | --- | --- | --- |
+| 1 | [HySparse](2602.03560-hysparse-a-hybrid-sparse-attention-architecture-with-oracle-token-sele.md) | Architecture | Interleave 1 full-attention layer with N sparse layers that **reuse its top-k selection and its KV** | Cuts both compute and KV without proxy selectors; a strong design for new models |
+| 2 | [xKV](2503.18893-xkv-cross-layer-kv-cache-compression-via-aligned-singular-vector-extra.md) (ICML'26) | Post-training | CKA shows dominant singular vectors of KV align across layers; **joint low-rank subspace per layer group** + selective reconstruction | Up to 8× KV compression, multi-turn safe |
+| 3 | [LRAgent](2602.01053-lragent-efficient-kv-cache-sharing-for-multi-lora-llm-agents.md) (ICML'26) | Multi-LoRA serving | Split KV into a **shared base component** plus a small adapter-dependent component | Large memory savings for multi-agent LoRA systems |
+| 4 | [Stochastic KV Routing](2604.22782-stochastic-kv-routing-enabling-adaptive-depth-wise-cache-sharing.md) | Training | Train with random depth-wise KV routing so layers can **drop their cache** at inference | Adaptive depth-wise sharing with no TTFT penalty |
+| 5 | [SkipV1Former](2510.16807-improving-model-representation-and-reducing-kv-cache-via-skip-connecti.md) (NeurIPS'25) | Architecture | Each layer reuses **half its V heads from layer 1** | Better perplexity *and* ~25% less KV |
+| 6 | [YOCO++](2604.13556-yoco-enhancing-yoco-with-kv-residual-connections-for-efficient-llm-inf.md) | Architecture | YOCO plus weighted KV residuals from the bottom layer | Best cross-layer method at 50% KV; beats the standard Transformer |
+| 7 | [FusedKV](2512.03870-reconstructing-kv-caches-with-cross-layer-fusion-for-enhanced-transfor.md) | Architecture | Top-layer KV = learned fusion of bottom- and middle-layer KV (post-RoPE) | Closes the CLA/YOCO vs GQA quality gap |
+| 8 | [SafeKV](2508.08438-selective-kv-cache-sharing-to-mitigate-timing-side-channels-in-llm-inf.md) | Security | Detect sensitive prefixes and isolate them in the radix-tree cache | Mitigates cross-tenant timing side channels at low cost |
+| 9 | [SparseX](2606.01751-sparsex-efficient-segment-level-kv-cache-sharing-for-interleaved-llm-s.md) | Serving | Segment-level non-prefix KV reuse with sparse recomputation of affected tokens | Reuse beyond exact prefixes |
+| 10 | [Cross-model KV translation](2608.30963-a-universal-context-reuse-layer-for-cross-model-kv-sharing.md) | Serving | Translate KV from one model to another (even across families) | Skip prefill on the target model |
+
+**For model builders.** When designing a new model, combine GQA or MLA with **cross-layer KV sharing** (YOCO-style
+halves, or HySparse full/sparse interleaving). Use sliding-window layers for the rest. Gemma-3/4, Hunyuan and several
+2026 hybrids already mix these.
+
+**For runtimes.** Support "KV aliasing", where layer *l* reads layer *k*'s pages, in the paged allocator. It is a small
+change that unlocks every architecture in this category.
+
 ## 🏆 Best of the best by impact score (top 10)
 
 1. **[LRAgent: Efficient KV Cache Sharing for Multi-LoRA LLM Agents](2602.01053-lragent-efficient-kv-cache-sharing-for-multi-lora-llm-agents.md)** (2026-05) — LRAgent, a KV cache sharing framework for multi-LoRA agents, and Flash-LoRA-Attention, a kernel that reorders attention computation to avoid materializing the low-rank cache to full dimension, to achieve throughput and …  
@@ -35,7 +75,7 @@ Citations lag, so new work is under-ranked above. These are the most-upvoted or 
 
 - **[RippleKV: Cross-Layer KV Cache Allocation via Perturbation Propagation](2608.08684-ripplekv-cross-layer-kv-cache-allocation-via-perturbation-propagation.md)** (2026-08-09; 0▲, 0 cites) — RippleKV is proposed, which allocates cache across layers by estimating how perturbations to each layer's value cache affect the final predictive distribution, and achieves the …
 - **[KV-Pipe: On the Relation Between KV Sharing and Pipeline Parallel Efficiency in LLMs](2608.15943-kv-pipe-on-the-relation-between-kv-sharing-and-pipeline-parallel-effic.md)** (2026-08-16; 0▲, 0 cites) — KV layout is identified as a system--architecture degree of freedom for jointly improving pipeline-parallel training efficiency and long-context inference.
-- **[Shared Global KV with Layer-Specific Local History](2609.28006-shared-global-kv-with-layer-specific-local-history.md)** (2026-09-23; 0▲, 0 cites) — At 126M parameters and 2K context, an eight-seed study finds about 1.4% lower held-out test perplexity with local history than with a current-token local branch.
+- **[Shared Global KV with Layer-Specific Local History](2609.28006-shared-global-kv-with-layer-specific-local-history.md)** (2026-09-23; 0▲, 0 cites) — This work derives a sufficient suffix schedule that reduces upper-layer construction work while preserving the complete cache in exact arithmetic, and derives a sufficient suffix …
 
 ## Full ranking
 
@@ -51,17 +91,17 @@ Citations lag, so new work is under-ranked above. These are the most-upvoted or 
 | 8 | [CommonKV: Compressing KV Cache with Cross-layer Parameter Sharing](2508.16134-commonkv-compressing-kv-cache-with-cross-layer-parameter-sharing.md) | 2025-08-22 | 1.54 | 7 | 0 |  |  | Inspired by the high similarity observed in cross-layer hidden states, Singular Value Decomposition (SVD) is utilized to achieve weight sharing across adjacent … |
 | 9 | [A Universal Context-Reuse Layer for Cross-Model KV Sharing](2608.30963-a-universal-context-reuse-layer-for-cross-model-kv-sharing.md) | 2026-08-31 | 1.52 | 1 | 0 |  |  | Results provide initial evidence that KV states can serve as transferable computational representations rather than strictly model-local caches, and motivate … |
 | 10 | [Reconstructing KV Caches with Cross-layer Fusion For Enhanced Transformers](2512.03870-reconstructing-kv-caches-with-cross-layer-fusion-for-enhanced-transfor.md) | 2026-02-19 | 1.43 | 4 | 0 |  |  | This work proposes FusedKV, whose top-layer KV caches are a learnable fusion of the most informative ones from the bottom and middle layers, and FusedKV-Lite, … |
-| 11 | [SparseX: Efficient Segment-Level KV Cache Sharing for Interleaved LLM Serving](2606.01751-sparsex-efficient-segment-level-kv-cache-sharing-for-interleaved-llm-s.md) | 2026-06-07 | 1.25 | 2 | 0 |  |  | SarseX is model-agnostic, training-free, and compatible with Prefix Cache, and it provides unified support for common online serving scenarios including … |
-| 12 | [RKSC: Reasoning-Aware KV Cache Sharing and Confident Early Exit for Multi-Step LLM Inference](2606.09937-rksc-reasoning-aware-kv-cache-sharing-and-confident-early-exit-for-mul.md) | 2026-06-07 | 1.2 | 0 | 0 | Accepted to the ICML 2026 Worksh | [✓](https://github.com/AnirudhSekar/RKSC) | RKSC (Reasoning-Aware KV Cache Sharing), a training-free inference framework that eliminates two structural redundancies in multi-branch LLM reasoning … |
-| 13 | [ReasonCache: Accelerating Large Reasoning Model Serving through KV Cache Sharing](2507.21433-reasoncache-accelerating-large-reasoning-model-serving-through-kv-cach.md) | 2026-05-14 | 0.63 | 1 | 0 | International Workshop on Quality of Ser |  | Experimental evaluation demonstrates that ReasonCache achieves a peak throughput improvement of 89.2% and an average gain of 40-60%, leading to more responsive … |
-| 14 | [KVSlimmer: Theoretical Insights and Practical Optimizations for Asymmetric KV Merging](2603.00907-kvslimmer-theoretical-insights-and-practical-optimizations-for-asymmet.md) | 2026-03-08 | 0.5 | 0 | 0 |  | [✓](https://github.com/lianjunl13-sudo/KVSlimmer) | This work introduces KVSlimmer, an efficient algorithm that captures exact Hessian information through a mathematically exact formulation, and derives a … |
-| 15 | [Krul: Efficient State Restoration for Multi-turn Conversations with Dynamic Cross-layer KV Sharing](2507.08045-krul-efficient-state-restoration-for-multi-turn-conversations-with-dyn.md) | 2025-08-26 | 0.3 | 1 | 0 |  |  | Krul is presented, a multi-turn LLM inference system that enables accurate and efficient KV cache restoration and introduces three key innovations: a … |
-| 16 | [UniAttn: Reducing Inference Costs via Softmax Unification for Post-Training LLMs](2502.00439-uniattn-reducing-inference-costs-via-softmax-unification-for-post-trai.md) | 2026-01-22 | 0.0 | 0 | 0 |  |  | Post-training is essential for adapting Large Language Models (LLMs) to real-world applications. |
+| 11 | [UniAttn: Reducing Inference Costs via Softmax Unification for Post-Training LLMs](2502.00439-uniattn-reducing-inference-costs-via-softmax-unification-for-post-trai.md) | 2026-01-22 | 1.33 | 4 | 0 |  |  | Experiments show that UniAttn matches the performance of standard post-training while significantly reducing inference costs, outperforming existing efficient … |
+| 12 | [SparseX: Efficient Segment-Level KV Cache Sharing for Interleaved LLM Serving](2606.01751-sparsex-efficient-segment-level-kv-cache-sharing-for-interleaved-llm-s.md) | 2026-06-07 | 1.25 | 2 | 0 |  |  | SarseX is model-agnostic, training-free, and compatible with Prefix Cache, and it provides unified support for common online serving scenarios including … |
+| 13 | [RKSC: Reasoning-Aware KV Cache Sharing and Confident Early Exit for Multi-Step LLM Inference](2606.09937-rksc-reasoning-aware-kv-cache-sharing-and-confident-early-exit-for-mul.md) | 2026-06-07 | 1.2 | 0 | 0 | Accepted to the ICML 2026 Worksh | [✓](https://github.com/AnirudhSekar/RKSC) | RKSC (Reasoning-Aware KV Cache Sharing), a training-free inference framework that eliminates two structural redundancies in multi-branch LLM reasoning … |
+| 14 | [ReasonCache: Accelerating Large Reasoning Model Serving through KV Cache Sharing](2507.21433-reasoncache-accelerating-large-reasoning-model-serving-through-kv-cach.md) | 2026-05-14 | 0.63 | 1 | 0 | International Workshop on Quality of Ser |  | Experimental evaluation demonstrates that ReasonCache achieves a peak throughput improvement of 89.2% and an average gain of 40-60%, leading to more responsive … |
+| 15 | [KVSlimmer: Theoretical Insights and Practical Optimizations for Asymmetric KV Merging](2603.00907-kvslimmer-theoretical-insights-and-practical-optimizations-for-asymmet.md) | 2026-03-08 | 0.5 | 0 | 0 |  | [✓](https://github.com/lianjunl13-sudo/KVSlimmer) | This work introduces KVSlimmer, an efficient algorithm that captures exact Hessian information through a mathematically exact formulation, and derives a … |
+| 16 | [Krul: Efficient State Restoration for Multi-turn Conversations with Dynamic Cross-layer KV Sharing](2507.08045-krul-efficient-state-restoration-for-multi-turn-conversations-with-dyn.md) | 2025-08-26 | 0.3 | 1 | 0 |  |  | Krul is presented, a multi-turn LLM inference system that enables accurate and efficient KV cache restoration and introduces three key innovations: a … |
 | 17 | [CLAA: Cross-Layer Attention Aggregation for Accelerating LLM Prefill](2602.16054-claa-cross-layer-attention-aggregation-for-accelerating-llm-prefill.md) | 2026-02-17 | 0.0 | 0 | 0 |  |  | This work introduces an Answer-Informed Oracle, which defines ground-truth token importance by measuring attention from generated answers back to the prompt, … |
 | 18 | [YOCO++: Enhancing YOCO with KV Residual Connections for Efficient LLM Inference](2604.13556-yoco-enhancing-yoco-with-kv-residual-connections-for-efficient-llm-inf.md) | 2026-04-15 | 0.0 | 0 | 0 |  |  | YOCO++ is proposed, an enhanced YOCO that incorporates a weighted residual connection between the KVs of each bottom-half layer and the bottom layer that … |
 | 19 | [RippleKV: Cross-Layer KV Cache Allocation via Perturbation Propagation](2608.08684-ripplekv-cross-layer-kv-cache-allocation-via-perturbation-propagation.md) | 2026-08-09 | 0.0 | 0 | 0 |  |  | RippleKV is proposed, which allocates cache across layers by estimating how perturbations to each layer's value cache affect the final predictive distribution, … |
 | 20 | [KV-Pipe: On the Relation Between KV Sharing and Pipeline Parallel Efficiency in LLMs](2608.15943-kv-pipe-on-the-relation-between-kv-sharing-and-pipeline-parallel-effic.md) | 2026-08-16 | 0.0 | 0 | 0 |  |  | KV layout is identified as a system--architecture degree of freedom for jointly improving pipeline-parallel training efficiency and long-context inference. |
-| 21 | [Shared Global KV with Layer-Specific Local History](2609.28006-shared-global-kv-with-layer-specific-local-history.md) | 2026-09-23 | 0.0 | 0 | 0 |  |  | At 126M parameters and 2K context, an eight-seed study finds about 1.4% lower held-out test perplexity with local history than with a current-token local … |
+| 21 | [Shared Global KV with Layer-Specific Local History](2609.28006-shared-global-kv-with-layer-specific-local-history.md) | 2026-09-23 | 0.0 | 0 | 0 |  |  | This work derives a sufficient suffix schedule that reduces upper-layer construction work while preserving the complete cache in exact arithmetic, and derives … |
 
 ## Also relevant (primary category elsewhere)
 

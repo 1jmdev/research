@@ -19,7 +19,7 @@ Distilling or converting pretrained attention models into linear-attention, Mamb
 5. **[Lizard: An Efficient Linearization Framework for Large Language Models](2507.09025-lizard-an-efficient-linearization-framework-for-large-language-models.md)** (2026-04) — Lizard is a linearization framework that transforms pretrained Transformer-based Large Language Models into subquadratic architectures that achieves near-lossless recovery of its teacher model's performance, …  
    _score 7.12 · ACL 2026 · 8 cites · 19▲ HF · [code](https://github.com/EleutherAI/lm-evaluation-harness)_
 6. **[ARWKV: Pretrain is not what we need, an RNN-Attention-Based Language Model Born from Transformer](2501.15570-arwkv-pretrain-is-not-what-we-need-an-rnn-attention-based-language-mod.md)** (2025-01) — This series of models distilled from Qwen 2.5, based on pure native RWKV-7 attention, which aims to make RNN more expressive and demonstrates state tracking ability beyond transformers, is introduced.  
-   _score 7.11 · 9 cites · 24▲ HF · [code](https://github.com/yynil/RWKVInside)_
+   _score 7.11 · 9 cites · 24▲ HF · [code](https://github.com/yynil/RWKVInside) · ~166 H100-h_
 7. **[Effective Distillation to Hybrid xLSTM Architectures](2603.15590-effective-distillation-to-hybrid-xlstm-architectures.md)** (2026-07) — This work introduces an effective distillation pipeline for xLSTM-based students, and proposes an additional merging stage, where individually linearized experts are combined into a single model.  
    _score 5.84 · 3 cites · 33▲ HF_
 8. **[Llamba: Scaling Distilled Recurrent Models for Efficient Language Processing](2502.14458-llamba-scaling-distilled-recurrent-models-for-efficient-language-proce.md)** (2025-02) — This work introduces Llamba, a family of efficient recurrent language models distilled from Llama-3.x into the Mamba architecture, which achieves higher inference throughput and handle significantly larger batch sizes …  
@@ -38,6 +38,14 @@ Citations lag, so new work is under-ranked above. These are the most-upvoted or 
 - **[Stuck on "A": Diagnosing and Repairing Interface Injury in Attention-to-KDA Linearization of a 0.6B Language Model](2608.02689-stuck-on-a-diagnosing-and-repairing-interface-injury-in-attention-to-k.md)** (2026-08-03; 0▲, 0 cites) — The engineering lessons -- including an FP32-master failure mode in which bf16 optimizer updates are silently swallowed -- that made convergence possible at this budget are …
 - **[Retrofitting Linear Attention into Diffusion Language Models](2608.06628-retrofitting-linear-attention-into-diffusion-language-models.md)** (2026-08-06; 0▲, 0 cites) — This work introduces block-hybrid attention, which retains exact softmax attention within the active denoising block while applying linear attention over previous blocks, and …
 - **[The Key to Going Linear: Analysis-Driven Transformer Linearization](2607.07706-the-key-to-going-linear-analysis-driven-transformer-linearization.md)** (2026-07-08; 0▲, 0 cites) — It is shown that softmax relies on key-dependent, rank-1 orthogonal projections, elucidating why delta-style networks outperform purely gated accumulation and introducing …
+
+## 💻 Compute cost (estimated H100-hours, auto-extracted)
+
+Sorted cheapest first by the *smallest* compute figure found in the paper. Ranges cover all figures the parser found (e.g. per-model-size runs). Verify against the quoted sentence in each paper file.
+
+| Paper | Min H100-h | Max H100-h | GPU seen | Evidence |
+| --- | ---: | ---: | --- | --- |
+| [ARWKV: Pretrain is not what we need, an RNN-Attention-Based Language Model Born ](2501.15570-arwkv-pretrain-is-not-what-we-need-an-rnn-attention-based-language-mod.md) | 166 | 166 | MI300X | We work with QRWK 32B † https://huggingface.co/recursal/QRWKV6-32B-Instruct-Preview-v0.1 based on RWKV-6 architecture, another approach that reduces the entire … |
 
 ## Full ranking
 
