@@ -147,6 +147,7 @@ Sorted cheapest first by the *smallest* compute figure found in the paper. Range
 | Paper | Min H100-h | Max H100-h | GPU seen | Evidence |
 | --- | ---: | ---: | --- | --- |
 | [Reinforcement Learning for Reasoning in Small LLMs: What Works and What Doesn't](2503.16219-reinforcement-learning-for-reasoning-in-small-llms-what-works-and-what.md) | 14 | 14 | A40 | Our study investigates the potential of reinforcement learning (RL) to improve reasoning in small LLMs, focusing on a 1.5-billion-parameter model, DeepSeek-R1-D… |
+| [SPIRAL: Self-Play on Zero-Sum Games Incentivizes Reasoning via Multi-Agent Multi](2506.24119-spiral-self-play-on-zero-sum-games-incentivizes-reasoning-via-multi-ag.md) | 200 | 200 | H100 | Each experimental run demanded 8 H100 GPUs for approximately 25 hours, which may be prohibitive for many research groups.… |
 
 ## Full ranking
 

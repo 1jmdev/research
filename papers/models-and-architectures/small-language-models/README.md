@@ -6,6 +6,69 @@ Designing and training small LMs, SLM recipes, sub-billion models.
 
 📖 Written overview of this area: [../../../overviews/models-and-architectures.md](../../../overviews/models-and-architectures.md)
 
+## 🔬 Analyst notes: hand ranking and verdict
+
+_Written after reading the abstracts, and the full text where available, of this category's papers. The hand ranking weighs technical merit and usefulness for a runtime or model builder, not just citations. The automatic impact ranking follows below._
+
+**Verdict.** Small models (0.1–4B) are where runtime choices matter most: they run on CPU, phone and edge, and at
+batch 1. The 2025–26 lessons are:
+
+1. **Data-centric training beats cleverness.** [SmolLM2](2502.02737-smollm2-when-smol-goes-big-data-centric-training-of-a-small-language-m.md) (Hugging Face) uses a multi-stage, manually
+   rebalanced 11T-token mix with new FineMath, Stack-Edu and SmolTalk datasets, all released. It beats Qwen2.5-1.5B and
+   Llama-3.2-1B. [MobileLLM-R1](2509.24945-mobilellm-r1-exploring-the-limits-of-sub-billion-language-model-reason.md) shows ~2T well-chosen tokens suffice for sub-billion reasoners.
+   [IMU-1](2602.02522-imu-1-sample-efficient-pre-training-of-small-language-models.md) (430M on 72B tokens) approaches models trained on 56× more data.
+2. **Design for latency, not parameter count.** [Nemotron-Flash](2511.18890-nemotron-flash-towards-latency-optimal-hybrid-small-language-models.md) (NVIDIA, NeurIPS'25) searches depth/width
+   ratios and operator mixes (attention vs linear) for *measured* latency. It gets +5.5% accuracy with 1.3–1.9× lower
+   latency and 18.7–45.6× higher throughput vs Qwen3-1.7B/0.6B. Also [MobileLLM-Flash](2603.15954-mobilellm-flash-latency-guided-on-device-llm-design-for-industry-scale.md),
+   [MobileLLM-Pro](2511.06719-mobilellm-pro-technical-report.md) (128K context, robust to 4-bit), [Daedalus-150M](2608.20210-daedalus-150m-a-convolution-attention-hybrid-designed-for-cpu-inferenc.md) (conv-attention hybrid
+   for CPU).
+3. **Sparse small models for local deployment.** [SmallThinker](2507.20984-smallthinker-a-family-of-efficient-large-language-models-natively-trai.md) (PowerInfer) combines a native MoE with
+   sparse FFNs and pre-attention routing that hides SSD/flash latency. 4B-A0.6B and 21B-A3B run at >20 tok/s on
+   consumer CPUs in 1 GB / 8 GB. See also MobileMoE in the MoE area.
+4. **Small reasoners can reach frontier-level math and code.**
+   * [VibeThinker-1.5B](2511.06221-tiny-model-big-logic-diversity-driven-optimization-elicits-large-model.md) (Weibo): diversity-driven SFT → MaxEnt-guided RL for **$7,800**; beats
+     Magistral Medium and matches GPT-OSS-20B-medium on math.
+   * [VibeThinker-3B](2606.16140-vibethinker-3b-exploring-the-frontier-of-verifiable-reasoning-in-small.md): 94.3 AIME'26, 80.2 LiveCodeBench v6.
+   * But [long-CoT SFT hurts small models first](2506.07712-through-the-valley-path-to-effective-long-cot-training-for-small-langu.md) ("through the valley") and needs large-scale SFT to
+     recover.
+   * [Towards Reasoning Ability of Small Language Models](2502.11569-towards-reasoning-ability-of-small-language-models.md): 72 SLMs × 17 benchmarks.
+5. **Derive small models from big ones** (pruning + distillation): [Ministral 3](2601.08584-ministral-3.md) (cascade distillation),
+   Minitron (see compression/structured-pruning).
+6. **SLMs as the default for agents**: [Small Language Models are the Future of Agentic AI](2506.02153-small-language-models-are-the-future-of-agentic-ai.md) (NVIDIA
+   position), [Small Language Models for Agentic Systems](2510.03847-small-language-models-for-agentic-systems-a-survey-of-architectures-ca.md) (SLM-default, LLM-fallback). Agentic small models: [Nanbeige4.1-3B](2602.13367-nanbeige4-1-3b-a-small-general-model-that-reasons-aligns-and-acts.md) (up to
+   600 tool turns), [AgenticQwen](2604.21590-agenticqwen-training-small-agentic-language-models-with-dual-data-flyw.md), [Jan-nano](2506.22760-jan-nano-technical-report.md).
+
+### Hand ranking
+
+| # | Paper | Kind | Key idea | Result |
+| ---: | --- | --- | --- | --- |
+| 1 | [SmolLM2](2502.02737-smollm2-when-smol-goes-big-data-centric-training-of-a-small-language-m.md) | Recipe | Multi-stage data-centric training with manual rebalancing + new specialized datasets | 1.7B beats Qwen2.5-1.5B and Llama-3.2-1B; fully open data |
+| 2 | [Nemotron-Flash](2511.18890-nemotron-flash-towards-latency-optimal-hybrid-small-language-models.md) (NeurIPS'25) | Latency-optimal design | Search depth/width and operator mix (hybrid attention/linear) against real latency; weight normalization, meta tokens | +5.5% accuracy; 1.3–1.9× lower latency; 18.7–45.6× throughput vs Qwen3-1.7B/0.6B |
+| 3 | [VibeThinker-1.5B](2511.06221-tiny-model-big-logic-diversity-driven-optimization-elicits-large-model.md) | Small reasoner | Spectrum-to-Signal: diversity-maximizing SFT then MaxEnt-guided RL | $7.8K training cost; beats much larger models on AIME/LiveCodeBench |
+| 4 | [SmallThinker](2507.20984-smallthinker-a-family-of-efficient-large-language-models-natively-trai.md) | Local-first MoE | Two-level sparsity (MoE + sparse FFN) + pre-attention router for I/O prefetch | 4B-A0.6B / 21B-A3B at >20 tok/s on consumer CPUs in 1 GB / 8 GB |
+| 5 | [MobileLLM-R1](2509.24945-mobilellm-r1-exploring-the-limits-of-sub-billion-language-model-reason.md) (Meta) | Sub-billion reasoning | Curated/resampled ~2T tokens; open recipe | Strong sub-1B reasoning with far less data than Qwen3-0.6B's 36T |
+| 6 | [SmolVLM](2504.05299-smolvlm-redefining-small-and-efficient-multimodal-models.md) | Small VLM | Aggressive visual tokenization (pixel shuffle), balanced encoder/LM split | 256M VLM in <1 GB GPU memory; good video understanding |
+| 7 | [Ministral 3](2601.08584-ministral-3.md) (Mistral) | Derived family | Cascade distillation: iterative pruning + continued training with distillation | 3B/8B/14B base/instruct/reasoning with vision, Apache-2.0 |
+| 8 | [Through the Valley](2506.07712-through-the-valley-path-to-effective-long-cot-training-for-small-langu.md) | Training science | Long-CoT SFT first degrades SLMs; error accumulation | Needs large SFT before RL; guidance for small reasoners |
+| 9 | [VibeThinker-3B](2606.16140-vibethinker-3b-exploring-the-frontier-of-verifiable-reasoning-in-small.md) | Small reasoner | Verifiable-reasoning focus with claim-level TTS | 94.3 AIME'26 (97.1 with TTS), 80.2 LiveCodeBench v6 |
+| 10 | [MobileLLM-Pro](2511.06719-mobilellm-pro-technical-report.md) | On-device | Implicit positional distillation for 128K context; QAT-robust | Minor regression at 4-bit; long context on device |
+| 11 | [SLMs are the future of agentic AI](2506.02153-small-language-models-are-the-future-of-agentic-ai.md) | Position | Economics and capability of SLMs for agent subtasks | Heterogeneous SLM-first agent systems |
+
+**Also useful.**
+* More families: [Nanbeige4-3B](2512.06266-nanbeige4-3b-technical-report-exploring-the-frontier-of-small-language.md) (23T tokens), [Xmodel-2.5](2511.19496-xmodel-2-5-1-3b-data-efficient-reasoning-slm.md), [PCMind-2.1](2512.07612-pcmind-2-1-kaiyuan-2b-technical-report.md).
+* Small VLMs: [Penguin-VL](2603.06569-penguin-vl-exploring-the-efficiency-limits-of-vlm-with-llm-based-visio.md) (LLM-initialized vision encoder), [Flash-VL 2B](2505.09498-flash-vl-2b-optimizing-vision-language-model-performance-for-ultra-low.md).
+* Encoder-decoder SLMs: [Return of the Encoder](2501.16273-return-of-the-encoder-maximizing-parameter-efficiency-for-slms.md).
+* Micro LMs for instant responses: [Micro Language Models Enable Instant Responses](2604.19642-micro-language-models-enable-instant-responses.md).
+* Research framework: [Pico](2509.16413-pico-a-modular-framework-for-hypothesis-driven-small-language-model-re.md).
+* Surveys: [Small Language Models (SLMs) Can Still Pack a Punch](2501.05465-small-language-models-slms-can-still-pack-a-punch-a-survey-updated-202.md), [A Survey on Collaborative Mechanisms Between Large and Small Language Models](2505.07460-a-survey-on-collaborative-mechanisms-between-large-and-small-language.md).
+
+**For runtimes.** SLMs are **latency- and overhead-bound**, not FLOP-bound:
+* CUDA graphs or mega-kernels;
+* low-bit GEMV (INT4/ternary) tuned per CPU/NPU;
+* LM-head optimizations for 150K+ vocabularies;
+* MoE-on-CPU with flash-backed experts (SmallThinker-style prefetch);
+* hybrid attention/linear kernels (Nemotron-Flash uses DeltaNet-style layers).
+
 ## 🏆 Best of the best by impact score (top 10)
 
 1. **[SmolLM2: When Smol Goes Big -- Data-Centric Training of a Small Language Model](2502.02737-smollm2-when-smol-goes-big-data-centric-training-of-a-small-language-m.md)** (2025-02) — This paper document the development of SmolLM2, a state-of-the-art"small"(1.7 billion parameter) language model (LM) that outperforms other recent small LMs including Qwen2.5-1.5B and Llama3.2-1B.  

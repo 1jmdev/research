@@ -6,6 +6,69 @@ Continuous-thought / latent CoT, looped transformers, recurrent-depth (depth-rec
 
 📖 Written overview of this area: [../../../overviews/reasoning.md](../../../overviews/reasoning.md)
 
+## 🔬 Analyst notes: hand ranking and verdict
+
+_Written after reading the abstracts, and the full text where available, of this category's papers. The hand ranking weighs technical merit and usefulness for a runtime or model builder, not just citations. The automatic impact ranking follows below._
+
+**Verdict.** There are two routes to "reasoning without spelling out every token".
+
+1. **Looped / recurrent-depth models** reuse a block many times, giving more compute per token without more parameters.
+   This is the more mature route.
+   * [Huginn: recurrent depth](2502.05171-scaling-up-test-time-compute-with-latent-reasoning-a-recurrent-depth-a.md) (3.5B, 800B tokens): scales test-time compute in latent space up to the
+     equivalent of 50B parameters.
+   * [Ouro / LoopLM](2510.25741-scaling-latent-reasoning-via-looped-language-models.md) (ByteDance): pretrained looped models (1.4B/2.6B, 7.7T tokens) match 12B-class LLMs.
+     The gain comes from better *knowledge manipulation*, not capacity.
+   * Stability and scaling laws: [Parcae](2604.12946-parcae-scaling-laws-for-stable-looped-language-models.md) (spectral-norm-constrained injection; 1.3B reaches 87.5% of a
+     2× Transformer) and [iso-depth laws](2604.21106-how-much-is-one-recurrence-worth-iso-depth-scaling-laws-for-looped-lan.md) (what one recurrence is worth; hyperconnections help).
+   * Theory: [looped transformers simulate T CoT steps with T loops](2502.17416-reasoning-with-latent-thoughts-on-the-power-of-looped-transformers.md) (ICLR'25).
+   * Latency fixes: [Parallel Loop Transformer](2510.24824-parallel-loop-transformer-for-efficient-test-time-computation-scaling.md) (loops across tokens in parallel, near-zero extra latency)
+     and [LoopCoder-v2](2606.18023-loopcoder-v2-only-loop-once-for-efficient-test-time-computation-scalin.md) (saturation at two loops explained).
+   * Retrofitting existing models: [Teaching Pretrained Language Models to Think Deeper with Retrofitted Recurrence](2511.07384-teaching-pretrained-language-models-to-think-deeper-with-retrofitted-r.md), [LoopUS](2605.11011-loopus-recasting-pretrained-llms-into-looped-latent-refinement-models.md).
+   * Tiny recursive models for puzzles: [TRM](2510.04871-less-is-more-recursive-reasoning-with-tiny-networks.md) (7M parameters, 45% ARC-AGI-1), [URM](2512.14693-universal-reasoning-model.md).
+2. **Continuous / latent chain-of-thought** replaces text thoughts with hidden vectors. Promising but fragile at scale.
+   * Training-free soft tokens: [Soft Thinking](2505.15778-soft-thinking-unlocking-the-reasoning-potential-of-llms-in-continuous.md) (probability-weighted embedding mixtures; +2.5% accuracy
+     with −22% tokens), [SwiReasoning](2510.05069-swireasoning-switch-thinking-in-latent-and-explicit-for-pareto-superio.md) (switch latent ↔ explicit by confidence),
+     [Multiplex Thinking](2601.08808-multiplex-thinking-reasoning-via-token-wise-branch-and-merge.md) (token-wise branch-and-merge trained with RL).
+   * Trained: [CODI](2502.21074-codi-compressing-chain-of-thought-into-continuous-space-via-self-disti.md) (self-distillation into continuous space; first implicit CoT to match explicit CoT on
+     GSM8K at GPT-2 scale), [SIM-CoT](2509.20317-sim-cot-supervised-implicit-chain-of-thought.md) (step-level supervision stabilizes latents),
+     [CoLaR](2505.16552-think-silently-think-fast-dynamic-latent-compression-of-llm-reasoning.md) (dynamic compression + RL).
+   * Reality check: [Soft Tokens, Hard Truths](2509.19170-soft-tokens-hard-truths.md) finds continuous-CoT RL helps diversity and OOD retention,
+     but the best deployment is often *train soft, infer hard*. [Implicit Reasoning in Transformers is Reasoning through Shortcuts](2503.07604-implicit-reasoning-in-transformers-is-reasoning-through-shortcuts.md) shows implicit reasoning often uses
+     shortcuts.
+   * Multi-agent latent communication: [LatentMAS](2511.20639-latent-collaboration-in-multi-agent-systems.md) (shared latent working memory; −70–84% tokens, 4×
+     faster).
+
+### Hand ranking
+
+| # | Paper | Route | Key idea | Result |
+| ---: | --- | --- | --- | --- |
+| 1 | [Ouro: Scaling Latent Reasoning via Looped LMs](2510.25741-scaling-latent-reasoning-via-looped-language-models.md) | Looped pretraining | Weight-shared looped blocks with learned early exit, trained on 7.7T tokens | 1.4B/2.6B LoopLMs match up to 12B standard LLMs |
+| 2 | [Recurrent-depth latent reasoning (Huginn)](2502.05171-scaling-up-test-time-compute-with-latent-reasoning-a-recurrent-depth-a.md) | Looped | Prelude / recurrent core / coda; random loop counts in training | Test-time depth scaling up to ~50B-parameter-equivalent compute |
+| 3 | [Parcae](2604.12946-parcae-scaling-laws-for-stable-looped-language-models.md) | Looped stability | Spectral-norm constraint on loop injection; looped scaling laws | 1.3B: +2.99 CORE vs Transformer; 87.5% of a 2× larger model |
+| 4 | [Parallel Loop Transformer](2510.24824-parallel-loop-transformer-for-efficient-test-time-computation-scaling.md) | Looped serving | Cross-loop parallelism + shared KV with gated sliding-window attention | Looped-model accuracy at almost standard latency and memory |
+| 5 | [Soft Thinking](2505.15778-soft-thinking-unlocking-the-reasoning-potential-of-llms-in-continuous.md) | Latent CoT (training-free) | Concept tokens = probability-weighted embedding mixtures; cold-stop on entropy | +2.48 pass@1 with −22.4% tokens |
+| 6 | [CODI](2502.21074-codi-compressing-chain-of-thought-into-continuous-space-via-self-disti.md) (EMNLP'25) | Latent CoT (trained) | Teacher (explicit) / student (implicit) self-distillation on one token's hidden state | Implicit CoT matching explicit CoT on GSM8K (GPT-2); +28.2% over prior implicit methods |
+| 7 | [Power of looped transformers](2502.17416-reasoning-with-latent-thoughts-on-the-power-of-looped-transformers.md) (ICLR'25) | Theory | k-layer model looped L times ≈ kL-layer model on reasoning; simulates CoT | Justifies looped reasoning; regularization via looping |
+| 8 | [Multiplex Thinking](2601.08808-multiplex-thinking-reasoning-via-token-wise-branch-and-merge.md) | Latent + RL | Token-wise branch-and-merge of K samples into one multiplex token; on-policy RL | Beats discrete CoT and RL baselines from pass@1 to pass@1024 with shorter outputs |
+| 9 | [TRM: Tiny Recursive Model](2510.04871-less-is-more-recursive-reasoning-with-tiny-networks.md) | Recursive small nets | 2-layer network recursively refining latent answer and state | 7M parameters: 45% ARC-AGI-1, 8% ARC-AGI-2 |
+| 10 | [LatentMAS](2511.20639-latent-collaboration-in-multi-agent-systems.md) | Latent multi-agent | Agents exchange last-layer embeddings through a shared latent working memory | +14.6% accuracy, −70.8–83.7% tokens, 4× faster |
+| 11 | [Soft Tokens, Hard Truths](2509.19170-soft-tokens-hard-truths.md) | Analysis | RL with continuous CoT at scale | Soft training + hard inference works best; better OOD preservation |
+| 12 | [Iso-depth scaling laws for looped LMs](2604.21106-how-much-is-one-recurrence-worth-iso-depth-scaling-laws-for-looped-lan.md) | Scaling | Equivalent unique-parameter value of one recurrence | Truncated-BPTT under-trains loops; hyperconnections help |
+
+**Also useful.**
+* Pondering in pretraining: [PonderLM](2505.20674-ponderlm-pretraining-language-models-to-ponder-in-continuous-space.md).
+* Adaptive loops: [Think-at-Hard](2511.08577-think-at-hard-dynamic-looped-transformers-for-improved-reasoning.md), [LoopFormer](2602.11451-loopformer-elastic-depth-looped-transformers-for-latent-reasoning-via.md) (elastic depth), [LoopMoE](2606.04438-loopmoe-unifying-iterative-computation-with-mixture-of-experts-for-lan.md).
+* Latent test-time scaling: [Parallel Test-Time Scaling for Latent Reasoning Models](2510.07745-parallel-test-time-scaling-for-latent-reasoning-models.md) (parallel TTS for latent models), [LatentSeek](2505.13308-seek-in-the-dark-reasoning-via-test-time-instance-level-policy-gradien.md).
+* Concept-level models: [Dynamic Large Concept Models](2512.24617-dynamic-large-concept-models-latent-reasoning-in-an-adaptive-semantic.md).
+* Theory: [Reasoning by Superposition](2505.12514-reasoning-by-superposition-a-theoretical-perspective-on-chain-of-conti.md) (reasoning by superposition).
+* Surveys: [Reasoning Beyond Language](2505.16782-reasoning-beyond-language-a-comprehensive-survey-on-latent-chain-of-th.md), [A Survey on Latent Reasoning](2507.06203-a-survey-on-latent-reasoning.md).
+
+**For runtimes.**
+* Looped models need **per-request loop count / early-exit control**, KV handling for weight-tied blocks (shared vs
+  per-loop KV; PLT shares across loops), and CUDA graphs per loop count.
+* Soft-token decoding needs an "embedding-mixture input" path that bypasses the discrete token lookup.
+* Latent multi-agent systems need hidden-state transfer APIs between sessions.
+
 ## 🏆 Best of the best by impact score (top 10)
 
 1. **[Scaling up Test-Time Compute with Latent Reasoning: A Recurrent Depth Approach](2502.05171-scaling-up-test-time-compute-with-latent-reasoning-a-recurrent-depth-a.md)** (2025-02) — A novel language model architecture that is capable of scaling test-time computation by implicitly reasoning in latent space by iterating a recurrent block, thereby unrolling to arbitrary depth at test-time is studied.  

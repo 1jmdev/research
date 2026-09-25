@@ -6,6 +6,78 @@ Best-of-N, self-consistency, parallel thinking, verifier-guided search, efficien
 
 📖 Written overview of this area: [../../../overviews/reasoning.md](../../../overviews/reasoning.md)
 
+## 🔬 Analyst notes: hand ranking and verdict
+
+_Written after reading the abstracts, and the full text where available, of this category's papers. The hand ranking weighs technical merit and usefulness for a runtime or model builder, not just citations. The automatic impact ranking follows below._
+
+**Verdict.** Test-time scaling (TTS) has two axes, and the runtime has to support both.
+
+* **Sequential** (think longer): [s1](2501.19393-s1-simple-test-time-scaling.md) budget forcing, with "Wait" appended to extend and forced end to
+  stop. s1-32B goes from 50% to 57% AIME'24 by extrapolation.
+* **Parallel** (think wider): best-of-N / self-consistency with smarter selection.
+
+**The 2025–26 consensus:**
+1. **Parallel beats sequential per unit of latency** once the model's single-chain length saturates. Longer CoTs
+   contain more harmful self-revisions ([Revisiting the Test-Time Scaling of o1-like Models](2502.12215-revisiting-the-test-time-scaling-of-o1-like-models-do-they-truly-posse.md)). There is even [inverse scaling in test-time
+   compute](2507.14417-inverse-scaling-in-test-time-compute.md) on some tasks.
+2. **Confidence-filtered parallel thinking is the best training-free recipe.** [DeepConf](2508.15260-deep-think-with-confidence.md) (Meta) uses
+   local token-confidence signals to kill low-confidence traces early and weight votes. It reaches **99.9% AIME'25 with
+   −84.7% tokens** vs full parallel thinking. It integrates into vLLM with a few lines. Related: [self-certainty
+   BoN](2502.18581-scalable-best-of-n-selection-for-large-language-models-via-self-certai.md), [confidence-weighted SC](2502.06233-confidence-improves-self-consistency-in-llms.md).
+3. **Learned parallelism is the next step.** The model spawns and joins threads itself:
+   * [APR](2504.15466-learning-adaptive-parallel-reasoning-with-language-models.md) (spawn/join, RL-trained; 80.1% vs 66.6% at 20K tokens);
+   * [Parallel-R1](2509.07980-parallel-r1-towards-parallel-thinking-via-reinforcement-learning.md), [Native Parallel Reasoner](2512.07461-native-parallel-reasoner-reasoning-in-parallelism-via-self-distilled-r.md);
+   * [PaCoRe](2601.05593-pacore-learning-to-scale-test-time-compute-with-parallel-coordinated-r.md): an 8B model reaches 94.5% on HMMT'25 by coordinating ~2M tokens of parallel reasoning;
+   * [Hogwild! Inference](2504.06261-hogwild-inference-parallel-llm-generation-via-concurrent-attention.md): parallel workers share one KV cache, with no fine-tuning needed.
+   * Also see [`decoding/jacobi-and-parallel-decoding`](../../decoding/jacobi-and-parallel-decoding/README.md)
+     (Multiverse).
+4. **Verifiers got generative and scalable**: [ThinkPRM](2504.16828-process-reward-models-that-think.md) (long-CoT PRM from 1% of PRM800K labels),
+   [GenPRM](2504.00891-genprm-scaling-test-time-compute-of-process-reward-models-via-generati.md), [inference-time scaling for generalist RMs](2504.02495-inference-time-scaling-for-generalist-reward-modeling.md) (DeepSeek GRM),
+   [lessons from developing PRMs](2501.07301-the-lessons-of-developing-process-reward-models-in-mathematical-reason.md) (Qwen). *When to verify vs solve*: [When To Solve, When To Verify](2504.01005-when-to-solve-when-to-verify-compute-optimal-problem-solving-and-gener.md).
+5. **Compute-optimal TTS depends on model, task and verifier**: [a 1B model can beat a 405B one](2502.06703-can-1b-llm-surpass-405b-llm-rethinking-compute-optimal-test-time-scali.md) with the
+   right strategy.
+6. **Beyond single queries.**
+   * [Sleep-time compute](2504.13171-sleep-time-compute-beyond-inference-scaling-at-test-time.md): pre-compute over context before the query arrives; 2.5× lower cost per query.
+   * [TTT-Discover](2601.16175-learning-to-discover-at-test-time.md): test-time *training* with RL for discovery problems (math, kernels, algorithms) at a
+     few hundred dollars per problem.
+   * [Power sampling](2510.14901-reasoning-with-sampling-your-base-model-is-smarter-than-you-think.md): base models match RL-trained ones via MCMC over p^α.
+7. **Speculative reasoning**: [SpecReason](2504.07891-specreason-fast-and-accurate-inference-time-compute-via-speculative-re.md) lets a small model do the easy reasoning steps while the big
+   model judges them; 1.4–3× faster with better accuracy.
+
+### Hand ranking
+
+| # | Paper | Axis | Key idea | Result |
+| ---: | --- | --- | --- | --- |
+| 1 | [DeepConf: Deep Think with Confidence](2508.15260-deep-think-with-confidence.md) (Meta) | Parallel, training-free | Group/tail token confidence to filter traces online (early stop) and weight votes | 99.9% AIME'25 (GPT-OSS-120B) with up to −84.7% tokens |
+| 2 | [s1: Simple test-time scaling](2501.19393-s1-simple-test-time-scaling.md) | Sequential | 1K curated examples + budget forcing (append "Wait" / force end) | s1-32B beats o1-preview by up to 27%; extrapolates 50 → 57% AIME'24 |
+| 3 | [APR: adaptive parallel reasoning](2504.15466-learning-adaptive-parallel-reasoning-with-language-models.md) (COLM'25) | Learned parallel | spawn()/join() threads trained end to end with RL | 80.1% vs 66.6% at 20K tokens; better accuracy at equal latency |
+| 4 | [PaCoRe](2601.05593-pacore-learning-to-scale-test-time-compute-with-parallel-coordinated-r.md) | Learned parallel | Parallel coordinated reasoning rounds with message passing, trained with RL | 8B reaches 94.5% HMMT'25 (> GPT-5's 93.2%) at ~2M effective tokens |
+| 5 | [ThinkPRM](2504.16828-process-reward-models-that-think.md) | Verifier | Generative long-CoT PRM fine-tuned on few labels | Beats discriminative PRMs and LLM-as-judge with 1% of PRM800K labels |
+| 6 | [Can 1B surpass 405B?](2502.06703-can-1b-llm-surpass-405b-llm-rethinking-compute-optimal-test-time-scali.md) | Compute-optimal | Reward-aware compute-optimal TTS across policies, PRMs and difficulty | 3B > 405B, 7B > o1 on MATH-500/AIME with the right strategy |
+| 7 | [SpecReason](2504.07891-specreason-fast-and-accurate-inference-time-compute-via-speculative-re.md) | Speculative | Small model drafts reasoning steps; large model scores and accepts or regenerates | 1.4–3× faster, +0.4–9% accuracy; composes with speculative decoding |
+| 8 | [Hogwild! Inference](2504.06261-hogwild-inference-parallel-llm-generation-via-concurrent-attention.md) (NeurIPS'25) | Parallel system | Workers attend to each other's KV via RoPE-shifted shared cache | Parallel collaboration with existing reasoning models, no training |
+| 9 | [Sleep-time compute](2504.13171-sleep-time-compute-beyond-inference-scaling-at-test-time.md) | Offline | Anticipate queries and pre-reason over context | 2.5× lower cost per query at equal accuracy |
+| 10 | [TTT-Discover](2601.16175-learning-to-discover-at-test-time.md) | Test-time training | RL on a single hard problem at test time with continuous rewards | New state of the art on several discovery tasks with gpt-oss-120b |
+| 11 | [Generalist reward modeling at inference time](2504.02495-inference-time-scaling-for-generalist-reward-modeling.md) (DeepSeek) | Verifier scaling | Pointwise generative RM + self-principled critique tuning; scale by sampling | Inference-time scaling of the RM itself beats bigger RMs |
+| 12 | [Inverse scaling in test-time compute](2507.14417-inverse-scaling-in-test-time-compute.md) | Failure analysis | Longer reasoning hurts on distractor/regression/deduction tasks | Evaluate across reasoning lengths |
+
+**Also useful.**
+* Search: [rStar-Math](2501.04519-rstar-math-small-llms-can-master-math-reasoning-with-self-evolved-deep.md) (MCTS + process preference model), [Atom of Thoughts](2502.12018-atom-of-thoughts-for-markov-llm-test-time-scaling.md),
+  [Mind Evolution](2501.09891-evolving-deeper-llm-thinking.md).
+* Code: [S*](2502.14382-s-test-time-scaling-for-code-generation.md), [CodeMonkeys](2501.14723-codemonkeys-scaling-test-time-compute-for-software-engineering.md), [Z1](2504.00810-z1-efficient-test-time-scaling-with-code.md).
+* Agents: [Scaling Test-time Compute for LLM Agents](2506.12928-scaling-test-time-compute-for-llm-agents.md).
+* Theory: [Is Best-of-N the Best of Them? Coverage, Scaling, and Optimality in Inference-Time Alignment](2503.21878-is-best-of-n-the-best-of-them-coverage-scaling-and-optimality-in-infer.md) (is best-of-N optimal?), [A Theoretical Study on Bridging Internal Probability and Self-Consistency for LLM Reasoning](2510.15444-a-theoretical-study-on-bridging-internal-probability-and-self-consiste.md).
+* Meta-RL view: [MRT](2503.07572-optimizing-test-time-compute-via-meta-reinforcement-fine-tuning.md) (cumulative regret over tokens).
+* Surveys: [A Survey on Test-Time Scaling in Large Language Models](2503.24235-a-survey-on-test-time-scaling-in-large-language-models-what-how-where.md), [RLM blueprint](2501.11223-reasoning-language-models-a-blueprint.md).
+
+**Runtime checklist.**
+* **n-way parallel sampling with a shared prefix KV** and *per-trace online early termination* (DeepConf needs token
+  log-prob windows).
+* Budget forcing (thinking-token caps, forced end, "Wait" injection).
+* spawn/join primitives with KV sharing (APR/Hogwild/Multiverse).
+* A verifier/PRM co-scheduled with the policy.
+* Speculative reasoning hooks (small model + judge).
+
 ## 🏆 Best of the best by impact score (top 10)
 
 1. **[s1: Simple test-time scaling](2501.19393-s1-simple-test-time-scaling.md)** (2025-03) — After supervised finetuning the Qwen2.5-32B-Instruct language model on s1K and equipping it with budget forcing, the model s1-32B exceeds o1-preview on competition math questions by up to 27% (MATH and AIME24).  
@@ -151,18 +223,18 @@ Citations lag, so new work is under-ranked above. These are the most-upvoted or 
 | 103 | [The Sequential Edge: Inverse-Entropy Voting Beats Parallel Self-Consistency at Matched Compute](2511.02309-the-sequential-edge-inverse-entropy-voting-beats-parallel-self-consist.md) | 2025-11-04 | 4.64 | 10 | 4 |  |  | It is found that sequential scaling where chains explicitly build upon previous attempts consistently outperforms the dominant parallel self-consistency … |
 | 104 | [Every Rollout Counts: Optimal Resource Allocation for Efficient Test-Time Scaling](2506.15707-every-rollout-counts-optimal-resource-allocation-for-efficient-test-ti.md) | 2025-10-20 | 4.63 | 16 | 0 | Neural Information Processing Systems (N |  | DORA is proposed, a provably optimal method that mitigates this bias by decoupling direction quality from candidate count and allocating resources at the … |
 | 105 | [Incentivizing LLMs to Self-Verify Their Answers](2506.01369-incentivizing-llms-to-self-verify-their-answers.md) | 2025-10-30 | 4.62 | 20 | 0 | Neural Information Processing Systems (N |  | This work proposes a framework that incentivizes LLMs to self-verify their own answers by unifying answer generation and verification within a single … |
-| 106 | [To Backtrack or Not to Backtrack: When Sequential Search Limits Model Reasoning](2504.07052-to-backtrack-or-not-to-backtrack-when-sequential-search-limits-model-r.md) | 2025-10-03 | 4.48 | 29 | 0 | COLM 2025 |  | It is found that sequential search underperforms parallel sampling on CountDown but outperforms it on Sudoku, suggesting that backtracking is not universally … |
-| 107 | [Test-Time Scaling Makes Overtraining Compute-Optimal](2604.01411-test-time-scaling-makes-overtraining-compute-optimal.md) | 2026-04-01 | 4.48 | 2 | 24 |  |  | Train-to-Test scaling laws that jointly optimize model size, training tokens, and number of inference samples under fixed end-to-end budgets are presented, … |
-| 108 | [Evaluation of Best-of-N Sampling Strategies for Language Model Alignment](2502.12668-evaluation-of-best-of-n-sampling-strategies-for-language-model-alignme.md) | 2025-02-18 | 4.47 | 42 | 0 | Trans. Mach. Learn. Res. |  | An extension of the RBoN framework, called Stochastic RBoN sampling (SRBoN), is proposed, which is a theoretically guaranteed approach to worst-case RBoN in … |
-| 109 | [Mining Intrinsic Rewards from LLM Hidden States for Efficient Best-of-N Sampling](2505.12225-mining-intrinsic-rewards-from-llm-hidden-states-for-efficient-best-of.md) | 2026-01-08 | 4.45 | 11 | 0 | Accepted by KDD 2026 (Resea | [✓](https://github.com/aster2024/SWIFT) | This work introduces SWIFT (Simple Weighted Intrinsic Feedback Technique), a novel and lightweight method that learns a reward function directly from the rich … |
-| 110 | [Scaling Test-Time Compute to Achieve IOI Gold Medal with Open-Weight Models](2510.14232-scaling-test-time-compute-to-achieve-ioi-gold-medal-with-open-weight-m.md) | 2026-04-14 | 4.4 | 8 | 0 | Accepted to ACL 2026 |  | GenCluster is presented, a scalable and reproducible test-time compute framework that attains IOI gold-level performance using open-weight models and sets a … |
-| 111 | [Rethinking Optimal Verification Granularity for Compute-Efficient Test-Time Scaling](2505.11730-rethinking-optimal-verification-granularity-for-compute-efficient-test.md) | 2025-10-30 | 4.38 | 7 | 5 | Accepted at NeurIPS 2025 |  | Variable Granularity Search is introduced, a unified algorithm that generalizes beam search and Best-of-N sampling via a tunable granularity parameter g and is … |
-| 112 | [Optimal Self-Consistency for Efficient Reasoning with Large Language Models](2511.12309-optimal-self-consistency-for-efficient-reasoning-with-large-language-m.md) | 2026-06-30 | 4.29 | 6 | 0 | Accepted at ICML 2026 |  | The first comprehensive analysis of SC's scaling behavior and its variants is provided, drawing on mode estimation and voting theory, and Blend-ASC, a novel … |
-| 113 | [SCALE: Selective Resource Allocation for Overcoming Performance Bottlenecks in Mathematical Test-time Scaling](2512.00466-scale-selective-resource-allocation-for-overcoming-performance-bottlen.md) | 2025-11-29 | 4.21 | 1 | 10 | accepted by AAAI 2026 | [✓](https://github.com/XiaoYang66/DualThinking) | Inspired by dual-process theory, SCALE (Selective Resource Allocation), a framework that selectively allocates computational resources based on sub-problem … |
-| 114 | [A Survey on LLM Test-Time Compute via Search: Tasks, LLM Profiling, Search Algorithms, and Relevant Frameworks](2501.10069-a-survey-on-llm-test-time-compute-via-search-tasks-llm-profiling-searc.md) | 2025-04-27 | 4.1 | 23 | 0 | Trans. Mach. Learn. Res. | [✓](https://github.com/xinzhel/LLM-Search) | This survey aims to provide a comprehensive but integrated technical review on existing LIS frameworks and unify task definitions under Markov Decision Process … |
-| 115 | [Exact Expressive Power of Transformers with Padding](2505.18948-exact-expressive-power-of-transformers-with-padding.md) | 2025-11-05 | 4.04 | 21 | 0 | Neural Information Processing Systems (N |  | Padding and looping together systematically expand transformers' expressive power: with polylogarithmic looping, polynomially padded transformers recognize … |
-| 116 | [Test-Time Scaling in Reasoning LLMs: Inference Regimes, Evaluation, and Reproducibility](2608.04001-test-time-scaling-in-reasoning-llms-inference-regimes-evaluation-and-r.md) | 2026-08-31 | 4.04 | 4 | 0 |  | [✓](https://huggingface.co/datasets/harimo) | This empirical study covers broad knowledge, symbolic reasoning, and competition mathematics, and it introduces an evaluation profile whose coordinates and … |
-| 117 | [Diverse Inference and Verification for Advanced Reasoning](2502.09955-diverse-inference-and-verification-for-advanced-reasoning.md) | 2025-02-14 | 4.03 | 4 | 18 |  |  | This work automatically verify correctness of solutions to IMO problems by Lean, and ARC puzzles by code, and finds that best-of-N effectively answers HLE … |
+| 106 | [Diverse Inference and Verification for Advanced Reasoning](2502.09955-diverse-inference-and-verification-for-advanced-reasoning.md) | 2025-02-14 | 4.53 | 4 | 18 |  | [✓](https://github.com/browser-use/browser-use) | This work automatically verify correctness of solutions to IMO problems by Lean, and ARC puzzles by code, and finds that best-of-N effectively answers HLE … |
+| 107 | [To Backtrack or Not to Backtrack: When Sequential Search Limits Model Reasoning](2504.07052-to-backtrack-or-not-to-backtrack-when-sequential-search-limits-model-r.md) | 2025-10-03 | 4.48 | 29 | 0 | COLM 2025 |  | It is found that sequential search underperforms parallel sampling on CountDown but outperforms it on Sudoku, suggesting that backtracking is not universally … |
+| 108 | [Test-Time Scaling Makes Overtraining Compute-Optimal](2604.01411-test-time-scaling-makes-overtraining-compute-optimal.md) | 2026-04-01 | 4.48 | 2 | 24 |  |  | Train-to-Test scaling laws that jointly optimize model size, training tokens, and number of inference samples under fixed end-to-end budgets are presented, … |
+| 109 | [Evaluation of Best-of-N Sampling Strategies for Language Model Alignment](2502.12668-evaluation-of-best-of-n-sampling-strategies-for-language-model-alignme.md) | 2025-02-18 | 4.47 | 42 | 0 | Trans. Mach. Learn. Res. |  | An extension of the RBoN framework, called Stochastic RBoN sampling (SRBoN), is proposed, which is a theoretically guaranteed approach to worst-case RBoN in … |
+| 110 | [Mining Intrinsic Rewards from LLM Hidden States for Efficient Best-of-N Sampling](2505.12225-mining-intrinsic-rewards-from-llm-hidden-states-for-efficient-best-of.md) | 2026-01-08 | 4.45 | 11 | 0 | Accepted by KDD 2026 (Resea | [✓](https://github.com/aster2024/SWIFT) | This work introduces SWIFT (Simple Weighted Intrinsic Feedback Technique), a novel and lightweight method that learns a reward function directly from the rich … |
+| 111 | [Scaling Test-Time Compute to Achieve IOI Gold Medal with Open-Weight Models](2510.14232-scaling-test-time-compute-to-achieve-ioi-gold-medal-with-open-weight-m.md) | 2026-04-14 | 4.4 | 8 | 0 | Accepted to ACL 2026 |  | GenCluster is presented, a scalable and reproducible test-time compute framework that attains IOI gold-level performance using open-weight models and sets a … |
+| 112 | [Rethinking Optimal Verification Granularity for Compute-Efficient Test-Time Scaling](2505.11730-rethinking-optimal-verification-granularity-for-compute-efficient-test.md) | 2025-10-30 | 4.38 | 7 | 5 | Accepted at NeurIPS 2025 |  | Variable Granularity Search is introduced, a unified algorithm that generalizes beam search and Best-of-N sampling via a tunable granularity parameter g and is … |
+| 113 | [Optimal Self-Consistency for Efficient Reasoning with Large Language Models](2511.12309-optimal-self-consistency-for-efficient-reasoning-with-large-language-m.md) | 2026-06-30 | 4.29 | 6 | 0 | Accepted at ICML 2026 |  | The first comprehensive analysis of SC's scaling behavior and its variants is provided, drawing on mode estimation and voting theory, and Blend-ASC, a novel … |
+| 114 | [SCALE: Selective Resource Allocation for Overcoming Performance Bottlenecks in Mathematical Test-time Scaling](2512.00466-scale-selective-resource-allocation-for-overcoming-performance-bottlen.md) | 2025-11-29 | 4.21 | 1 | 10 | accepted by AAAI 2026 | [✓](https://github.com/XiaoYang66/DualThinking) | Inspired by dual-process theory, SCALE (Selective Resource Allocation), a framework that selectively allocates computational resources based on sub-problem … |
+| 115 | [A Survey on LLM Test-Time Compute via Search: Tasks, LLM Profiling, Search Algorithms, and Relevant Frameworks](2501.10069-a-survey-on-llm-test-time-compute-via-search-tasks-llm-profiling-searc.md) | 2025-04-27 | 4.1 | 23 | 0 | Trans. Mach. Learn. Res. | [✓](https://github.com/xinzhel/LLM-Search) | This survey aims to provide a comprehensive but integrated technical review on existing LIS frameworks and unify task definitions under Markov Decision Process … |
+| 116 | [Exact Expressive Power of Transformers with Padding](2505.18948-exact-expressive-power-of-transformers-with-padding.md) | 2025-11-05 | 4.04 | 21 | 0 | Neural Information Processing Systems (N |  | Padding and looping together systematically expand transformers' expressive power: with polylogarithmic looping, polynomially padded transformers recognize … |
+| 117 | [Test-Time Scaling in Reasoning LLMs: Inference Regimes, Evaluation, and Reproducibility](2608.04001-test-time-scaling-in-reasoning-llms-inference-regimes-evaluation-and-r.md) | 2026-08-31 | 4.04 | 4 | 0 |  | [✓](https://huggingface.co/datasets/harimo) | This empirical study covers broad knowledge, symbolic reasoning, and competition mathematics, and it introduces an evaluation profile whose coordinates and … |
 | 118 | [Learning a Continue-Thinking Token for Enhanced Test-Time Scaling](2506.11274-learning-a-continue-thinking-token-for-enhanced-test-time-scaling.md) | 2026-05-12 | 3.98 | 3 | 5 | IJCNLP-AACL | [✓](https://github.com/liranringel/learning-continue-thinking-token) | This work augments a distilled version of DeepSeek-R1 with a single learned "\|continue-thinking\|>" token, training only its embedding via reinforcement … |
 | 119 | [Solve-Detect-Verify: Inference-Time Scaling with Flexible Generative Verifier](2505.11966-solve-detect-verify-inference-time-scaling-with-flexible-generative-ve.md) | 2025-05-17 | 3.9 | 5 | 6 | Annual Meeting of the Association for Co |  | FlexiVe is a novel generative verifier that flexibly balances computational resources between rapid, reliable fast thinking and meticulous slow thinking using … |
 | 120 | [Is PRM Necessary? Problem-Solving RL Implicitly Induces PRM Capability in LLMs](2505.11227-is-prm-necessary-problem-solving-rl-implicitly-induces-prm-capability.md) | 2025-12-08 | 3.61 | 15 | 0 | Accepted by NeurIPS 2025 |  | The findings suggest that PRM may not be essential for enhancing complex reasoning, as pure RL not only improves problem-solving skills but also inherently … |

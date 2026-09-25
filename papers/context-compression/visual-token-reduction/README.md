@@ -6,6 +6,74 @@ Reducing image/video tokens in multimodal LLMs for faster inference.
 
 📖 Written overview of this area: [../../../overviews/context-compression.md](../../../overviews/context-compression.md)
 
+## 🔬 Analyst notes: hand ranking and verdict
+
+_Written after reading the abstracts, and the full text where available, of this category's papers. The hand ranking weighs technical merit and usefulness for a runtime or model builder, not just citations. The automatic impact ranking follows below._
+
+**Verdict.** VLMs spend most prefill on visual tokens: 576–2,880 per image and far more for video. With 300+ papers, the
+field has converged on some lessons.
+
+1. **Benchmarks flatter pruning methods.** [Are we using the right benchmark?](2510.07143-are-we-using-the-right-benchmark-an-evaluation-framework-for-visual-to.md) finds plain **image
+   downsampling beats many "advanced" token-compression methods** on standard benchmarks, because most samples don't
+   need fine detail. Use downsampling as the baseline and VTC-Bench-style hard subsets. [Are we solving the
+   right problem?](2502.11501-token-pruning-in-multimodal-large-language-models-are-we-solving-the-r.md) makes the same point.
+2. **Duplication and diversity beat "importance".** Attention-score importance (FastV lineage) is biased and incompatible
+   with FlashAttention.
+   * [DART](2502.11494-stop-looking-for-important-tokens-in-multimodal-language-models-duplic.md): prune duplicates of pivot tokens; keeps 11% of tokens, 2× end-to-end.
+   * [DivPrune](2503.02175-divprune-diversity-based-visual-token-pruning-for-large-multimodal-mod.md): max-min diversity.
+   * [CDPruner](2506.10967-beyond-attention-or-similarity-maximizing-conditional-diversity-for-to.md): instruction-conditional DPP; −95% FLOPs at 94% accuracy.
+   * [MMTok](2508.18264-mmtok-multimodal-coverage-maximization-for-efficient-inference-of-vlms.md): multimodal coverage.
+   These are training-free, kernel-compatible, and select *before* the LLM.
+3. **Video is where the big wins are.**
+   * Temporal redundancy: [TimeChat-Online](2504.17343-timechat-online-80-visual-tokens-are-naturally-redundant-in-streaming.md) (80% of streaming-video tokens are redundant; differential token
+     drop).
+   * Holistic merging: [HoliTom](2505.21334-holitom-holistic-token-merging-for-fast-video-large-language-models.md) (6.9% of FLOPs at 99.1% performance; 2.28× TTFT).
+   * [STTM](2507.07990-multi-granular-spatio-temporal-token-merging-for-training-free-acceler.md), [FastVID](2503.11187-fastvid-dynamic-density-pruning-for-fast-video-large-language-models.md), [FrameFusion](2501.01986-framefusion-combining-similarity-and-importance-for-video-token-reduct.md).
+   * Streaming: [StreamingVLM](2510.09608-streamingvlm-real-time-understanding-for-infinite-video-streams.md) (sink + recent-vision + longer-text windows; 8 FPS on one H100) and
+     [STC](2512.00891-accelerating-streaming-video-large-language-models-via-hierarchical-to.md).
+4. **Let the model ask for resolution.** [VisionThink](2507.13348-visionthink-smart-and-efficient-vision-language-model-via-reinforcemen.md) starts low-resolution and uses RL to request
+   high-resolution only when needed. Crop retrieval: [Look Where It Matters](2603.16932-look-where-it-matters-high-resolution-crops-retrieval-for-efficient-vl.md), [AdaptVision](2512.03794-adaptvision-efficient-vision-language-models-via-adaptive-visual-acqui.md).
+5. **Architectural reduction.** [LLaVA-Mini](2501.03895-llava-mini-efficient-image-and-video-large-multimodal-models-with-one.md) (one vision token after modality pre-fusion; −77% FLOPs, 40 ms
+   responses), [ShortV](2504.00502-shortv-efficient-multimodal-large-language-models-by-freezing-visual-t.md) (freeze visual tokens in the ~60% of layers where they don't help),
+   [STORM](2503.04130-storm-token-efficient-long-video-understanding-for-multimodal-llms.md) (Mamba temporal encoder before the LLM).
+
+Omni-modal: audio-guided video pruning ([OmniZip](2511.14582-omnizip-audio-guided-dynamic-token-compression-for-fast-omnimodal-larg.md), [OmniSIFT](2602.04804-omnisift-modality-asymmetric-token-compression-for-efficient-omni-moda.md)). Text-as-image compression (the
+reverse direction) is in [`prompt-and-context-compression`](../prompt-and-context-compression/README.md)
+(DeepSeek-OCR, Glyph).
+
+### Hand ranking
+
+| # | Paper | Kind | Key idea | Result |
+| ---: | --- | --- | --- | --- |
+| 1 | [Are we using the right benchmark?](2510.07143-are-we-using-the-right-benchmark-an-evaluation-framework-for-visual-to.md) | Evaluation | Downsampling as a discriminator; VTC-Bench denoises existing benchmarks | Downsampling beats many methods. **Required baseline** |
+| 2 | [DART: duplication matters more](2502.11494-stop-looking-for-important-tokens-in-multimodal-language-models-duplic.md) | Training-free pruning | Keep pivot tokens and drop tokens duplicating them; FlashAttention-compatible | 88.9% pruned at comparable accuracy; 1.99× total, 2.99× prefill |
+| 3 | [HoliTom](2505.21334-holitom-holistic-token-merging-for-fast-video-large-language-models.md) (NeurIPS'25) | Video merging | Outer-LLM global temporal segmentation + spatio-temporal merging + inner-LLM merging | 6.9% of FLOPs at 99.1% performance; 2.28× TTFT |
+| 4 | [StreamingVLM](2510.09608-streamingvlm-real-time-understanding-for-infinite-video-streams.md) (MIT) | Streaming video | Training aligned with streaming KV (sinks + recent vision + long text window) | Stable real-time understanding of infinite streams at 8 FPS on one H100 |
+| 5 | [CDPruner](2506.10967-beyond-attention-or-similarity-maximizing-conditional-diversity-for-to.md) | Training-free pruning | Instruction-conditioned DPP for conditional diversity | −95% FLOPs, −78% CUDA latency at 94% accuracy (LLaVA) |
+| 6 | [VisionThink](2507.13348-visionthink-smart-and-efficient-vision-language-model-via-reinforcemen.md) | Adaptive resolution | RL-trained decision to request high-resolution images | Most queries answered at low resolution with little loss on OCR-heavy tasks |
+| 7 | [LLaVA-Mini](2501.03895-llava-mini-efficient-image-and-video-large-multimodal-models-with-one.md) (ICLR'25) | Architecture | Modality pre-fusion into text, then one vision token per image/frame | Beats LLaVA-1.5 with 1 token instead of 576; 10K+ frames on 24 GB |
+| 8 | [TimeChat-Online](2504.17343-timechat-online-80-visual-tokens-are-naturally-redundant-in-streaming.md) | Streaming | Differential token drop based on frame-to-frame change | ~80% of visual tokens removed with strong streaming results |
+| 9 | [DivPrune](2503.02175-divprune-diversity-based-visual-token-pruning-for-large-multimodal-mod.md) (CVPR'25) | Pruning | Max-min diversity subset selection | State of the art across 16 image/video datasets; lower latency and memory |
+| 10 | [ShortV](2504.00502-shortv-efficient-multimodal-large-language-models-by-freezing-visual-t.md) | Layer-wise | Freeze visual-token updates in ineffective layers (layer contribution metric) | −50% FLOPs on LLaVA-NeXT-13B |
+| 11 | [MMTok](2508.18264-mmtok-multimodal-coverage-maximization-for-efficient-inference-of-vlms.md) | Pruning | Multimodal max-coverage selection using both text and vision | 98.7% performance with large speedup; 87.7% with only 4 tokens |
+| 12 | [STORM](2503.04130-storm-token-efficient-long-video-understanding-for-multimodal-llms.md) | Long video | Mamba temporal encoder injects dynamics, then aggressive token reduction | Better long-video reasoning at lower token cost |
+
+**Also useful.**
+* Training-free video: [STTM](2507.07990-multi-granular-spatio-temporal-token-merging-for-training-free-acceler.md), [FastVID](2503.11187-fastvid-dynamic-density-pruning-for-fast-video-large-language-models.md), [Video Compression Commander](2505.14454-video-compression-commander-plug-and-play-inference-acceleration-for-v.md),
+  [EarlyTom](2605.30010-earlytom-early-token-compression-completes-fast-video-understanding.md), [LLaVA-Scissor](2506.21862-llava-scissor-token-compression-with-semantic-connected-components-for.md).
+* Distillation for compressed tokens: [EPIC](2510.00515-efficient-multi-modal-large-language-models-via-progressive-consistenc.md).
+* Holistic context retention: [Don't Just Chase "Highlighted Tokens" in MLLMs](2510.02912-don-t-just-chase-highlighted-tokens-in-mllms-revisiting-visual-holisti.md).
+* Hybrid: [Hybrid Token Compression for Vision-Language Models](2512.08240-hybrid-token-compression-for-vision-language-models.md).
+* Codec-aligned encoders: [OneVision-Encoder](2602.08683-onevision-encoder-codec-aligned-sparsity-as-a-foundational-principle-f.md).
+* Survey: [A Survey of Token Compression for Efficient Multimodal Large Language Models](2507.20198-a-survey-of-token-compression-for-efficient-multimodal-large-language.md).
+
+**Runtime checklist.**
+* Pre-LLM token selection hooks (duplication/diversity based, instruction-conditioned).
+* Image-level prefix caching by content hash.
+* Streaming KV policy for video (sinks + recent frames + text).
+* Dynamic-resolution requests in the loop (VisionThink-style tool call).
+* Report against a downsampling baseline.
+
 ## 🏆 Best of the best by impact score (top 10)
 
 1. **[StreamingVLM: Real-Time Understanding for Infinite Video Streams](2510.09608-streamingvlm-real-time-understanding-for-infinite-video-streams.md)** (2026-05) — This paper introduces StreamingVLM, a model designed for real-time, stable understanding of infinite visual input that applies full attention on short, overlapped video chunks, which effectively mimics the …  

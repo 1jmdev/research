@@ -114,6 +114,7 @@ Sorted cheapest first by the *smallest* compute figure found in the paper. Range
 | Paper | Min H100-h | Max H100-h | GPU seen | Evidence |
 | --- | ---: | ---: | --- | --- |
 | [FoNE: Precise Single-Token Number Embeddings via Fourier Features](2502.09741-fone-precise-single-token-number-embeddings-via-fourier-features.md) | 3.8 | 3.8 | A6000 | Training is conducted using a language model cramming approach (Geiping and Goldstein, 2023), constrained to 8 exaFLOP (equivalent to 24 hours of training on a … |
+| [Prune or Retrain: Optimizing the Vocabulary of Multilingual Models for Estonian](2501.02631-prune-or-retrain-optimizing-the-vocabulary-of-multilingual-models-for.md) | 120 | 120 | unspecified | The embedding tuning and LoRA training took approximately 120 GPU hours each with the pruned model taking longer due to the large vocabulary size.… |
 
 ## Full ranking
 

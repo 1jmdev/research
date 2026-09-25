@@ -121,6 +121,7 @@ Sorted cheapest first by the *smallest* compute figure found in the paper. Range
 
 | Paper | Min H100-h | Max H100-h | GPU seen | Evidence |
 | --- | ---: | ---: | --- | --- |
+| [SkyLadder: Better and Faster Pretraining via Context Window Scheduling](2503.15450-skyladder-better-and-faster-pretraining-via-context-window-scheduling.md) | 0.07 | 512 | A100 | The detailed computation for each experiment is as follows: For the preliminary study on context window, pretraining a 1B model with 100B tokens (with 8K contex… |
 | [All is Not Lost: LLM Recovery without Checkpoints](2506.15461-all-is-not-lost-llm-recovery-without-checkpoints.md) | 0.22 | 0.22 | H100 | For convergence tests we run on 2, 4, and 8 H100s for the small, medium, and large models respectively.… |
 
 ## Full ranking

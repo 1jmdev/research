@@ -6,6 +6,81 @@ New layer types, normalization, residual/skip designs, memory layers, architectu
 
 📖 Written overview of this area: [../../../overviews/models-and-architectures.md](../../../overviews/models-and-architectures.md)
 
+## 🔬 Analyst notes: hand ranking and verdict
+
+_Written after reading the abstracts, and the full text where available, of this category's papers. The hand ranking weighs technical merit and usefulness for a runtime or model builder, not just citations. The automatic impact ranking follows below._
+
+**Verdict.** Outside attention (see the attention area) and MoE, the architecture changes that 2025–26 frontier labs
+actually adopted are about **the residual stream, normalization, and memory**.
+
+1. **Richer residual streams.**
+   * [mHC: manifold-constrained hyper-connections](2512.24880-mhc-manifold-constrained-hyper-connections.md) (DeepSeek) widens the residual into N streams and
+     projects mixing matrices onto a manifold that restores identity-mapping stability. It trains stably at scale with
+     efficient kernels.
+   * [Attention Residuals](2603.15031-attention-residuals.md) (Moonshot) lets each layer *attend over previous layers' outputs*; the block
+     variant scales. Integrated into Kimi Linear 48B-A3B on 1.4T tokens, it fixes PreNorm dilution.
+   * Also [MUDDFormer](2502.12170-muddformer-breaking-residual-bottlenecks-in-transformers-via-multiway.md) (dense dynamic connections; 1.8–2.4× compute-equivalent),
+     [Deep Delta Learning](2601.00417-deep-delta-learning.md), [xHC](2607.14530-xhc-expanded-hyper-connections.md), [LIMe](2502.09245-you-do-not-fully-utilize-transformer-s-representation-capacity.md).
+   * Motivation: [deep models don't use depth efficiently](2505.13898-do-language-models-use-their-depth-efficiently.md) (NeurIPS'25). The second half of layers mostly
+     refines.
+2. **Normalization and the curse of depth.**
+   * [The Curse of Depth](2502.05795-the-curse-of-depth-in-large-language-models.md) (NeurIPS'25): Pre-LN variance grows with depth so deep layers ≈ identity; fixed
+     by LayerNorm scaling (1/√depth).
+   * [DyT: Transformers without normalization](2503.10622-transformers-without-normalization.md) (Meta, CVPR'25): tanh(αx) replaces norms;
+     [Derf](2512.10938-stronger-normalization-free-transformers.md) improves on it.
+   * [HybridNorm](2503.04598-hybridnorm-towards-stable-and-efficient-transformer-training-via-hybri.md), [Peri-LN](2502.02732-peri-ln-revisiting-normalization-layer-in-the-transformer-architecture.md), [Post-LN is back](2601.19895-post-layernorm-is-back-stable-expressive-and-deep.md), [SiameseNorm](2602.08064-siamesenorm-breaking-the-barrier-to-reconciling-pre-post-norm.md).
+3. **Memory as a new sparsity axis** (parameters that are looked up, not multiplied):
+   * [Engram: conditional memory via scalable lookup](2601.07372-conditional-memory-via-scalable-lookup-a-new-axis-of-sparsity-for-larg.md) (DeepSeek): hashed n-gram embedding memory. At 27B
+     iso-parameter/iso-FLOPs it beats MoE; bigger gains on *reasoning* than knowledge; host-memory prefetch because
+     addressing is deterministic.
+   * [SCONE](2502.01637-scaling-embedding-layers-in-language-models.md) (NeurIPS'25): scale n-gram embeddings off-accelerator; 1B beats 1.9B at half the FLOPs.
+   * [LongCat-Flash-Lite](2601.21204-scaling-embeddings-outperforms-scaling-experts-in-language-models.md): 30B of embeddings in a 68.5B model.
+   * Memory layers: [UltraMemV2](2508.18756-ultramemv2-memory-networks-scaling-to-120b-parameters-with-superior-lo.md) (MoE parity at 120B total).
+   * [Hierarchical memories](2510.02375-pretraining-with-hierarchical-memories-separating-long-tail-and-common.md), [Memory Decoder at scale](2607.27919-memory-decoder-at-scale-a-pretrained-parametric-long-term-memory.md).
+4. **Adaptive depth and recursion**: [Mixture-of-Recursions](2507.10524-mixture-of-recursions-learning-dynamic-recursive-depths-for-adaptive-t.md) (NeurIPS'25; token-level recursion depth with
+   recursion-wise KV caching), [Mixture-of-Depths Attention](2603.15619-mixture-of-depths-attention.md), [HRM-Text](2605.20613-hrm-text-efficient-pretraining-beyond-scaling.md). Looped models are in
+   [`reasoning/latent-and-looped`](../../reasoning/latent-and-looped/README.md).
+5. **Beyond next-token prediction.**
+   * [CALM: continuous autoregressive LMs](2510.27688-continuous-autoregressive-language-models.md) predicts K-token chunks as one continuous vector (autoencoder
+     reconstruction >99.9%), so K× fewer generation steps.
+   * [Energy-Based Transformers](2507.02092-energy-based-transformers-are-scalable-learners-and-thinkers.md), [LLM-JEPA](2509.14252-llm-jepa-large-language-models-meet-joint-embedding-predictive-archite.md), concept models ([SONAR-LLM](2508.05305-sonar-llm-autoregressive-transformer-that-thinks-in-sentence-embedding.md),
+     [NCP](2609.10715-ncp-archpreview-technical-report-moving-towards-latent-space-language.md)).
+6. **Science of architecture**: [Physics of LMs 4.1: Canon layers](2512.17351-physics-of-language-models-part-4-1-architecture-design-and-the-magic.md) (cheap local token mixing; roughly 2×
+   reasoning depth across attention, linear and SSM backbones).
+
+### Hand ranking
+
+| # | Paper | Area | Key idea | Result |
+| ---: | --- | --- | --- | --- |
+| 1 | [Engram: conditional memory](2601.07372-conditional-memory-via-scalable-lookup-a-new-axis-of-sparsity-for-larg.md) (DeepSeek) | Memory sparsity | O(1) hashed n-gram lookup memory beside MoE; memory/MoE allocation law | Beats iso-parameter/iso-FLOP MoE at 27B; reasoning gains (e.g. BBH) > knowledge gains; host prefetch |
+| 2 | [mHC](2512.24880-mhc-manifold-constrained-hyper-connections.md) (DeepSeek) | Residual | Hyper-connections constrained to a manifold (restore identity mapping) + infrastructure optimizations | Stable, scalable multi-stream residuals with real gains at scale |
+| 3 | [Attention Residuals](2603.15031-attention-residuals.md) (Moonshot) | Residual | Softmax attention over previous layer outputs; Block AttnRes for memory | Mitigates PreNorm dilution in Kimi Linear 48B-A3B on 1.4T tokens |
+| 4 | [The Curse of Depth](2502.05795-the-curse-of-depth-in-large-language-models.md) (NeurIPS'25) | Normalization | Scale LayerNorm output by 1/√layer | Deep layers contribute again; better pretraining and SFT |
+| 5 | [Mixture-of-Recursions](2507.10524-mixture-of-recursions-learning-dynamic-recursive-depths-for-adaptive-t.md) (NeurIPS'25) | Adaptive depth | Shared recursive block + per-token router picking recursion depth; KV only for active tokens | Better perplexity and throughput than vanilla and recursive baselines at equal FLOPs |
+| 6 | [DyT: Transformers without Normalization](2503.10622-transformers-without-normalization.md) (CVPR'25) | Normalization | tanh(αx) drop-in for LayerNorm/RMSNorm | Matches normalized models, mostly without tuning |
+| 7 | [CALM: Continuous Autoregressive LMs](2510.27688-continuous-autoregressive-language-models.md) | Objective | Autoencode K tokens into a vector; predict vectors with an energy/likelihood-free head | K× fewer generative steps at matched quality |
+| 8 | [SCONE: scaling embedding layers](2502.01637-scaling-embedding-layers-in-language-models.md) (NeurIPS'25) | Embedding scaling | Frequent n-gram embeddings from an offline model, stored off-accelerator | 1B accelerator-resident beats 1.9B at ~half the inference FLOPs |
+| 9 | [Physics of LMs 4.1: Canon layers](2512.17351-physics-of-language-models-part-4-1-architecture-design-and-the-magic.md) | Architecture science | Lightweight local-mixing Canon layers across architectures | ~2× reasoning depth; enables fair architecture comparisons |
+| 10 | [MUDDFormer](2502.12170-muddformer-breaking-residual-bottlenecks-in-transformers-via-multiway.md) (ICML'25) | Residual | Multiway dynamic dense connections across layers | Matches Transformers trained with 1.8–2.4× compute |
+| 11 | [UltraMemV2](2508.18756-ultramemv2-memory-networks-scaling-to-120b-parameters-with-superior-lo.md) | Memory layers | Memory-layer design at 120B total / 2.5B active | Parity with MoE; activation density matters more than total sparse parameters |
+| 12 | [Do LMs use their depth efficiently?](2505.13898-do-language-models-use-their-depth-efficiently.md) (NeurIPS'25) | Analysis | Layer contribution and skip analysis | Second-half layers mostly refine the residual; motivates residual/depth redesign |
+
+**Also useful.**
+* Brain-inspired: [Dragon Hatchling (BDH)](2509.26507-the-dragon-hatchling-the-missing-link-between-the-transformer-and-mode.md).
+* Nested learning (Titans follow-up): [Nested Learning](2512.24695-nested-learning-the-illusion-of-deep-learning-architectures.md).
+* Memory models: [LM2](2502.06049-lm2-large-memory-models.md), [MeKi](2602.03359-meki-memory-based-expert-knowledge-injection-for-efficient-llm-scaling.md).
+* Chain-of-Model elastic sizes: [Chain-of-Model Learning for Language Model](2505.11820-chain-of-model-learning-for-language-model.md).
+* Automated architecture discovery: [ASI-Evolve](2603.29640-asi-evolve-ai-accelerates-ai.md).
+* Scale vectors in norms: [Negligible in Size, Significant in Effect](2605.26895-negligible-in-size-significant-in-effect-on-scale-vectors-in-large-lan.md).
+* Survey: [Speed Always Wins](2508.09834-speed-always-wins-a-survey-on-efficient-architectures-for-large-langua.md).
+
+**For runtimes.**
+* Support multi-stream residuals (mHC/HC).
+* **Host-memory embedding/memory tables with deterministic prefetch** (Engram, SCONE).
+* Per-token recursion depth (MoR) with depth-aware KV.
+* Continuous-vector decoding heads (CALM).
+* Normalization-free blocks (DyT), which simplify fused kernels.
+
 ## 🏆 Best of the best by impact score (top 10)
 
 1. **[Transformers without Normalization](2503.10622-transformers-without-normalization.md)** (2025-06) — Dynamic Tanh (DyT), an element-wise operation DyT(x) = tanh(αx), is introduced as a dropin replacement for normalization layers in Transformers, inspired by the observation that layer normalization in Transformers often …  

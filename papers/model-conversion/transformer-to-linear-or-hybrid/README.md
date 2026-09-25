@@ -109,7 +109,7 @@ Pretraining an 8B hybrid from scratch costs ≳100K H100-h. Conversion is **100�
 9. **[Distilling to Hybrid Attention Models via KL-Guided Layer Selection](2512.20569-distilling-to-hybrid-attention-models-via-kl-guided-layer-selection.md)** (2025-12) — A simple and efficient recipe for layer selection that uses layer importance scores derived from a small amount of training on generic text data is described, which is more effective than existing approaches for layer …  
    _score 5.09 · 15 cites · [code](https://github.com/fla-org/hybrid-distillation)_
 10. **[Morphing into Hybrid Attention Models](2606.30562-morphing-into-hybrid-attention-models.md)** (2026-06) — This work forms hybrid layer selection as a budget-constrained subset optimization problem, and proposes FlashMorph (Fast LAyer Selection for Hybrid MORPHing), an effective, efficient and scalable layer selection method …  
-   _score 4.87 · 0 cites · 49▲ HF · [code](https://github.com/LanDisen/FlashMorph)_
+   _score 4.87 · 0 cites · 49▲ HF · [code](https://github.com/LanDisen/FlashMorph) · ~2.1 H100-h_
 
 ## 🆕 Recent papers to watch (last 90 days)
 
@@ -127,6 +127,7 @@ Sorted cheapest first by the *smallest* compute figure found in the paper. Range
 
 | Paper | Min H100-h | Max H100-h | GPU seen | Evidence |
 | --- | ---: | ---: | --- | --- |
+| [Morphing into Hybrid Attention Models](2606.30562-morphing-into-hybrid-attention-models.md) | 2.1 | 2.1 | unspecified | FlashMorph uses only 20M tokens for hybrid layer selection, requiring 2.5\times 10^{17} FLOPs and 2.1 GPU hours.… |
 | [ARWKV: Pretrain is not what we need, an RNN-Attention-Based Language Model Born ](2501.15570-arwkv-pretrain-is-not-what-we-need-an-rnn-attention-based-language-mod.md) | 166 | 166 | MI300X | We work with QRWK 32B † https://huggingface.co/recursal/QRWKV6-32B-Instruct-Preview-v0.1 based on RWKV-6 architecture, another approach that reduces the entire … |
 | [RAD: Redundancy-Aware Distillation for Hybrid Models via Self-Speculative Decodi](2505.22135-rad-redundancy-aware-distillation-for-hybrid-models-via-self-speculati.md) | 184 | 184 | A100 | The training settings for the hybrid models are as follows (training takes 2-3 days on 8×A100 GPUs): Using the base model Llama3.2-3B-Instruct as the teacher \m… |
 

@@ -6,6 +6,74 @@ Shortening reasoning traces, adaptive think/no-think, budget control, early stop
 
 📖 Written overview of this area: [../../../overviews/reasoning.md](../../../overviews/reasoning.md)
 
+## 🔬 Analyst notes: hand ranking and verdict
+
+_Written after reading the abstracts, and the full text where available, of this category's papers. The hand ranking weighs technical merit and usefulness for a runtime or model builder, not just citations. The automatic impact ranking follows below._
+
+**Verdict.** Reasoning models overthink: long CoT on easy questions, "Wait" loops, switching between thoughts.
+Efficiency methods fall into four families, in order of practicality.
+
+1. **Training-free, runtime-level controls.** These are the cheapest and deploy with any model.
+   * **Early exit when the answer converges**: [DEER](2504.15895-dynamic-early-exit-in-reasoning-models.md) probes a trial answer at reasoning transition
+     points and stops when confident; 19–80% shorter CoT with *higher* accuracy across 11 models.
+   * **Suppress reflection tokens**: [NoWait](2506.08343-wait-we-don-t-need-to-wait-removing-thinking-tokens-improves-reasoning.md), −27–51% length.
+   * **Skip thinking** ([NoThinking](2504.09858-reasoning-models-can-be-effective-without-thinking.md)) plus parallel sampling; strong at low budgets.
+   * **Shortest-first voting**: [short-m@k](2505.17813-don-t-overthink-it-preferring-shorter-thinking-chains-for-improved-llm.md) takes the first m finished of k parallel chains. Shorter chains
+     are more often correct.
+   * **Prompting**: [Chain of Draft](2502.18600-chain-of-draft-thinking-faster-by-writing-less.md) (as little as 7.6% of the tokens), [Sketch-of-Thought](2503.05179-sketch-of-thought-efficient-llm-reasoning-with-adaptive-cognitive-insp.md)
+     (up to −84%).
+   * **Activation steering**: [SEAL](2504.07986-seal-steerable-reasoning-calibration-of-large-language-models-for-free.md).
+2. **Length-aware RL** (the model learns *how much* to think):
+   * [L1 / LCPO](2503.04697-l1-controlling-how-long-a-reasoning-model-thinks-with-reinforcement-le.md): obey a length budget given in the prompt; 1.5B beats GPT-4o at equal length;
+   * [LASER](2505.15612-learn-to-reason-efficiently-with-adaptive-length-based-reward-shaping.md), [ThinkPrune](2504.01296-thinkprune-pruning-long-chain-of-thought-of-llms-via-reinforcement-lea.md) (halve length for −2%), [GFPO](2508.09726-sample-more-to-think-less-group-filtered-policy-optimization-for-conci.md) (sample more, keep
+     short correct ones), [BRPO](2505.13438-optimizing-anytime-reasoning-via-budget-relative-policy-optimization.md) (anytime reasoning), [DAST](2503.04472-dast-difficulty-adaptive-slow-thinking-for-large-reasoning-models.md), [O1-Pruner](2501.12570-o1-pruner-length-harmonizing-fine-tuning-for-o1-like-reasoning-pruning.md).
+3. **Hybrid / adaptive thinking** (decide *whether* to think):
+   * [Thinkless](2505.13379-thinkless-llm-learns-when-to-think.md) (DeGRPO, −50–90% long-thinking use);
+   * [Large Hybrid-Reasoning Models](2505.14631-think-only-when-you-need-with-large-hybrid-reasoning-models.md);
+   * [AdaCoT](2505.11896-adacot-pareto-optimal-adaptive-chain-of-thought-triggering-via-reinfor.md), [ARM](2505.20258-arm-adaptive-reasoning-model.md).
+   * Production models now ship thinking on/off and budget controls.
+4. **Compress the CoT itself**:
+   * [TokenSkip](2502.12067-tokenskip-controllable-chain-of-thought-compression-in-llms.md): skip unimportant tokens; −40% at <0.4% loss;
+   * [LightThinker](2502.15589-lightthinker-thinking-step-by-step-compression.md): compress thoughts into gist tokens mid-generation, cutting KV and memory;
+   * [CRISP](2603.05433-crisp-compressed-reasoning-via-iterative-self-policy-distillation.md): iterative self-policy distillation; −56% on Qwen3-14B;
+   * merging long and short models: [Unlocking Efficient Long-to-Short LLM Reasoning with Model Merging](2503.20641-unlocking-efficient-long-to-short-llm-reasoning-with-model-merging.md).
+   * Latent CoT is in [`latent-and-looped`](../latent-and-looped/README.md).
+
+**Failure analyses to know:** [underthinking](2501.18585-thoughts-are-all-over-the-place-on-the-underthinking-of-o1-like-llms.md) (premature thought switching), [missing premise
+causes runaway length](2504.06514-missing-premise-exacerbates-overthinking-are-reasoning-models-losing-c.md), [overthinking in agentic tasks](2502.08235-the-danger-of-overthinking-examining-the-reasoning-action-dilemma-in-a.md), and [optimal CoT length is
+task-dependent and shrinks with capability](2502.07266-when-more-is-less-understanding-chain-of-thought-length-in-llms.md).
+
+### Hand ranking
+
+| # | Paper | Family | Key idea | Result |
+| ---: | --- | --- | --- | --- |
+| 1 | [DEER: dynamic early exit](2504.15895-dynamic-early-exit-in-reasoning-models.md) | Runtime, training-free | At "Wait"/transition points, induce a trial answer; exit if its confidence is high | −19–80% CoT length with +0.3–5% accuracy on 11 models |
+| 2 | [L1 (LCPO)](2503.04697-l1-controlling-how-long-a-reasoning-model-thinks-with-reinforcement-le.md) | RL length control | RL with target-length-in-prompt reward | Precise length control; 1.5B beats GPT-4o at equal reasoning length |
+| 3 | [Thinkless](2505.13379-thinkless-llm-learns-when-to-think.md) (NeurIPS'25) | Hybrid | `<short>` / `<think>` control tokens learned with decoupled GRPO | −50–90% long-thinking use |
+| 4 | [Don't overthink: short-m@k](2505.17813-don-t-overthink-it-preferring-shorter-thinking-chains-for-improved-llm.md) | Runtime | Run k chains in parallel; stop when the first m finish; majority vote | Better accuracy at lower wall-clock; shorter chains are more often correct |
+| 5 | [TokenSkip](2502.12067-tokenskip-controllable-chain-of-thought-compression-in-llms.md) (EMNLP'25) | CoT compression | Train on importance-pruned CoTs at controllable ratios | −40% tokens at <0.4% loss (Qwen2.5-14B GSM8K) |
+| 6 | [GFPO](2508.09726-sample-more-to-think-less-group-filtered-policy-optimization-for-conci.md) (Microsoft) | RL | Sample larger groups, train only on the shortest / most token-efficient correct responses | Big length cuts; training compute buys test-time savings |
+| 7 | [Reasoning models can be effective without thinking](2504.09858-reasoning-models-can-be-effective-without-thinking.md) | Runtime | Prefill an empty thinking block; parallel NoThinking + best-of-N | Beats thinking at low budgets (51.3 vs 28.9 at 700 tokens) |
+| 8 | [Chain of Draft](2502.18600-chain-of-draft-thinking-faster-by-writing-less.md) | Prompting | Minimal "draft" intermediate steps | CoT-level accuracy with as little as 7.6% of tokens |
+| 9 | [LightThinker](2502.15589-lightthinker-thinking-step-by-step-compression.md) (EMNLP'25) | Compression | Learn to compress past thoughts into gist tokens during generation | Lower peak KV memory and time at competitive accuracy |
+| 10 | [ThinkPrune](2504.01296-thinkprune-pruning-long-chain-of-thought-of-llms-via-reinforcement-lea.md) | RL | Hard token limit during RL with iterative tightening | R1-Distill-1.5B: length halved at −2% |
+| 11 | [CRISP](2603.05433-crisp-compressed-reasoning-via-iterative-self-policy-distillation.md) | Self-distillation | Iterative on-policy self-distillation from concise-prompted self (reverse KL) | −56% length on Qwen3-14B with accuracy preserved |
+| 12 | [NoWait](2506.08343-wait-we-don-t-need-to-wait-removing-thinking-tokens-improves-reasoning.md) | Runtime | Suppress "Wait/Hmm" tokens by logit masking | −27–51% length across R1-style families |
+
+**Also useful.**
+* Adaptive budgets: [AdaCtrl](2505.18822-adactrl-towards-adaptive-and-controllable-reasoning-via-difficulty-awa.md), [MUR](2507.14958-mur-momentum-uncertainty-guided-reasoning-for-large-language-models.md), [SAGE](2602.08354-does-your-reasoning-model-implicitly-know-when-to-stop-thinking.md) (models implicitly know when to stop),
+  [Let LRMs Break Free from Overthinking via Self-Braking Tuning](2505.14604-let-lrms-break-free-from-overthinking-via-self-braking-tuning.md) (self-braking).
+* Verification-based: [VeriThinker](2505.17941-verithinker-learning-to-verify-makes-reasoning-model-efficient.md).
+* Structure over content: [LLMs Can Easily Learn to Reason from Demonstrations Structure, not content, is what matters!](2502.07374-llms-can-easily-learn-to-reason-from-demonstrations-structure-not-cont.md) (long-CoT structure is what's learned).
+* Surveys: [Stop Overthinking](2503.16419-stop-overthinking-a-survey-on-efficient-reasoning-for-large-language-m.md), [A Survey of Efficient Reasoning for Large Reasoning Models](2503.21614-a-survey-of-efficient-reasoning-for-large-reasoning-models-language-mu.md), [Efficient Reasoning Models](2504.10903-efficient-reasoning-models-a-survey.md), [Efficient Inference for Large Reasoning Models](2503.23077-efficient-inference-for-large-reasoning-models-a-survey.md).
+
+**Runtime checklist.**
+* Thinking-budget parameters: max thinking tokens, and forcing `</think>` with an answer prefix when the budget ends.
+* DEER-style confidence probes at transition tokens (needs cheap forked answer probes on a shared prefix).
+* Logit suppression lists for reflection tokens.
+* Parallel sample-and-stop-early (short-m@k) sharing the prompt KV.
+* Hybrid-mode routing: think vs no-think per request.
+
 ## 🏆 Best of the best by impact score (top 10)
 
 1. **[Stop Overthinking: A Survey on Efficient Reasoning for Large Language Models](2503.16419-stop-overthinking-a-survey-on-efficient-reasoning-for-large-language-m.md)** (2025-08) — This paper provides the first structured survey to systematically investigate and explore the current progress toward achieving efficient reasoning in LLMs, and introduces the use of efficient data for training …  
