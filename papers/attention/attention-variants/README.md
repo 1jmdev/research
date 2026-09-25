@@ -6,6 +6,55 @@ Changes to the attention operator/head layout: MLA, GQA, MQA, differential atten
 
 📖 Written overview of this area: [../../../overviews/attention.md](../../../overviews/attention.md)
 
+## 🔬 Analyst notes: hand ranking and verdict
+
+_Written after reading the abstracts, and the full text where available, of this category's papers. The hand ranking weighs technical merit and usefulness for a runtime or model builder, not just citations. The automatic impact ranking follows below._
+
+**Verdict.** Two practical changes to softmax attention have strong evidence.
+
+1. **Output gating.** A head-specific sigmoid gate after SDPA ([Gated Attention](2505.06708-gated-attention-for-large-language-models-non-linearity-sparsity-and-a.md), Qwen; NeurIPS'25 best
+   paper). It was tested across 30 variants at 1.7B dense and 15B MoE on 3.5T tokens. It:
+   * improves quality;
+   * permits larger learning rates;
+   * **removes the attention sink and massive activations**, so the model is easier to quantize and handles long
+     context better.
+
+   Qwen3-Next / Qwen3.5 ship it.
+2. **KV-compact head designs** beyond GQA: MLA (DeepSeek), TPA (tensor product factorized Q/K/V), GTA, GVA. These
+   match or beat GQA with 2–10× smaller caches. See also
+   [`kv-cache/low-rank-and-latent`](../../kv-cache/low-rank-and-latent/README.md).
+
+The large attention-sink literature has converged.
+* **Why sinks exist.** Sinks and massive activations let deep Transformers **avoid over-mixing** and implement a
+  "no-op" state ([Why do LLMs attend to the first token?](2504.02732-why-do-llms-attend-to-the-first-token.md), [Attention Sinks Are Provably Necessary in Softmax Transformers](2603.11487-attention-sinks-are-provably-necessary-in-softmax-transformers-evidenc.md), [A Unified View of Attention and Residual Sinks](2601.22966-a-unified-view-of-attention-and-residual-sinks-outlier-driven-rescalin.md)).
+* **What they cost.** They are the root of activation outliers that hurt quantization.
+* **How to remove them safely.** Architectural fixes (gating, softpick, value-state gating) remove sinks without losing
+  quality. Naive suppression does not.
+
+### Hand ranking
+
+| # | Paper | Change | Evidence | Why a builder cares |
+| ---: | --- | --- | --- | --- |
+| 1 | [Gated Attention](2505.06708-gated-attention-for-large-language-models-non-linearity-sparsity-and-a.md) (Qwen, NeurIPS'25 best paper) | Sigmoid gate on the SDPA output, per head | 30 variants, up to 15B MoE and 3.5T tokens | **Adopt in new models.** Quality, stability, no sinks, better long context |
+| 2 | [Tensor Product Attention (T6)](2501.06425-tensor-product-attention-is-all-you-need.md) (NeurIPS'25 spotlight) | Contextual low-rank tensor factorization of Q/K/V; RoPE-compatible | Beats MHA/GQA/MLA at equal params with a **smaller KV cache** | Alternative to MLA; simple decode |
+| 3 | [Softpick](2504.20966-softpick-no-attention-sink-no-massive-activations-with-rectified-softm.md) (ACL'26) | Rectified, not sum-to-one softmax replacement | 0% sink rate; lower kurtosis; **better low-bit quantization** | Quantization-friendly models |
+| 4 | [Why do LLMs attend to the first token?](2504.02732-why-do-llms-attend-to-the-first-token.md) | Theory + experiments: sinks prevent over-mixing | Depth, context and packing effects | Don't "fix" sinks blindly; keep a sink or gate |
+| 5 | [Multi-Token Attention](2504.00927-multi-token-attention.md) (Meta) | Convolutions over queries, keys and heads so weights depend on several tokens | Better long-context retrieval | Research-grade; kernel cost |
+| 6 | [2-Simplicial Attention](2507.02754-fast-and-simplex-2-simplicial-attention-in-triton.md) (Meta) | Trilinear attention in an efficient Triton kernel | **Better token efficiency** (steeper scaling exponent) for reasoning/math/code under a token budget | Relevant as data runs out |
+| 7 | [Grouped Value Attention](2609.13285-grouped-value-attention-efficient-kv-caching-via-on-demand-key-reconst.md) | Store grouped values; reconstruct keys with a linear map absorbed into the query; small decoupled RoPE key | −45–47% cache vs matched GQA | MLA-like savings with a simpler path |
+| 8 | [Cost-optimal GQA](2503.09579-cost-optimal-grouped-query-attention-for-long-context-modeling.md) (EMNLP'25) | Decouple head size from hidden size; jointly optimize model size and GQA config for a context length | Common GQA configs are far from optimal for long context | Use when designing a model for 128K+ |
+| 9 | [Grouped Query Experts](2606.20945-grouped-query-experts-mixture-of-experts-on-gqa-self-attention.md) | MoE over query heads inside each GQA group; KV stays dense | Matches GQA with fewer active query heads | Compute savings without KV cost |
+| 10 | [Sinks ↔ compression valleys](2510.06477-attention-sinks-and-compression-valleys-in-llms-are-two-sides-of-the-s.md) | Massive activations cause both | 410M–120B models | Mix-Compress-Refine view of depth |
+| 11 | [The Spike, the Sparse and the Sink](2603.05498-the-spike-the-sparse-and-the-sink-anatomy-of-massive-activations-and-a.md) | Massive activations act as implicit parameters; sinks modulate locally | Separates their roles | Guides mitigation |
+| 12 | [Do Transformers need three projections?](2606.04032-do-transformers-need-three-projections-systematic-study-of-qkv-variant.md) (ICML'26) | Q-K=V sharing etc. | Q-K=V gives **50% KV reduction** at par quality (1.2B) | Cheap KV saving |
+| 13 | [Hardware-efficient attention for fast decoding](2505.21487-hardware-efficient-attention-for-fast-decoding.md) (GTA/GLA) | Grouped-tied and grouped-latent attention designed for decode arithmetic intensity | ~2× faster decode than FlashMLA at parity | Serving-friendly MLA alternative |
+
+**For model builders.**
+* Default to **GQA or MLA + output gating + QK-norm**.
+* Consider TPA/GVA/GTA if KV memory dominates your serving cost.
+* Avoid architectures that create massive activations (see also [Outlier-Safe Pre-Training](../../quantization/_general/2506.19697-outlier-safe-pre-training-for-robust-4-bit-quantization-of-large-langu.md)) if you plan
+  4-bit W/A/KV deployment.
+
 ## 🏆 Best of the best by impact score (top 10)
 
 1. **[Gated Attention for Large Language Models: Non-linearity, Sparsity, and Attention-Sink-Free](2505.06708-gated-attention-for-large-language-models-non-linearity-sparsity-and-a.md)** (2025-05) — This central finding is that a simple modification-applying a head-specific sigmoid gate after the Scaled Dot-Product Attention (SDPA)-consistently improves performance, and this modification also enhances training …  

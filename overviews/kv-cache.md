@@ -65,7 +65,7 @@ composable mechanisms, roughly in order of payoff:
 ## Streaming / multimodal
 
 Video LLMs are the heaviest KV users. Query-agnostic memory caps are standard there:
-[InfiniPot-V](../papers/kv-cache/eviction-and-token-selection/2506.15745-infinipot-v-memory-constrained-kv-cache-compression-for-streaming-vide.md) (−94% peak memory), [StreamMem](../papers/kv-cache/_general/2508.15717-streammem-query-agnostic-kv-cache-memory-for-streaming-video-understan.md), [HERMES](https://arxiv.org/abs/2601.14724) (10× faster TTFT) and
+[InfiniPot-V](../papers/kv-cache/eviction-and-token-selection/2506.15745-infinipot-v-memory-constrained-kv-cache-compression-for-streaming-vide.md) (−94% peak memory), [StreamMem](../papers/kv-cache/_general/2508.15717-streammem-query-agnostic-kv-cache-memory-for-streaming-video-understan.md), [HERMES](../papers/kv-cache/_general/2601.14724-hermes-kv-cache-as-hierarchical-memory-for-efficient-streaming-video-u.md) (10× faster TTFT) and
 [ReKV](../papers/kv-cache/_general/2503.00540-streaming-video-question-answering-with-in-context-video-kv-cache-retr.md). For VideoLLMs, quantize values **per-channel** ([VidKV](../papers/kv-cache/quantization/2503.16257-plug-and-play-1-x-bit-kv-cache-quantization-for-video-large-language-m.md), 1.x-bit KV).
 
 ## Security note

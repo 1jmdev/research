@@ -109,7 +109,7 @@ reduce to the same verify kernel with tree attention masks and KV rollback.
   for TPU/GPU, 0.033 ms/step), and XGrammar-style pushdown automata (pre-2025).
 * Accuracy caveat: [CRANE](../papers/decoding/constrained-and-structured/2502.09061-crane-reasoning-with-constrained-llm-generation.md). Constraining the *whole* output to a strict grammar hurts reasoning; let the
   model reason freely, then constrain the answer span (+10 points).
-* Benchmarks: [JSONSchemaBench](../papers/decoding/constrained-and-structured/2501.10868-jsonschemabench-a-rigorous-benchmark-of-structured-outputs-for-languag.md) (10K real schemas) and [StructEval](https://arxiv.org/abs/2505.20139).
+* Benchmarks: [JSONSchemaBench](../papers/decoding/constrained-and-structured/2501.10868-jsonschemabench-a-rigorous-benchmark-of-structured-outputs-for-languag.md) (10K real schemas) and [StructEval](../papers/decoding/constrained-and-structured/2505.20139-structeval-benchmarking-llms-capabilities-to-generate-structural-outpu.md).
 
 ## Sampling ([folder](../papers/decoding/sampling-and-strategies/README.md))
 

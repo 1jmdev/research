@@ -6,6 +6,58 @@ Models interleaving full attention with linear/SSM/sliding-window layers (Jamba,
 
 📖 Written overview of this area: [../../../overviews/attention.md](../../../overviews/attention.md)
 
+## 🔬 Analyst notes: hand ranking and verdict
+
+_Written after reading the abstracts, and the full text where available, of this category's papers. The hand ranking weighs technical merit and usefulness for a runtime or model builder, not just citations. The automatic impact ranking follows below._
+
+**Verdict.** Hybrid is the default architecture for new efficient LLMs in 2026: a few full or MLA attention layers plus
+many linear/SSM/SWA layers. Production examples:
+
+| Family | Recipe |
+| --- | --- |
+| Nemotron-H → Nemotron Nano 2 → Nemotron 3 | Mamba-2 + attention, MoE ([Nemotron-H](../../models-and-architectures/technical-reports/2504.03624-nemotron-h-a-family-of-accurate-and-efficient-hybrid-mamba-transformer.md), [NVIDIA Nemotron Nano 2](../../models-and-architectures/technical-reports/2508.14444-nvidia-nemotron-nano-2-an-accurate-and-efficient-hybrid-mamba-transfor.md), [NVIDIA Nemotron 3](../../models-and-architectures/technical-reports/2512.20856-nvidia-nemotron-3-efficient-and-open-intelligence.md)) |
+| Falcon-H1 | Parallel attention + Mamba heads ([Falcon-H1](../../models-and-architectures/technical-reports/2507.22448-falcon-h1-a-family-of-hybrid-head-language-models-redefining-efficienc.md)) |
+| Jet-Nemotron | PostNAS search of the linear/full layout ([Jet-Nemotron](../../models-and-architectures/technical-reports/2508.15884-jet-nemotron-efficient-language-model-with-post-neural-architecture-se.md)) |
+| Hunyuan-TurboS | Mamba-Transformer MoE ([Hunyuan-TurboS](../../models-and-architectures/technical-reports/2505.15431-hunyuan-turbos-advancing-large-language-models-through-mamba-transform.md)) |
+| Qwen3-Next / Qwen3.5 | Gated DeltaNet + gated attention |
+| Kimi Linear | KDA + MLA |
+| MiniMax-01 / M1 | Lightning + softmax |
+| Olmo Hybrid | GDN in place of SWA ([Olmo Hybrid](2604.03444-olmo-hybrid-from-theory-to-practice-and-back.md)) |
+
+Design findings that recur across the systematic studies:
+* **Retrieval is carried almost entirely by the full-attention layers** ([Some Attention is All You Need for Retrieval](2510.19861-some-attention-is-all-you-need-for-retrieval.md), [Rethinking the Role of Efficient Attention in Hybrid Architectures](2606.15378-rethinking-the-role-of-efficient-attention-in-hybrid-architectures.md)). The efficient
+  layers mostly shape optimization and local modeling.
+* A **1:3 to 1:6** full:efficient ratio is the sweet spot.
+* **Intra-layer (parallel-head) hybrids** slightly beat inter-layer ones ([Hybrid Architectures for Language Models](2510.04800-hybrid-architectures-for-language-models-systematic-analysis-and-desig.md)).
+* **Smaller SWA windows can help long context** ([Short window attention enables long-term memorization](2509.24552-short-window-attention-enables-long-term-memorization.md)): they force the recurrent memory to learn.
+* Hybrids have their own failure modes. CoT-SFT can destroy long-range recall
+  ([Attention Amnesia](2606.11052-attention-amnesia-in-hybrid-llms-when-cot-fine-tuning-breaks-long-rang.md), fixed by restoring W_Q/W_K). Massive activations cluster before full-attention
+  layers.
+
+### Hand ranking (architecture papers in this category)
+
+| # | Paper | Contribution | Take-away |
+| ---: | --- | --- | --- |
+| 1 | [Hybrid Architectures: Systematic Analysis](2510.04800-hybrid-architectures-for-language-models-systematic-analysis-and-desig.md) (Meta) | Inter- vs intra-layer fusion; scaling to 4T tokens; efficiency | Hybrids beat homogeneous models in both quality and speed. Intra-layer fusion is best |
+| 2 | [Olmo Hybrid](2604.03444-olmo-hybrid-from-theory-to-practice-and-back.md) | Theory (hybrids can express tasks beyond both parents, e.g. code execution) + a **fully open 7B** hybrid (GDN replaces SWA) | Beats Olmo 3 7B. The best open, reproducible hybrid recipe |
+| 3 | [SambaY / Gated Memory Unit](2507.06607-decoder-hybrid-decoder-architecture-for-efficient-reasoning-with-long.md) (Microsoft, NeurIPS'25) | Decoder-hybrid-decoder: a cross-decoder shares SSM memory readouts via GMUs; no positional encoding | Up to 10× decode throughput for **long generation** (Phi-4-mini-flash-reasoning) |
+| 4 | [Native Hybrid Attention](2510.07019-native-hybrid-attention-for-efficient-sequence-modeling.md) (ACL'26) | One softmax over **linear-RNN KV slots + a sliding window**; a single hyperparameter moves between linear and full | Unified intra/inter-layer hybrid with a Triton kernel |
+| 5 | [Artificial Hippocampus Networks](2510.07318-artificial-hippocampus-networks-for-efficient-long-context-modeling.md) | Sliding-window KV (lossless short-term) + an RNN compressing out-of-window context; train only the AHN by self-distillation | Retrofits open LLMs: ~10 h on 32 A100s for 7B (≈100 H100-h) |
+| 6 | [Rethinking efficient attention in hybrids](2606.15378-rethinking-the-role-of-efficient-attention-in-hybrid-architectures.md) | Scaling + mechanism analysis | Long-range retrieval lives in full attention; hybrids converge given enough data |
+| 7 | [MiniCPM-SALA](2602.11761-minicpm-sala-hybridizing-sparse-and-linear-attention-for-efficient-lon.md) | **Sparse (InfLLM-V2) + linear (Lightning)** at 1:3, hybrid positional encoding, continual-training conversion | 9B ultra-long-context hybrid from a pretrained dense model |
+| 8 | [Attention Amnesia](2606.11052-attention-amnesia-in-hybrid-llms-when-cot-fine-tuning-breaks-long-rang.md) (EMNLP'26) | CoT-SFT breaks long-range recall in hybrids; **QK-Restore** reverts W_Q and W_K | Must-know post-training pitfall |
+| 9 | [Short window attention → long-term memory](2509.24552-short-window-attention-enables-long-term-memorization.md) | SWAX: short SWA windows force the xLSTM memory to learn | Train with small or stochastic windows |
+| 10 | [StripedHyena 2 (multi-hybrid)](2503.01868-systems-and-algorithms-for-convolutional-multi-hybrid-language-models.md) | Convolutional multi-hybrids co-designed with kernels at 40B | 1.2–2.9× faster training than optimized Transformers |
+| 11 | [Blending KV and fast-weight memory](2506.00744-blending-complementary-memory-systems-in-hybrid-quadratic-linear-trans.md) (NeurIPS'25) | Three ways to fuse softmax KV memory with fast weights | Principled hybrid memory designs |
+| 12 | [Switch Attention](2603.26380-switch-attention-towards-dynamic-and-fine-grained-hybrid-transformers.md) (EMNLP'26) | Per-token, per-layer **routing** between full attention and SWA | Dynamic hybrids |
+
+**For a runtime.**
+1. Support heterogeneous layer types in one model: full/MLA, SWA, GDN/KDA/Mamba-2, cross-layer KV. Each needs its own
+   cache object: KV pages, a ring buffer, or a fixed recurrent state.
+2. Size the scheduler memory per request type (state size vs KV growth).
+3. Prefix caching, speculative decoding and PD disaggregation must all handle recurrent-state snapshots. See
+   [DASC](2608.30386-dasc-decay-aware-state-compression-for-hybrid-linear-attention-serving.md) for compressing that state in serving.
+
 ## 🏆 Best of the best by impact score (top 10)
 
 1. **[Vamba: Understanding Hour-Long Videos with Hybrid Mamba-Transformers](2503.11579-vamba-understanding-hour-long-videos-with-hybrid-mamba-transformers.md)** (2025-07) — An orthogonal direction is explored to build a hybrid Mamba-Transformer model (VAMBA) that employs Mamba-2 blocks to encode video tokens with linear complexity that achieves at least 50 % reduction in GPU memory usage …  

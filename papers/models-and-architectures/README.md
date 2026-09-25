@@ -1,6 +1,6 @@
 # Models & architectures
 
-**340 papers** across 3 sub-categories. [Back to index](../../README.md)
+**341 papers** across 3 sub-categories. [Back to index](../../README.md)
 
 📖 **Read first:** [written overview & recommendations](../../overviews/models-and-architectures.md)
 
@@ -8,7 +8,7 @@
 | --- | ---: | --- |
 | [Model technical reports (open & frontier models)](technical-reports/README.md) | 164 | [DeepSeek-R1: Incentivizing Reasoning Capability in LLMs via Reinforcement Learning](technical-reports/2501.12948-deepseek-r1-incentivizing-reasoning-capability-in-llms-via-reinforceme.md) |
 | [Small language models (≤ ~4B)](small-language-models/README.md) | 42 | [SmolLM2: When Smol Goes Big -- Data-Centric Training of a Small Language Model](small-language-models/2502.02737-smollm2-when-smol-goes-big-data-centric-training-of-a-small-language-m.md) |
-| [Novel architectures & architecture analysis](novel-architectures/README.md) | 134 | [Transformers without Normalization](novel-architectures/2503.10622-transformers-without-normalization.md) |
+| [Novel architectures & architecture analysis](novel-architectures/README.md) | 135 | [Transformers without Normalization](novel-architectures/2503.10622-transformers-without-normalization.md) |
 
 ## Top 25 across the whole area
 

@@ -79,7 +79,7 @@ Results to calibrate expectations:
 TransMLA ([TransMLA](../papers/model-conversion/attention-conversion/2502.07864-transmla-multi-head-latent-attention-is-all-you-need.md)) shows that GQA is a special case of MLA, so any GQA checkpoint can be re-parameterised
 (RoPE split + low-rank KV joint compression) and then briefly fine-tuned. X-EcoMLA ([X-EcoMLA](../papers/model-conversion/attention-conversion/2503.11132-x-ecomla-upcycling-pre-trained-attention-into-mla-for-efficient-and-ex.md)) adds teacher
 distillation for extreme compression: 6.4× KV at equal score with 3.6B tokens and 70 MI300 GPU-hours on
-Llama-3.2-1B. Variants exist for VLMs (MHA2MLA-VLM, [MHA2MLA-VLM](../papers/model-conversion/attention-conversion/2601.11464-mha2mla-vlm-enabling-deepseek-s-economical-multi-head-latent-attention.md)) and ASR (Whisper-MLA, [arXiv:2603.00563](https://arxiv.org/abs/2603.00563)).
+Llama-3.2-1B. Variants exist for VLMs (MHA2MLA-VLM, [MHA2MLA-VLM](../papers/model-conversion/attention-conversion/2601.11464-mha2mla-vlm-enabling-deepseek-s-economical-multi-head-latent-attention.md)) and ASR (Whisper-MLA, [Whisper-MLA](../papers/model-conversion/attention-conversion/2603.00563-whisper-mla-reducing-gpu-memory-consumption-of-asr-models-based-on-mha.md)).
 [GQLA](../papers/model-conversion/attention-conversion/2605.15250-gqla-group-query-latent-attention-for-hardware-adaptive-large-language.md) keeps both an MLA-absorb path and a GQA path in one set of weights, so it adapts to hardware.
 
 ## Dense → MoE ([folder](../papers/model-conversion/dense-to-moe-upcycling/README.md))

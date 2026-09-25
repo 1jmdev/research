@@ -6,6 +6,60 @@ RoPE scaling / extrapolation, length generalization, long-context training & eva
 
 📖 Written overview of this area: [../../../overviews/attention.md](../../../overviews/attention.md)
 
+## 🔬 Analyst notes: hand ranking and verdict
+
+_Written after reading the abstracts, and the full text where available, of this category's papers. The hand ranking weighs technical merit and usefulness for a runtime or model builder, not just citations. The automatic impact ranking follows below._
+
+**Verdict.** Three separate problems are grouped here.
+
+**1. Positional encoding and length extrapolation.** RoPE plus scaling (YaRN/LongRoPE2) is standard. The strongest
+2025–26 ideas:
+* **Hybrid RoPE/NoPE layers** ([RoPE to NoPE](2501.18795-rope-to-nope-and-back-again-a-new-hybrid-attention-strategy.md); used in Llama-4-style iRoPE and Command-A).
+* **Attention temperature scaling with log n** (Scalable-Softmax, critical scaling). Qwen and Llama already use log-n
+  scaling.
+* **Data-dependent position** (PaTH, the Forgetting Transformer's forget gate, RePo).
+* **Dropping positional embeddings to extend context** ([DroPE](2512.12167-extending-the-context-of-pretrained-llms-by-dropping-their-positional.md)).
+
+**2. Training for long context.**
+* LongRoPE2 mixed-window training.
+* Synthetic long data (NExtLong, LongMagpie).
+* Short-to-long preference optimization (LongPO, SoLoPO).
+* Restoring short-context quality (LongReD).
+* Test-time training that turns the context into weights (TTT-E2E, PERK).
+
+**3. The uncomfortable evaluation truth.**
+* Models claiming 128K–1M fail **NoLiMa** (non-literal needles) at modest lengths.
+* Performance falls **13.9–85% with length even when retrieval is perfect** ([Context Length Alone Hurts LLM Performance Despite Perfect Retrieval](2510.05381-context-length-alone-hurts-llm-performance-despite-perfect-retrieval.md)).
+
+This is why agentic/recursive approaches (**Recursive Language Models**, MemAgent) that *avoid* stuffing the context
+are rising fast.
+
+### Hand ranking
+
+| # | Paper | Kind | Key idea | Result |
+| ---: | --- | --- | --- | --- |
+| 1 | [Recursive Language Models](2512.24601-recursive-language-models.md) | Inference paradigm | The prompt becomes an **environment variable in a REPL**; the model inspects, decomposes and recursively calls itself on snippets | 100× beyond the context window; beats compaction and CodeAct; post-trained RLM ~48 H100-h |
+| 2 | [MemAgent](2507.02259-memagent-reshaping-long-context-llm-with-multi-conv-rl-based-memory-ag.md) (ICLR'26 oral) | RL memory agent | Read in segments, **overwrite a fixed memory**, trained with multi-conversation DAPO | 8K-context model trained at 32K extrapolates to 3.5M QA with <5% loss |
+| 3 | [Forgetting Transformer (FoX)](2503.02130-forgetting-transformer-softmax-attention-with-a-forget-gate.md) (ICLR'25) | Architecture | **Data-dependent forget gate on softmax attention logits**; no positional embeddings; FlashAttention-compatible | Beats the Transformer on long-context LM and extrapolation |
+| 4 | [TTT-E2E](2512.23675-end-to-end-test-time-training-for-long-context.md) | Test-time training | SWA Transformer that keeps learning on the context by next-token prediction; meta-learned init | Scales with context like full attention at constant per-token cost (3B/164B tokens) |
+| 5 | [LongRoPE2](2502.20082-longrope2-near-lossless-llm-context-window-scaling.md) (ICML'25) | RoPE extension | Under-trained high RoPE dims explain OOD; needle-driven evolutionary rescale + mixed-window training | Near-lossless 128K extension with 10B tokens, short quality kept |
+| 6 | [Scalable-Softmax (SSMax)](2501.19399-scalable-softmax-is-superior-for-attention.md) | Softmax fix | Scale logits by s·log n so attention does not flatten with length | Better pretraining loss and long-context retrieval |
+| 7 | [PaTH](2505.16381-path-attention-position-encoding-via-accumulating-householder-transfor.md) (NeurIPS'25) | Data-dependent PE | Accumulated **Householder** transforms instead of fixed rotations | More expressive than RoPE; efficient parallel training |
+| 8 | [RoPE to NoPE and back](2501.18795-rope-to-nope-and-back-again-a-new-hybrid-attention-strategy.md) (NeurIPS'25) | Hybrid PE | Interleave RoPE (local) and NoPE (global) layers + QK-norm | Better long-context performance and efficiency |
+| 9 | [NoLiMa](2502.05167-nolima-long-context-evaluation-beyond-literal-matching.md) (ICML'25) | Benchmark | Needles with minimal lexical overlap | Most "128K" models degrade sharply by 32K. **Use it** |
+| 10 | [Context length alone hurts](2510.05381-context-length-alone-hurts-llm-performance-despite-perfect-retrieval.md) (EMNLP F'25) | Analysis | Accuracy drops with length even with perfect retrieval (and even with whitespace padding) | Motivates recite-then-solve prompting and context engineering |
+| 11 | [LongPO](2502.13922-longpo-long-context-self-evolution-of-large-language-models-through-sh.md) (ICLR'25) | Alignment | Self-generated short-to-long preference pairs | Long-context alignment without annotation |
+| 12 | [DroPE: Dropping positional embeddings](2512.12167-extending-the-context-of-pretrained-llms-by-dropping-their-positional.md) | Extension | Remove PE after pretraining + short recalibration | Zero-shot context extension without long fine-tuning |
+| 13 | [InfiniteHiP](2502.08910-infinitehip-extending-language-model-context-up-to-3-million-tokens-on.md) | Inference | Hierarchical token pruning + adaptive RoPE + KV offload | 3M tokens on one GPU |
+| 14 | [Overflow prevention for recurrent LLMs](2505.07793-overflow-prevention-enhances-long-context-recurrent-llms.md) | Recurrent inference | Chunk-based inference prevents memory overflow in SSM/linear models | Big long-context gains for recurrent models, training-free |
+| 15 | [Critical attention scaling](2510.05554-critical-attention-scaling-in-long-context-transformers.md) (ICLR'26) | Theory | Phase transition: **β_n ≍ log n** is the critical scale | Justifies log-n attention temperature |
+
+**For a runtime.**
+* Implement the RoPE scaling family (linear/NTK/YaRN/LongRoPE, per-layer NoPE, **log-n attention temperature**, iRoPE
+  chunked attention) as config options. Get the numerics exactly right: pre- vs post-RoPE caching, FP32 angles.
+* For >1M-token products, favour **agentic context management** (RLM/MemAgent-style tool loops) plus sparse attention
+  and KV offloading over raw window size. See [`context-compression`](../../context-compression/README.md).
+
 ## 🏆 Best of the best by impact score (top 10)
 
 1. **[Recursive Language Models](2512.24601-recursive-language-models.md)** (2026-05) — It is found that RLMs can successfully process inputs up to two orders of magnitude beyond model context windows and, even for shorter prompts, dramatically outperform the quality of vanilla frontier LLMs and common …  

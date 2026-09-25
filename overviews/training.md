@@ -42,7 +42,7 @@
   * Use asynchronous and disaggregated rollouts ([RollArt](../papers/training/rl-for-reasoning/2512.22560-rollart-disaggregated-multi-task-agentic-rl-training-at-scale.md)) and routing replay for MoE
     ([R3](../papers/training/rl-for-reasoning/2510.11370-stabilizing-moe-reinforcement-learning-by-aligning-training-and-infere.md)).
   * Use FP8 end-to-end ([Jet-RL](../papers/quantization/low-precision-training/2601.14243-jet-rl-enabling-on-policy-fp8-reinforcement-learning-with-unified-trai.md)) and train MTP drafters during RL ([Breaking Entropy Bounds](../papers/training/rl-for-reasoning/2606.12370-breaking-entropy-bounds-accelerating-rl-training-via-mtp-with-rejectio.md)).
-  * Use tree-structured trajectories with shared prefixes ([Tree Training](https://arxiv.org/abs/2511.00413), 6.2×).
+  * Use tree-structured trajectories with shared prefixes ([Tree Training](../papers/training/rl-for-reasoning/2511.00413-tree-training-accelerating-agentic-llms-training-via-shared-prefix-reu.md), 6.2×).
 * **Reward models:** [RM-R1](../papers/training/rl-for-reasoning/2505.02387-rm-r1-reward-modeling-as-reasoning.md) (reasoning reward models) and [ReasonFlux-PRM](../papers/reasoning/test-time-scaling/2506.18896-reasonflux-prm-trajectory-aware-prms-for-long-chain-of-thought-reasoni.md).
 * On-policy distillation as an RL alternative: see [compression](compression.md#distillation-folder).
 

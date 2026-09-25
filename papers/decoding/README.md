@@ -1,6 +1,6 @@
 # Decoding: speculative, parallel, MTP, diffusion
 
-**1047 papers** across 8 sub-categories. [Back to index](../../README.md)
+**1048 papers** across 8 sub-categories. [Back to index](../../README.md)
 
 📖 **Read first:** [written overview & recommendations](../../overviews/decoding.md)
 
@@ -12,7 +12,7 @@
 | [Diffusion language models (dLLMs) — models & training](diffusion-language-models/README.md) | 351 | [Large Language Diffusion Models](diffusion-language-models/2502.09992-large-language-diffusion-models.md) |
 | [Diffusion LLM inference acceleration](diffusion-llm-inference/README.md) | 203 | [Fast-dLLM: Training-free Acceleration of Diffusion LLM by Enabling KV Cache and Parallel D](diffusion-llm-inference/2505.22618-fast-dllm-training-free-acceleration-of-diffusion-llm-by-enabling-kv-c.md) |
 | [Early exit, layer skipping & dynamic depth](early-exit-and-layer-skipping/README.md) | 45 | [Dr.LLM: Dynamic Layer Routing in LLMs](early-exit-and-layer-skipping/2510.12773-dr-llm-dynamic-layer-routing-in-llms.md) |
-| [Constrained & structured decoding](constrained-and-structured/README.md) | 47 | [CRANE: Reasoning with constrained LLM generation](constrained-and-structured/2502.09061-crane-reasoning-with-constrained-llm-generation.md) |
+| [Constrained & structured decoding](constrained-and-structured/README.md) | 48 | [StructEval: Benchmarking LLMs' Capabilities to Generate Structural Outputs](constrained-and-structured/2505.20139-structeval-benchmarking-llms-capabilities-to-generate-structural-outpu.md) |
 | [Sampling & decoding strategies](sampling-and-strategies/README.md) | 42 | [Roll the dice & look before you leap: Going beyond the creative limits of next-token predi](sampling-and-strategies/2504.15266-roll-the-dice-look-before-you-leap-going-beyond-the-creative-limits-of.md) |
 
 ## Top 25 across the whole area

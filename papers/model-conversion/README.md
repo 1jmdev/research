@@ -1,6 +1,6 @@
 # Model conversion (AR→diffusion, linearization, upcycling, …)
 
-**226 papers** across 7 sub-categories. [Back to index](../../README.md)
+**227 papers** across 7 sub-categories. [Back to index](../../README.md)
 
 📖 **Read first:** [written overview & recommendations](../../overviews/model-conversion.md)
 
@@ -8,7 +8,7 @@
 | --- | ---: | --- |
 | [AR → diffusion LM conversion](ar-to-diffusion/README.md) | 18 | [SDAR: A Synergistic Diffusion-AutoRegression Paradigm for Scalable Sequence Generation](ar-to-diffusion/2510.06303-sdar-a-synergistic-diffusion-autoregression-paradigm-for-scalable-sequ.md) |
 | [Transformer → linear / SSM / hybrid conversion (linearization)](transformer-to-linear-or-hybrid/README.md) | 32 | [RADLADS: Rapid Attention Distillation to Linear Attention Decoders at Scale](transformer-to-linear-or-hybrid/2505.03005-radlads-rapid-attention-distillation-to-linear-attention-decoders-at-s.md) |
-| [Attention conversion (MHA/GQA → MLA, GQA uptraining, sparse retrofit)](attention-conversion/README.md) | 14 | [TransMLA: Multi-Head Latent Attention Is All You Need](attention-conversion/2502.07864-transmla-multi-head-latent-attention-is-all-you-need.md) |
+| [Attention conversion (MHA/GQA → MLA, GQA uptraining, sparse retrofit)](attention-conversion/README.md) | 15 | [TransMLA: Multi-Head Latent Attention Is All You Need](attention-conversion/2502.07864-transmla-multi-head-latent-attention-is-all-you-need.md) |
 | [Dense → MoE upcycling & MoE-fication](dense-to-moe-upcycling/README.md) | 25 | [Drop-Upcycling: Training Sparse Mixture of Experts with Partial Re-initialization](dense-to-moe-upcycling/2502.19261-drop-upcycling-training-sparse-mixture-of-experts-with-partial-re-init.md) |
 | [Tokenizer / vocabulary transfer & cross-tokenizer distillation](tokenizer-and-vocab-transfer/README.md) | 27 | [AdaptiVocab: Enhancing LLM Efficiency in Focused Domains through Lightweight Vocabulary Ad](tokenizer-and-vocab-transfer/2503.19693-adaptivocab-enhancing-llm-efficiency-in-focused-domains-through-lightw.md) |
 | [Model merging](model-merging/README.md) | 102 | [No Task Left Behind: Isotropic Model Merging with Common and Task-Specific Subspaces](model-merging/2502.04959-no-task-left-behind-isotropic-model-merging-with-common-and-task-speci.md) |

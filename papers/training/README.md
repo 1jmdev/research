@@ -1,6 +1,6 @@
 # Training: optimizers, scaling, RL, data, PEFT, tokenization
 
-**1356 papers** across 7 sub-categories. [Back to index](../../README.md)
+**1358 papers** across 7 sub-categories. [Back to index](../../README.md)
 
 📖 **Read first:** [written overview & recommendations](../../overviews/training.md)
 
@@ -10,7 +10,7 @@
 | [Scaling laws](scaling-laws/README.md) | 87 | [Parallel Scaling Law for Language Models](scaling-laws/2505.10475-parallel-scaling-law-for-language-models.md) |
 | [Pre-training recipes & efficiency](pretraining-recipes-and-efficiency/README.md) | 143 | [Scaling Agents via Continual Pre-training](pretraining-recipes-and-efficiency/2509.13310-scaling-agents-via-continual-pre-training.md) |
 | [Parameter-efficient fine-tuning (LoRA & friends)](parameter-efficient-finetuning/README.md) | 117 | [Make LoRA Great Again: Boosting LoRA with Adaptive Singular Values and Mixture-of-Experts ](parameter-efficient-finetuning/2502.16894-make-lora-great-again-boosting-lora-with-adaptive-singular-values-and.md) |
-| [Reinforcement learning for LLM reasoning (GRPO, RLVR)](rl-for-reasoning/README.md) | 514 | [DAPO: An Open-Source LLM Reinforcement Learning System at Scale](rl-for-reasoning/2503.14476-dapo-an-open-source-llm-reinforcement-learning-system-at-scale.md) |
+| [Reinforcement learning for LLM reasoning (GRPO, RLVR)](rl-for-reasoning/README.md) | 516 | [DAPO: An Open-Source LLM Reinforcement Learning System at Scale](rl-for-reasoning/2503.14476-dapo-an-open-source-llm-reinforcement-learning-system-at-scale.md) |
 | [Data curation, mixtures & synthetic data](data-curation-and-synthetic-data/README.md) | 247 | [LIMO: Less is More for Reasoning](data-curation-and-synthetic-data/2502.03387-limo-less-is-more-for-reasoning.md) |
 | [Tokenization & byte-level models](tokenization/README.md) | 90 | [Dynamic Chunking for End-to-End Hierarchical Sequence Modeling](tokenization/2507.07955-dynamic-chunking-for-end-to-end-hierarchical-sequence-modeling.md) |
 

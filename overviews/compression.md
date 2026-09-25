@@ -39,7 +39,7 @@
 * [Revisiting OPD](../papers/compression/knowledge-distillation/2603.25562-revisiting-on-policy-distillation-empirical-failure-modes-and-simple-f.md): three failure modes (token imbalance, unreliable teacher on student prefixes,
   tokenizer mismatch) and fixes (+19.8%).
 * Self-distillation as RL: [OPSD](../papers/compression/knowledge-distillation/2601.18734-self-distilled-reasoner-on-policy-self-distillation-for-large-language.md), [SDPO](../papers/training/rl-for-reasoning/2601.20802-reinforcement-learning-via-self-distillation.md), [RLSD](../papers/compression/knowledge-distillation/2604.03128-self-distilled-rlvr.md) and
-  [SDAR](https://arxiv.org/abs/2605.15155) (agentic). Caveat: [Why Does Self-Distillation (Sometimes) Degrade the Reasoning Capability of LLMs?](../papers/compression/knowledge-distillation/2603.24472-why-does-self-distillation-sometimes-degrade-the-reasoning-capability.md) shows self-distillation can suppress uncertainty expression
+  [SDAR](../papers/training/rl-for-reasoning/2605.15155-self-distilled-agentic-reinforcement-learning.md) (agentic). Caveat: [Why Does Self-Distillation (Sometimes) Degrade the Reasoning Capability of LLMs?](../papers/compression/knowledge-distillation/2603.24472-why-does-self-distillation-sometimes-degrade-the-reasoning-capability.md) shows self-distillation can suppress uncertainty expression
   and hurt out-of-distribution reasoning by up to 40%.
 * Continual learning: [SDFT](../papers/compression/knowledge-distillation/2601.19897-self-distillation-enables-continual-learning.md) (learn from demonstrations on-policy, with less forgetting).
 * Cross-tokenizer distillation is covered in [model conversion](model-conversion.md).

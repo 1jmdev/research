@@ -6,6 +6,55 @@ FlashAttention-style kernels, FP8/FP4 attention kernels (SageAttention), decode 
 
 📖 Written overview of this area: [../../../overviews/attention.md](../../../overviews/attention.md)
 
+## 🔬 Analyst notes: hand ranking and verdict
+
+_Written after reading the abstracts, and the full text where available, of this category's papers. The hand ranking weighs technical merit and usefulness for a runtime or model builder, not just citations. The automatic impact ranking follows below._
+
+**Verdict.** The attention-kernel landscape in 2026:
+
+* **FlashAttention-4** is the Blackwell dense baseline.
+* **FlashInfer** is the serving engine: paged/ragged KV, JIT variants, CUDA-graph-friendly scheduling.
+* **FlashMLA**-family kernels serve MLA.
+* **SageAttention3** covers FP4 and 8-bit attention.
+
+On Blackwell, tensor cores got 2× faster but **shared memory and the exponential unit did not**. Kernels are now bound
+by softmax and SMEM, hence FA4's software exp2 and conditional rescaling, and FP4 attention's softmax bottleneck
+([Hardware-Aware FP4 FlashAttention-4](2609.04105-hardware-aware-fp4-flashattention-4.md), [EFQ-Softmax](2609.09721-efq-softmax-exp-free-quantization-for-softmax.md)). For serving, the big wins come from **shared-prefix-aware decode**
+(PAT, CoDec, TyphoonMLA, DualKV for RL) and from portable Triton/Pallas kernels (AMD, TPU).
+
+### Hand ranking
+
+| # | Paper | Scope | Key idea | Headline |
+| ---: | --- | --- | --- | --- |
+| 1 | [FlashAttention-4](2603.05451-flashattention-4-algorithm-and-kernel-pipelining-co-design-for-asymmet.md) | Dense, Blackwell | Fully async MMA pipelines with larger tiles; **software-emulated exp** + conditional softmax rescaling; 2-CTA MMA for backward; written in CuTe-DSL (Python) | Up to 1.3× over cuDNN 9.13 and 2.7× over Triton on B200; ~71% utilization |
+| 2 | [FlashInfer](2501.01005-flashinfer-efficient-and-customizable-attention-engine-for-llm-inferen.md) (MLSys'25 best paper) | Serving engine | Block-sparse and composable KV formats, **JIT attention templates**, load-balanced scheduler compatible with CUDA graphs | Powers vLLM, SGLang and MLC. The reference for serving attention |
+| 3 | [SageAttention3](2505.11594-sageattention3-microscaling-fp4-attention-for-inference-and-an-explora.md) (NeurIPS'25) | FP4 inference + INT8 training | **Microscaling FP4 attention** (1038 TOPS on RTX 5090, 5× FA) + trainable 8-bit attention (SageBwd) | Plug-and-play FP4 attention |
+| 4 | [SageBwd](2603.02170-sagebwd-a-trainable-low-bit-attention.md) | Low-bit training | INT8 in 6 of 7 attention matmuls; needs **QK-norm**; the error lives in the dS gradient | Matches full-precision pretraining at moderate tokens per step |
+| 5 | [ThriftAttention](2605.23081-thriftattention-selective-mixed-precision-for-long-context-fp4-attenti.md) | FP4 long context | Keep a few important Q-K block pairs in FP16, the rest FP4 | Near-FP16 long-context quality at FP4 speed |
+| 6 | [PAT](2511.22333-pat-accelerating-llm-decoding-via-prefix-aware-attention-with-resource.md) (ASPLOS'26) | Decode, shared prefix | **Pack queries by shared prefix** and a multi-tile kernel (pack-forward-merge) | Cuts redundant prefix KV reads in serving |
+| 7 | [Tiled Flash Linear Attention](2503.14376-tiled-flash-linear-attention-more-efficient-linear-rnn-and-xlstm-kerne.md) (NeurIPS'25) | Linear RNN kernels | Two-level tiling within chunks → fewer materialized states | Faster than FA and FLA for mLSTM/linear RNNs |
+| 8 | [FlashMLA-ETAP](2506.01969-flashmla-etap-efficient-transpose-attention-pipeline-for-accelerating.md) | MLA decode on H20 | Transposed pipeline aligning KV length with the WGMMA M-dimension | 2.78× over FlashMLA at 64K |
+| 9 | [DualKV](2605.15422-dualkv-shared-prompt-flash-attention-for-efficient-rl-training-with-la.md) | RL training | Process the **shared prompt once** across N rollouts in fused forward and backward | Large savings for GRPO/DAPO with long prompts |
+| 10 | [Anatomy of a Triton attention kernel](2511.11581-the-anatomy-of-a-triton-attention-kernel.md) (IBM/vLLM) | Portability | State-of-the-art paged attention in **pure Triton** on NVIDIA and AMD | In vLLM; shows portability is achievable |
+| 11 | [Ragged Paged Attention](2604.15464-ragged-paged-attention-a-high-performance-and-flexible-llm-inference-k.md) (Google) | TPU | Pallas/Mosaic ragged paged attention with fused KV update | TPU serving reference |
+| 12 | [DASH](2601.21824-dash-deterministic-attention-scheduling-for-high-throughput-reproducib.md) | Deterministic training | DAG scheduling of the deterministic backward | Recovers most of the ~38% determinism penalty |
+| 13 | [Guess-Verify-Refine](2604.22312-guess-verify-refine-data-aware-top-k-for-sparse-attention-decoding-on.md) | Sparse decode top-k | Exact top-k reusing the previous step's selection (temporal correlation) on Blackwell | Speeds up the DSA indexer's top-k stage |
+| 14 | [TyphoonMLA](2509.21081-typhoonmla-a-mixed-naive-absorb-mla-kernel-for-shared-prefix.md) | MLA shared prefix | Mixed naive/absorb MLA: naive for the shared prefix, absorb for the rest | Faster MLA with prefix sharing |
+| 15 | [FlashBias](2505.12044-flashbias-fast-computation-of-attention-with-bias.md) (NeurIPS'25) | Attention with bias | Low-rank bias decomposition keeps fusion | Fast biased attention (ALiBi-like, science models) |
+
+Also relevant:
+* Compiler and DSL approaches: [Flashlight](2511.02043-flashlight-pytorch-compiler-extensions-to-accelerate-attention-variant.md), [AttnFuse](2609.13612-attnfuse-a-composable-dsl-for-compiling-attentions-to-fused-gpu-kernel.md), [Paged Attention Meets FlexAttention](2506.07311-paged-attention-meets-flexattention-unlocking-long-context-efficiency.md) (PagedAttention in
+  FlexAttention).
+* LLM-generated kernels: [QiMeng-Attention](2506.12355-qimeng-attention-sota-attention-operator-is-generated-by-sota-attentio.md), [CuBridge](2605.05023-cubridge-an-llm-based-framework-for-understanding-and-reconstructing-h.md).
+* NPUs: [HiFA4 (Ascend)](2607.04302-hifa4-training-free-4-bit-flashattention-on-ascend-hif4-npus-for-llm-i.md), [AMD XDNA](2609.21264-programming-amd-xdna-npus-with-open-source-compiler-tools-a-flashatten.md).
+
+**Runtime recommendations.**
+1. Adopt FlashInfer (or FA3/FA4 + FlashMLA) as the kernel layer. Your runtime's job is paging, scheduling and variant
+   selection.
+2. Add **cascade/shared-prefix decode** (FlashInfer cascade, PAT) for agents and RL.
+3. On Blackwell, prefer FP8 attention by default. Use FP4 attention (SageAttention3) only with a mixed-precision guard
+   such as ThriftAttention for long context.
+
 ## 🏆 Best of the best by impact score (top 10)
 
 1. **[SageAttention3: Microscaling FP4 Attention for Inference and An Exploration of 8-Bit Training](2505.11594-sageattention3-microscaling-fp4-attention-for-inference-and-an-explora.md)** (2026-01) — This work designs an accurate and efficient 8-bit attention for both forward and backward propagation, and pioneer low-bit attention to training tasks, to explore whether low-bit attention can be effectively applied to …  

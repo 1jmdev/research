@@ -6,6 +6,49 @@ SSM/RNN language models, selective state spaces, recurrent memory LMs.
 
 📖 Written overview of this area: [../../../overviews/attention.md](../../../overviews/attention.md)
 
+## 🔬 Analyst notes: hand ranking and verdict
+
+_Written after reading the abstracts, and the full text where available, of this category's papers. The hand ranking weighs technical merit and usefulness for a runtime or model builder, not just citations. The automatic impact ranking follows below._
+
+**Verdict.** Pure recurrent models (Mamba-3, RWKV-7, xLSTM 7B) are now competitive at small and medium scale. They have
+provably **better state tracking** than Transformers: RWKV-7 recognizes all regular languages, while Transformers are
+limited to TC⁰. They still trail on **associative recall** at long context, the gather-and-aggregate skill. Two lines
+of work address that gap:
+
+* **Richer state updates.** Diagonal → diagonal + low-rank (DeltaProduct, PD-SSM) → non-linear or implicit RNNs
+  (ParaRNN, M²RNN).
+* **Bigger or smarter memory.** Test-time memorization (Titans, ATLAS, the Miras framework); mixture-of-memories;
+  sparse delta memory; memory caching.
+
+In production the answer is **hybrids**: see [`hybrid-architectures`](../hybrid-architectures/README.md) and
+[`linear-attention`](../linear-attention/README.md).
+
+### Hand ranking
+
+| # | Paper | Key idea | Why it matters |
+| ---: | --- | --- | --- |
+| 1 | [Mamba-3](2603.15569-mamba-3-improved-sequence-modeling-using-state-space-principles.md) (ICLR'26) | Inference-first SSM: a more expressive (trapezoidal) discretization, **complex-valued states** (rotations → state tracking) and **MIMO** updates for higher arithmetic intensity at decode | Best pure SSM for decode efficiency and quality; the reference for SSM kernels |
+| 2 | [RWKV-7 "Goose"](2503.14456-rwkv-7-goose-with-expressive-dynamic-state-evolution.md) | Generalized delta rule with vector gating and in-context learning rates; 2.9B trained on 3.1T open tokens | 3B multilingual state of the art at constant memory; provable state tracking. Open data |
+| 3 | [Titans](2501.00663-titans-learning-to-memorize-at-test-time.md) (Google, NeurIPS'25) | **Neural long-term memory** (MLP) updated at test time by surprise-gated gradient descent, combined with attention as short-term memory | Scales to >2M context; the anchor of the test-time-memorization line |
+| 4 | [Miras: It's All Connected](2504.13173-it-s-all-connected-a-journey-through-test-time-memorization-attentiona.md) | Unifies Transformers, Titans and linear RNNs as associative memory with an **attentional-bias objective + retention gate**; introduces Moneta/Yaad/Memora | Design framework for new recurrent layers |
+| 5 | [ATLAS](2505.23735-atlas-learning-to-optimally-memorize-the-context-at-test-time.md) | Sliding-window (Omega) memory learning, higher-order feature maps, Muon-style memory optimizer | Beats Titans and Transformers on long-context recall |
+| 6 | [DeltaProduct](2502.10297-deltaproduct-improving-state-tracking-in-linear-rnns-via-householder-p.md) (NeurIPS'25) | Multiple delta-rule steps per token = **products of Householder matrices**; tunable expressivity | Cleanly trades compute for state tracking |
+| 7 | [MoM: Mixture-of-Memories](2502.13685-mom-linear-sequence-modeling-with-mixture-of-memories.md) | Router sends tokens to **multiple independent memory states** | Large recall gains at constant memory |
+| 8 | [MesaNet](2506.05233-mesanet-sequence-modeling-by-locally-optimal-test-time-training.md) (ICLR'26) | Chunkwise-parallel **locally optimal** TTT (solves in-context regression exactly with CG) | Strong recall; principled |
+| 9 | [M1](2504.10449-m1-towards-scalable-test-time-compute-with-mamba-reasoning-models.md) | Hybrid Mamba **reasoning model** distilled from R1 then RL'd | Matches R1-distill at the same scale with >3× generation throughput, so more samples fit a fixed test-time budget |
+| 10 | [Sparse Delta Memory](2607.07386-sparse-delta-memory-scaling-the-state-of-linear-rnns-through-sparsity.md) | GDN with **sparse reads/writes to a large explicit memory** | Orders-of-magnitude bigger state at iso-FLOPs |
+| 11 | [Memory Caching](2602.24281-memory-caching-rnns-with-growing-memory.md) | Cache checkpoints of RNN states so memory grows with length | Interpolates between RNN and Transformer memory |
+| 12 | [ParaRNN](2510.21450-pararnn-unlocking-parallel-training-of-nonlinear-rnns-for-large-langua.md) (Apple) | Newton-based **parallel training of non-linear RNNs** at 7B | Revives non-linear RNNs for LLMs |
+| 13 | [xLSTM 7B](2503.13427-xlstm-7b-a-recurrent-llm-for-fast-and-efficient-inference.md) | mLSTM-based 7B LLM optimized for fast inference | Competitive 7B recurrent model |
+| 14 | [Gather-and-Aggregate skill gap](2504.18574-understanding-the-skill-gap-in-recurrent-language-models-the-role-of-t.md) | Recall failures trace to a few G&A heads, which SSMs implement poorly | Explains why a few attention layers fix hybrids |
+| 15 | [Length generalization in recurrent models](2507.02782-understanding-and-improving-length-generalization-in-recurrent-models.md) (ICML'25) | "Unexplored states" hypothesis; state-init interventions fix length generalization | Cheap training fix |
+
+**Runtime notes.**
+* SSM decode is **state-update bound**, not bandwidth bound on KV. Mamba-3 MIMO raises arithmetic intensity.
+  Implement the fused selective-scan decode step and **state snapshots** for speculative decoding and prefix caching.
+* For RWKV-7 and xLSTM, specialized kernels (WKV7, mLSTM chunkwise) matter more than for Transformers. Watch the
+  numerical-precision sensitivity the RWKV-7 authors report.
+
 ## 🏆 Best of the best by impact score (top 10)
 
 1. **[RWKV-7 "Goose" with Expressive Dynamic State Evolution](2503.14456-rwkv-7-goose-with-expressive-dynamic-state-evolution.md)** (2025-03) — RWKV-7 is presented, a new sequence modeling architecture with constant memory usage and constant inference time per token, and it is shown that RWKV-7 can perform state tracking and recognize all regular languages, …  

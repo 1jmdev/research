@@ -26,14 +26,14 @@
 
 * **Underthinking:** o1-like models switch thoughts too early ([Thoughts Are All Over the Place](../papers/reasoning/efficient-reasoning/2501.18585-thoughts-are-all-over-the-place-on-the-underthinking-of-o1-like-llms.md)); a thought-switching penalty (TIP)
   fixes it at decode time.
-* **Overthinking on ill-posed questions:** [MiP-Overthinking](https://arxiv.org/abs/2504.06514), which spreads through distillation.
+* **Overthinking on ill-posed questions:** [MiP-Overthinking](../papers/reasoning/efficient-reasoning/2504.06514-missing-premise-exacerbates-overthinking-are-reasoning-models-losing-c.md), which spreads through distillation.
 * Survey: [Efficient Reasoning Models](../papers/reasoning/efficient-reasoning/2504.10903-efficient-reasoning-models-a-survey.md) (shorter / smaller / faster).
 
 ## Test-time scaling ([folder](../papers/reasoning/test-time-scaling/README.md))
 
 * Search + self-evolution: [rStar-Math](../papers/reasoning/test-time-scaling/2501.04519-rstar-math-small-llms-can-master-math-reasoning-with-self-evolved-deep.md) (MCTS with a PRM lifts Qwen2.5-Math-7B on MATH from 58.8% to
   90.0%).
-* Code: [S*](https://arxiv.org/abs/2502.14382) (parallel + sequential scaling; a 3B model beats GPT-4o-mini).
+* Code: [S*](../papers/reasoning/test-time-scaling/2502.14382-s-test-time-scaling-for-code-generation.md) (parallel + sequential scaling; a 3B model beats GPT-4o-mini).
 * **Parallel reasoning** is the runtime-relevant trend: many branches sharing a prefix. It needs efficient prefix
   sharing, branch pruning and fork/join in the scheduler.
   * [Adaptive Parallel Reasoning](../papers/reasoning/test-time-scaling/2504.15466-learning-adaptive-parallel-reasoning-with-language-models.md): the model spawns and joins threads itself.

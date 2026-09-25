@@ -9,7 +9,7 @@ Designing and training small LMs, SLM recipes, sub-billion models.
 ## 🏆 Best of the best by impact score (top 10)
 
 1. **[SmolLM2: When Smol Goes Big -- Data-Centric Training of a Small Language Model](2502.02737-smollm2-when-smol-goes-big-data-centric-training-of-a-small-language-m.md)** (2025-02) — This paper document the development of SmolLM2, a state-of-the-art"small"(1.7 billion parameter) language model (LM) that outperforms other recent small LMs including Qwen2.5-1.5B and Llama3.2-1B.  
-   _score 20.17 · 362 cites · 260▲ HF · [code](https://github.com/huggingface/smollm)_
+   _score 20.17 · 362 cites · 260▲ HF · [code](https://github.com/huggingface/smollm) · ~7.1 H100-h_
 2. **[Small Language Models are the Future of Agentic AI](2506.02153-small-language-models-are-the-future-of-agentic-ai.md)** (2026-09) — It is argued that small language models (SLMs) are sufficiently powerful, inherently more suitable, and necessarily more economical for many invocations in agentic systems, and are therefore the future of agentic AI.  
    _score 19.8 · 381 cites · 25▲ HF_
 3. **[SmolVLM: Redefining small and efficient multimodal models](2504.05299-smolvlm-redefining-small-and-efficient-multimodal-models.md)** (2025-04) — This work introduces SmolVLM, a series of compact multimodal models specifically engineered for resource-efficient inference, and systematically explores architectural configurations, tokenization strategies, and data …  
@@ -42,6 +42,7 @@ Sorted cheapest first by the *smallest* compute figure found in the paper. Range
 
 | Paper | Min H100-h | Max H100-h | GPU seen | Evidence |
 | --- | ---: | ---: | --- | --- |
+| [SmolLM2: When Smol Goes Big -- Data-Centric Training of a Small Language Model](2502.02737-smollm2-when-smol-goes-big-data-centric-training-of-a-small-language-m.md) | 7.1 | 7.1 | H100 | We trained the model on 256 H100s using the nanotron framework and use AdamW optimizer with (\beta,\beta_{2})=(0.9,0.95) with a Warmup Stable Decay (WSD) (Hu et… |
 | [Nemotron-Flash: Towards Latency-Optimal Hybrid Small Language Models](2511.18890-nemotron-flash-towards-latency-optimal-hybrid-small-language-models.md) | 20 | 20 | A100 | Training and evaluating a sampled architecture takes approximately 2 hours using 32 NVIDIA A100 GPUs.… |
 
 ## Full ranking

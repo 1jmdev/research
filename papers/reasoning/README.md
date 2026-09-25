@@ -1,13 +1,13 @@
 # Reasoning efficiency & test-time compute
 
-**751 papers** across 3 sub-categories. [Back to index](../../README.md)
+**753 papers** across 3 sub-categories. [Back to index](../../README.md)
 
 📖 **Read first:** [written overview & recommendations](../../overviews/reasoning.md)
 
 | Sub-category | Papers | #1 paper |
 | --- | ---: | --- |
-| [Efficient reasoning (CoT compression, overthinking, adaptive thinking)](efficient-reasoning/README.md) | 359 | [Stop Overthinking: A Survey on Efficient Reasoning for Large Language Models](efficient-reasoning/2503.16419-stop-overthinking-a-survey-on-efficient-reasoning-for-large-language-m.md) |
-| [Test-time scaling & inference-time compute](test-time-scaling/README.md) | 226 | [s1: Simple test-time scaling](test-time-scaling/2501.19393-s1-simple-test-time-scaling.md) |
+| [Efficient reasoning (CoT compression, overthinking, adaptive thinking)](efficient-reasoning/README.md) | 360 | [Stop Overthinking: A Survey on Efficient Reasoning for Large Language Models](efficient-reasoning/2503.16419-stop-overthinking-a-survey-on-efficient-reasoning-for-large-language-m.md) |
+| [Test-time scaling & inference-time compute](test-time-scaling/README.md) | 227 | [s1: Simple test-time scaling](test-time-scaling/2501.19393-s1-simple-test-time-scaling.md) |
 | [Latent reasoning, looped & recurrent-depth models](latent-and-looped/README.md) | 166 | [Scaling up Test-Time Compute with Latent Reasoning: A Recurrent Depth Approach](latent-and-looped/2502.05171-scaling-up-test-time-compute-with-latent-reasoning-a-recurrent-depth-a.md) |
 
 ## Top 25 across the whole area
@@ -38,27 +38,27 @@
    Findings show the significance of adapting TTS strategies to the specific characteristics of each task and model and indicate that TTS is a promising approach for enhancing the reasoning abilities of …
 13. [Thinkless: LLM Learns When to Think](efficient-reasoning/2505.13379-thinkless-llm-learns-when-to-think.md) — _Efficient reasoning (CoT compression, overthinking, adaptive thinking)_ · score 15.31 · 127 cites · 50▲  
    Thinkless is a learnable framework that empowers an LLM to adaptively select between short-form and long-form reasoning, based on both task complexity and the model's ability, significantly improving …
-14. [Sketch-of-Thought: Efficient LLM Reasoning with Adaptive Cognitive-Inspired Sketching](efficient-reasoning/2503.05179-sketch-of-thought-efficient-llm-reasoning-with-adaptive-cognitive-insp.md) — _Efficient reasoning (CoT compression, overthinking, adaptive thinking)_ · score 14.98 · 140 cites · 46▲  
+14. [S*: Test Time Scaling for Code Generation](test-time-scaling/2502.14382-s-test-time-scaling-for-code-generation.md) — _Test-time scaling & inference-time compute_ · score 15.11 · 117 cites · 63▲  
+   S* is proposed, the first hybrid test-time scaling framework that substantially improves the coverage and selection accuracy of generated code and extends the existing parallel scaling paradigm with …
+15. [Sketch-of-Thought: Efficient LLM Reasoning with Adaptive Cognitive-Inspired Sketching](efficient-reasoning/2503.05179-sketch-of-thought-efficient-llm-reasoning-with-adaptive-cognitive-insp.md) — _Efficient reasoning (CoT compression, overthinking, adaptive thinking)_ · score 14.98 · 140 cites · 46▲  
    Sketch-of-Thought (SoT), a prompting framework that integrates cognitively inspired reasoning paradigms with linguistic constraints to reduce token usage while preserving reasoning accuracy, is …
-15. [A Survey of Efficient Reasoning for Large Reasoning Models: Language, Multimodality, and Beyond](efficient-reasoning/2503.21614-a-survey-of-efficient-reasoning-for-large-reasoning-models-language-mu.md) — _Efficient reasoning (CoT compression, overthinking, adaptive thinking)_ · score 14.8 · 145 cites · 44▲  
+16. [A Survey of Efficient Reasoning for Large Reasoning Models: Language, Multimodality, and Beyond](efficient-reasoning/2503.21614-a-survey-of-efficient-reasoning-for-large-reasoning-models-language-mu.md) — _Efficient reasoning (CoT compression, overthinking, adaptive thinking)_ · score 14.8 · 145 cites · 44▲  
    This survey provides a comprehensive overview of recent efforts aimed at improving reasoning efficiency in LRMs, with a particular focus on the unique challenges that arise in this new paradigm.
-16. [Learning to Discover at Test Time](test-time-scaling/2601.16175-learning-to-discover-at-test-time.md) — _Test-time scaling & inference-time compute_ · score 14.49 · 82 cites · 45▲  
+17. [Learning to Discover at Test Time](test-time-scaling/2601.16175-learning-to-discover-at-test-time.md) — _Test-time scaling & inference-time compute_ · score 14.49 · 82 cites · 45▲  
    This work performs reinforcement learning at test time, so the LLM can continue to train, but now with experience specific to the test problem, and sets the new state of the art in almost all of them.
-17. [Optimizing Test-Time Compute via Meta Reinforcement Fine-Tuning](test-time-scaling/2503.07572-optimizing-test-time-compute-via-meta-reinforcement-fine-tuning.md) — _Test-time scaling & inference-time compute_ · score 14.2 · 134 cites · 48▲  
+18. [Optimizing Test-Time Compute via Meta Reinforcement Fine-Tuning](test-time-scaling/2503.07572-optimizing-test-time-compute-via-meta-reinforcement-fine-tuning.md) — _Test-time scaling & inference-time compute_ · score 14.2 · 134 cites · 48▲  
    Meta Reinforcement Fine-Tuning, or MRT, a new class of fine-tuning methods for optimizing test-time compute that leads to a 2-3x relative gain in performance and roughly a 1.5x gain in token …
-18. [LightThinker: Thinking Step-by-Step Compression](efficient-reasoning/2502.15589-lightthinker-thinking-step-by-step-compression.md) — _Efficient reasoning (CoT compression, overthinking, adaptive thinking)_ · score 14.11 · 118 cites · 31▲  
+19. [LightThinker: Thinking Step-by-Step Compression](efficient-reasoning/2502.15589-lightthinker-thinking-step-by-step-compression.md) — _Efficient reasoning (CoT compression, overthinking, adaptive thinking)_ · score 14.11 · 118 cites · 31▲  
    LightThinker, a novel method that enables LLMs to dynamically compress intermediate thoughts during reasoning, and introduces the Dependency (Dep) metric to quantify the degree of compression by …
-19. [Reasoning with Sampling: Your Base Model is Smarter Than You Think](test-time-scaling/2510.14901-reasoning-with-sampling-your-base-model-is-smarter-than-you-think.md) — _Test-time scaling & inference-time compute_ · score 13.98 · 79 cites · 47▲  
+20. [Reasoning with Sampling: Your Base Model is Smarter Than You Think](test-time-scaling/2510.14901-reasoning-with-sampling-your-base-model-is-smarter-than-you-think.md) — _Test-time scaling & inference-time compute_ · score 13.98 · 79 cites · 47▲  
    This work proposes a simple iterative sampling algorithm leveraging the base models'own likelihoods, and shows that the algorithm offers substantial boosts in reasoning that nearly match and even …
-20. [A Survey on Test-Time Scaling in Large Language Models: What, How, Where, and How Well?](test-time-scaling/2503.24235-a-survey-on-test-time-scaling-in-large-language-models-what-how-where.md) — _Test-time scaling & inference-time compute_ · score 13.91 · 194 cites · 55▲  
+21. [A Survey on Test-Time Scaling in Large Language Models: What, How, Where, and How Well?](test-time-scaling/2503.24235-a-survey-on-test-time-scaling-in-large-language-models-what-how-where.md) — _Test-time scaling & inference-time compute_ · score 13.91 · 194 cites · 55▲  
    This work distill the major developmental trajectories of TTS to date and offers hands-on guidelines for practical deployment, and proposes a unified, multidimensional framework structured along four …
-21. [Atom of Thoughts for Markov LLM Test-Time Scaling](test-time-scaling/2502.12018-atom-of-thoughts-for-markov-llm-test-time-scaling.md) — _Test-time scaling & inference-time compute_ · score 13.82 · 72 cites · 17▲  
+22. [Atom of Thoughts for Markov LLM Test-Time Scaling](test-time-scaling/2502.12018-atom-of-thoughts-for-markov-llm-test-time-scaling.md) — _Test-time scaling & inference-time compute_ · score 13.82 · 72 cites · 17▲  
    This work leverages the memoryless property of Markov processes to minimize reliance on historical context and proposes a Markovian reasoning process, which enables seamless integration with various …
-22. [Soft Thinking: Unlocking the Reasoning Potential of LLMs in Continuous Concept Space](latent-and-looped/2505.15778-soft-thinking-unlocking-the-reasoning-potential-of-llms-in-continuous.md) — _Latent reasoning, looped & recurrent-depth models_ · score 13.74 · 117 cites · 19▲  
+23. [Soft Thinking: Unlocking the Reasoning Potential of LLMs in Continuous Concept Space](latent-and-looped/2505.15778-soft-thinking-unlocking-the-reasoning-potential-of-llms-in-continuous.md) — _Latent reasoning, looped & recurrent-depth models_ · score 13.74 · 117 cites · 19▲  
    Soft Thinking is introduced, a training-free method that emulates human-like "soft"reasoning by generating soft, abstract concept tokens in a continuous concept space, enabling smooth transitions and …
-23. [Thoughts Are All Over the Place: On the Underthinking of o1-Like LLMs](efficient-reasoning/2501.18585-thoughts-are-all-over-the-place-on-the-underthinking-of-o1-like-llms.md) — _Efficient reasoning (CoT compression, overthinking, adaptive thinking)_ · score 13.65 · 171 cites · 61▲  
+24. [Thoughts Are All Over the Place: On the Underthinking of o1-Like LLMs](efficient-reasoning/2501.18585-thoughts-are-all-over-the-place-on-the-underthinking-of-o1-like-llms.md) — _Efficient reasoning (CoT compression, overthinking, adaptive thinking)_ · score 13.65 · 171 cites · 61▲  
    A decoding strategy with thought switching penalty TIP that discourages premature transitions between thoughts, encouraging deeper exploration of each reasoning path and contributes to understanding …
-24. [L1: Controlling How Long A Reasoning Model Thinks With Reinforcement Learning](efficient-reasoning/2503.04697-l1-controlling-how-long-a-reasoning-model-thinks-with-reinforcement-le.md) — _Efficient reasoning (CoT compression, overthinking, adaptive thinking)_ · score 13.55 · 376 cites · 0▲  
+25. [L1: Controlling How Long A Reasoning Model Thinks With Reinforcement Learning](efficient-reasoning/2503.04697-l1-controlling-how-long-a-reasoning-model-thinks-with-reinforcement-le.md) — _Efficient reasoning (CoT compression, overthinking, adaptive thinking)_ · score 13.55 · 376 cites · 0▲  
    This work uses LCPO to train L1, a reasoning language model that produces outputs satisfying a length constraint given in its prompt, and derives Short Reasoning Models (SRMs), that exhibit similar …
-25. [The Danger of Overthinking: Examining the Reasoning-Action Dilemma in Agentic Tasks](efficient-reasoning/2502.08235-the-danger-of-overthinking-examining-the-reasoning-action-dilemma-in-a.md) — _Efficient reasoning (CoT compression, overthinking, adaptive thinking)_ · score 13.46 · 155 cites · 43▲  
-   This paper introduces and analyzes overthinking in LRMs, a phenomenon where models favor extended internal reasoning chains over environmental interaction and suggests that by leveraging native …
