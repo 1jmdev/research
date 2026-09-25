@@ -6,7 +6,7 @@ Swapping or extending a pretrained model's tokenizer, cross-tokenizer distillati
 
 📖 Written overview of this area: [../../../overviews/model-conversion.md](../../../overviews/model-conversion.md)
 
-## 🏆 Best of the best (top 10)
+## 🏆 Best of the best by impact score (top 10)
 
 1. **[Universal Cross-Tokenizer Distillation via Approximate Likelihood Matching](2503.20083-universal-cross-tokenizer-distillation-via-approximate-likelihood-matc.md)** (2025-10) — This work develops a principled cross-tokenizer distillation method, which is the first to enable effective distillation across fundamentally different tokenizers, while also substantially outperforming prior methods in …  
    _score 7.56 · NeurIPS 2025 · 42 cites · ~48–192 H100-h_

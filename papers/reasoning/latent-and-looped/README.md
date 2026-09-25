@@ -6,7 +6,7 @@ Continuous-thought / latent CoT, looped transformers, recurrent-depth (depth-rec
 
 📖 Written overview of this area: [../../../overviews/reasoning.md](../../../overviews/reasoning.md)
 
-## 🏆 Best of the best (top 10)
+## 🏆 Best of the best by impact score (top 10)
 
 1. **[Scaling up Test-Time Compute with Latent Reasoning: A Recurrent Depth Approach](2502.05171-scaling-up-test-time-compute-with-latent-reasoning-a-recurrent-depth-a.md)** (2025-02) — A novel language model architecture that is capable of scaling test-time computation by implicitly reasoning in latent space by iterating a recurrent block, thereby unrolling to arbitrary depth at test-time is studied.  
    _score 20.38 · Neural Information Processing Systems (Neural Inf Process Sy · 376 cites · 162▲ HF · [code](https://huggingface.co/tomg-group-umd/huginn-0125)_

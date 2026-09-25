@@ -6,7 +6,7 @@ Draft-then-verify decoding: draft models, EAGLE/Medusa heads, tree verification,
 
 📖 Written overview of this area: [../../../overviews/decoding.md](../../../overviews/decoding.md)
 
-## 🏆 Best of the best (top 10)
+## 🏆 Best of the best by impact score (top 10)
 
 1. **[DFlash: Block Diffusion for Flash Speculative Decoding](2602.06036-dflash-block-diffusion-for-flash-speculative-decoding.md)** (2026-05) — DFlash is introduced, a speculative decoding framework that employs a lightweight block diffusion model for parallel drafting that enables efficient drafting with high-quality outputs and higher acceptance rates and …  
    _score 19.5 · Accepted at ICML 2026 · 98 cites · 99▲ HF · [code](https://github.com/z-lab/dflash)_

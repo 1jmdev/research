@@ -6,7 +6,7 @@ Compressing KV along the hidden/head dimension: low-rank projection, latent KV (
 
 📖 Written overview of this area: [../../../overviews/kv-cache.md](../../../overviews/kv-cache.md)
 
-## 🏆 Best of the best (top 10)
+## 🏆 Best of the best by impact score (top 10)
 
 1. **[LeanK: Learnable K Cache Channel Pruning for Efficient Decoding](2508.02215-leank-learnable-k-cache-channel-pruning-for-efficient-decoding.md)** (2025-08) — This work proposes LeanK, a learning-based method that prunes unimportant key (K) cache channels by leveraging static channel sparsity by learning channel-wise static mask that could satisfy specific sparsity ratio and …  
    _score 5.56 · Conference on Empirical Methods in Natural Language Processi · 6 cites · 12▲ HF_

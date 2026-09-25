@@ -6,12 +6,12 @@ Exploiting sparse activations at inference (ReLU-fication, TEAL, contextual spar
 
 📖 Written overview of this area: [../../../overviews/compression.md](../../../overviews/compression.md)
 
-## 🏆 Best of the best (top 10)
+## 🏆 Best of the best by impact score (top 10)
 
 1. **[SoLA: Leveraging Soft Activation Sparsity and Low-Rank Decomposition for Large Language Model Compression](2604.03258-sola-leveraging-soft-activation-sparsity-and-low-rank-decomposition-fo.md)** (2026-03) — A novel training-free compression method for LLMs, named SoLA, which leverages Soft activation sparsity and Low-rAnk decomposition is proposed, which exhibits remarkable improvement in both language modeling and …  
    _score 5.71 · AAAI Conference on Artificial Intelligence (National Confere · 20 cites_
 2. **[R-Sparse: Rank-Aware Activation Sparsity for Efficient LLM Inference](2504.19449-r-sparse-rank-aware-activation-sparsity-for-efficient-llm-inference.md)** (2025-04) — R-Sparse is introduced, a training-free activation sparsity approach capable of achieving high sparsity levels in advanced LLMs that replaces the linear layers in LLMs with a rank-aware sparse inference method that …  
-   _score 4.78 · ICLR 2025 · 24 cites_
+   _score 5.28 · ICLR 2025 · 24 cites · [code](https://github.com/VITA-Group/R-Sparse) · ~0.16 H100-h_
 3. **[BlockFFN: Towards End-Side Acceleration-Friendly Mixture-of-Experts with Chunk-Level Activation Sparsity](2507.08771-blockffn-towards-end-side-acceleration-friendly-mixture-of-experts-wit.md)** (2025-07) — A novel MoE architecture, BlockFFN, is introduced, as well as its efficient training and deployment techniques, and efficient acceleration kernels are implemented, combining activation sparsity and speculative decoding …  
    _score 4.59 · 6 cites · 10▲ HF · [code](https://github.com/thunlp/BlockFFN)_
 4. **[WINA: Weight Informed Neuron Activation for Accelerating Large Language Model Inference](2505.19427-wina-weight-informed-neuron-activation-for-accelerating-large-language.md)** (2026-02) — WINA (Weight Informed Neuron Activation) is proposed, a novel, simple, and training-free sparse activation framework that jointly considers hidden state magnitudes and the column-wise $\ell_2$-norms of weight matrices …  
@@ -39,12 +39,20 @@ Citations lag, so new work is under-ranked above. These are the most-upvoted or 
 - **[SelectInfer: Selective Neuron Loading and Computation for On-Device LLMs](2607.18081-selectinfer-selective-neuron-loading-and-computation-for-on-device-llm.md)** (2026-07-20; 0▲, 0 cites) — Evaluation across multiple datasets shows that SelectInfer achieves significant reductions in memory footprint and computation while preserving task performance, making it a …
 - **[Prox: Training-Free FFN Activation Sparsity via Approximate Intermediate-Channel Salience in LLMs](2607.27591-prox-training-free-ffn-activation-sparsity-via-approximate-intermediat.md)** (2026-07-30; 0▲, 0 cites) — Prox is a two-stage training-free framework for sparse SwiGLU FFNs that outperforms training-free baselines at all sparsity levels, achieves up to a $1.99\times end-to-end …
 
+## 💻 Compute cost (estimated H100-hours, auto-extracted)
+
+Sorted cheapest first by the *smallest* compute figure found in the paper. Ranges cover all figures the parser found (e.g. per-model-size runs). Verify against the quoted sentence in each paper file.
+
+| Paper | Min H100-h | Max H100-h | GPU seen | Evidence |
+| --- | ---: | ---: | --- | --- |
+| [R-Sparse: Rank-Aware Activation Sparsity for Efficient LLM Inference](2504.19449-r-sparse-rank-aware-activation-sparsity-for-efficient-llm-inference.md) | 0.16 | 0.16 | A6000 | The overhead of the search process is minimal, taking approximately one hour on a single A6000 GPU for the Llama-2-7B model.… |
+
 ## Full ranking
 
 | # | Paper | Date | Score | Cites | HF▲ | Venue | Code | Headline |
 | ---: | --- | --- | ---: | ---: | ---: | --- | --- | --- |
 | 1 | [SoLA: Leveraging Soft Activation Sparsity and Low-Rank Decomposition for Large Language Model Compression](2604.03258-sola-leveraging-soft-activation-sparsity-and-low-rank-decomposition-fo.md) | 2026-03-12 | 5.71 | 20 | 0 | AAAI Conference on Artificial Intelligen |  | A novel training-free compression method for LLMs, named SoLA, which leverages Soft activation sparsity and Low-rAnk decomposition is proposed, which exhibits … |
-| 2 | [R-Sparse: Rank-Aware Activation Sparsity for Efficient LLM Inference](2504.19449-r-sparse-rank-aware-activation-sparsity-for-efficient-llm-inference.md) | 2025-04-28 | 4.78 | 24 | 0 | ICLR 2025 |  | R-Sparse is introduced, a training-free activation sparsity approach capable of achieving high sparsity levels in advanced LLMs that replaces the linear layers … |
+| 2 | [R-Sparse: Rank-Aware Activation Sparsity for Efficient LLM Inference](2504.19449-r-sparse-rank-aware-activation-sparsity-for-efficient-llm-inference.md) | 2025-04-28 | 5.28 | 24 | 0 | ICLR 2025 | [✓](https://github.com/VITA-Group/R-Sparse) | R-Sparse is introduced, a training-free activation sparsity approach capable of achieving high sparsity levels in advanced LLMs that replaces the linear layers … |
 | 3 | [BlockFFN: Towards End-Side Acceleration-Friendly Mixture-of-Experts with Chunk-Level Activation Sparsity](2507.08771-blockffn-towards-end-side-acceleration-friendly-mixture-of-experts-wit.md) | 2025-07-30 | 4.59 | 6 | 10 |  | [✓](https://github.com/thunlp/BlockFFN) | A novel MoE architecture, BlockFFN, is introduced, as well as its efficient training and deployment techniques, and efficient acceleration kernels are … |
 | 4 | [WINA: Weight Informed Neuron Activation for Accelerating Large Language Model Inference](2505.19427-wina-weight-informed-neuron-activation-for-accelerating-large-language.md) | 2026-02-18 | 4.56 | 2 | 11 |  | [✓](https://github.com/microsoft/wina) | WINA (Weight Informed Neuron Activation) is proposed, a novel, simple, and training-free sparse activation framework that jointly considers hidden state … |
 | 5 | [Polar Sparsity: High Throughput Batched LLM Inferencing with Scalable Contextual Sparsity](2505.14884-polar-sparsity-high-throughput-batched-llm-inferencing-with-scalable-c.md) | 2025-11-11 | 3.63 | 7 | 0 | NeurIPS 2025 | [✓](https://github.com/susavlsh10/Polar-Sparsity) | This work introduces Polar Sparsity, the first work to demonstrate that contextual sparsity can scale effectively to large batch sizes, delivering substantial … |

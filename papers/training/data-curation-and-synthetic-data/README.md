@@ -6,7 +6,7 @@ Pre-/post-training data selection, filtering, mixture optimization, synthetic da
 
 📖 Written overview of this area: [../../../overviews/training.md](../../../overviews/training.md)
 
-## 🏆 Best of the best (top 10)
+## 🏆 Best of the best by impact score (top 10)
 
 1. **[KodCode: A Diverse, Challenging, and Verifiable Synthetic Dataset for Coding](2503.02951-kodcode-a-diverse-challenging-and-verifiable-synthetic-dataset-for-cod.md)** (2025-07) — KodCode comprises question-solution-test triplets that are systematically validated via a self-verification procedure to address the persistent challenge of acquiring high-quality, verifiable training data across …  
    _score 15.08 · Accepted by ACL 2025 · 121 cites · 34▲ HF · [code](https://github.com/KodCode-AI/kodcode)_

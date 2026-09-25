@@ -6,7 +6,7 @@ Weight/activation offloading, memory-bandwidth-bound optimizations, SSD/flash-ba
 
 📖 Written overview of this area: [../../../overviews/serving-systems.md](../../../overviews/serving-systems.md)
 
-## 🏆 Best of the best (top 10)
+## 🏆 Best of the best by impact score (top 10)
 
 1. **[HeadInfer: Memory-Efficient LLM Inference by Head-wise Offloading](2502.12574-headinfer-memory-efficient-llm-inference-by-head-wise-offloading.md)** (2025-02) — This paper proposes HEADINFER, which offloads the KV cache to CPU RAM while avoiding the need to fully store the KV cache for any transformer layer on the GPU, and evaluates it on the Llama-3-8B model with a …  
    _score 5.73 · 14 cites · 13▲ HF · [code](https://github.com/wdlctc/headinfer)_
@@ -90,8 +90,8 @@ Citations lag, so new work is under-ranked above. These are the most-upvoted or 
 
 | Paper | Primary category | Score |
 | --- | --- | ---: |
+| [Continuum: Efficient and Robust Multi-Turn LLM Agent Scheduling with KV Cache Time-to-Live](../scheduling-and-batching/2511.02230-continuum-efficient-and-robust-multi-turn-llm-agent-scheduling-with-kv.md) | Request scheduling, batching & SLO serving | 11.66 |
 | [LMCache: An Efficient KV Cache Layer for Enterprise-Scale LLM Inference](../../kv-cache/offloading-and-hierarchical-storage/2510.09665-lmcache-an-efficient-kv-cache-layer-for-enterprise-scale-llm-inference.md) | KV cache offloading & hierarchical storage | 11.2 |
-| [Continuum: Efficient and Robust Multi-Turn LLM Agent Scheduling with KV Cache Time-to-Live](../scheduling-and-batching/2511.02230-continuum-efficient-and-robust-multi-turn-llm-agent-scheduling-with-kv.md) | Request scheduling, batching & SLO serving | 11.16 |
 | [DeepSeek-V4.1-Flash: Pushing the Limits of KV Cache Compression](../../models-and-architectures/technical-reports/2609.19969-deepseek-v4-1-flash-pushing-the-limits-of-kv-cache-compression.md) | Model technical reports (open & frontier models) | 10.78 |
 | [MSA: Memory Sparse Attention for Efficient End-to-End Memory Model Scaling to 100M Tokens](../../attention/sparse-attention/2603.23516-msa-memory-sparse-attention-for-efficient-end-to-end-memory-model-scal.md) | Sparse attention (trainable & training-free) | 9.23 |
 | [RetroInfer: A Vector Storage Engine for Scalable Long-Context LLM Inference](../../kv-cache/offloading-and-hierarchical-storage/2505.02922-retroinfer-a-vector-storage-engine-for-scalable-long-context-llm-infer.md) | KV cache offloading & hierarchical storage | 8.82 |

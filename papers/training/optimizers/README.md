@@ -6,7 +6,7 @@ New optimizers, second-order methods, learning-rate schedules, hyper-parameter t
 
 📖 Written overview of this area: [../../../overviews/training.md](../../../overviews/training.md)
 
-## 🏆 Best of the best (top 10)
+## 🏆 Best of the best by impact score (top 10)
 
 1. **[Muon is Scalable for LLM Training](2502.16982-muon-is-scalable-for-llm-training.md)** (2025-02) — This work identifies two crucial techniques for scaling up Muon: adding weight decay and carefully adjusting the per-parameter update scale, which allow Muon to work out-of-the-box on large-scale training without the …  
    _score 12.42 · 386 cites_

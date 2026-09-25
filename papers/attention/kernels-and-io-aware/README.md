@@ -6,7 +6,7 @@ FlashAttention-style kernels, FP8/FP4 attention kernels (SageAttention), decode 
 
 📖 Written overview of this area: [../../../overviews/attention.md](../../../overviews/attention.md)
 
-## 🏆 Best of the best (top 10)
+## 🏆 Best of the best by impact score (top 10)
 
 1. **[SageAttention3: Microscaling FP4 Attention for Inference and An Exploration of 8-Bit Training](2505.11594-sageattention3-microscaling-fp4-attention-for-inference-and-an-explora.md)** (2026-01) — This work designs an accurate and efficient 8-bit attention for both forward and backward propagation, and pioneer low-bit attention to training tasks, to explore whether low-bit attention can be effectively applied to …  
    _score 15.19 · Neural Information Processing Systems (Neural Inf Process Sy · 72 cites · 77▲ HF · [code](https://github.com/thu-ml/SageAttention)_

@@ -6,7 +6,7 @@ Temperature/min-p/top-p style samplers, contrastive decoding, decoding-time inte
 
 📖 Written overview of this area: [../../../overviews/decoding.md](../../../overviews/decoding.md)
 
-## 🏆 Best of the best (top 10)
+## 🏆 Best of the best by impact score (top 10)
 
 1. **[Roll the dice & look before you leap: Going beyond the creative limits of next-token prediction](2504.15266-roll-the-dice-look-before-you-leap-going-beyond-the-creative-limits-of.md)** (2025-08) — This work offers a principled, minimal test-bed for analyzing open-ended creative skills, and offers new arguments for going beyond next-token learning and temperature sampling.  
    _score 9.53 · ICML 2025 · 33 cites · 6▲ HF · [code](https://github.com/chenwu98/algorithmic-creativity)_

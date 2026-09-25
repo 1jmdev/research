@@ -6,7 +6,7 @@ Grammar/JSON-constrained generation, structured output engines (XGrammar-style).
 
 📖 Written overview of this area: [../../../overviews/decoding.md](../../../overviews/decoding.md)
 
-## 🏆 Best of the best (top 10)
+## 🏆 Best of the best by impact score (top 10)
 
 1. **[CRANE: Reasoning with constrained LLM generation](2502.09061-crane-reasoning-with-constrained-llm-generation.md)** (2025-09) — This work provides a theoretical explanation for why constraining LLM outputs to very restrictive grammars that only allow syntactically valid final answers reduces the reasoning capabilities of the model and proposes a …  
    _score 9.27 · Accepted at ICML 2025 · 48 cites · 21▲ HF · [code](https://github.com/uiuc-focal-lab/CRANE)_

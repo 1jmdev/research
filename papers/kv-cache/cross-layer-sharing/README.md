@@ -6,7 +6,7 @@ Sharing or merging KV across layers or heads (CLA, YOCO-style, MiniCache).
 
 📖 Written overview of this area: [../../../overviews/kv-cache.md](../../../overviews/kv-cache.md)
 
-## 🏆 Best of the best (top 10)
+## 🏆 Best of the best by impact score (top 10)
 
 1. **[LRAgent: Efficient KV Cache Sharing for Multi-LoRA LLM Agents](2602.01053-lragent-efficient-kv-cache-sharing-for-multi-lora-llm-agents.md)** (2026-05) — LRAgent, a KV cache sharing framework for multi-LoRA agents, and Flash-LoRA-Attention, a kernel that reorders attention computation to avoid materializing the low-rank cache to full dimension, to achieve throughput and …  
    _score 7.48 · ICML 2026 · 8 cites · 8▲ HF · [code](https://github.com/hjeon2k/LRAgent)_

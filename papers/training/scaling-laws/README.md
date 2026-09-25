@@ -6,7 +6,7 @@ Compute/data/parameter scaling laws, compute-optimal training, scaling of infere
 
 📖 Written overview of this area: [../../../overviews/training.md](../../../overviews/training.md)
 
-## 🏆 Best of the best (top 10)
+## 🏆 Best of the best by impact score (top 10)
 
 1. **[Scaling Laws for Native Multimodal Models](2504.07951-scaling-laws-for-native-multimodal-models.md)** (2025-08) — This investigation reveals no inherent advantage to late-fusion architectures over early-fusion ones, which do not rely on image encoders or tokenizers, and shows that incorporating Mixture of Experts (MoEs) allows …  
    _score 10.94 · ICCV 2025 · 51 cites · 31▲ HF_

@@ -6,7 +6,7 @@ Compressing long prompts/contexts into fewer tokens (LLMLingua-style, gist/memor
 
 📖 Written overview of this area: [../../../overviews/context-compression.md](../../../overviews/context-compression.md)
 
-## 🏆 Best of the best (top 10)
+## 🏆 Best of the best by impact score (top 10)
 
 1. **[DeepSeek-OCR: Contexts Optical Compression](2510.18234-deepseek-ocr-contexts-optical-compression.md)** (2025-10) — DeepSeek-OCR shows considerable promise for research areas such as historical long-context compression and memory forgetting mechanisms in LLMs, and demonstrates high practical value on OmniDocBench.  
    _score 18.35 · 189 cites · 95▲ HF · [code](http://github.com/deepseek-ai/DeepSeek-OCR)_

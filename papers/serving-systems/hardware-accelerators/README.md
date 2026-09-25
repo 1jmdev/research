@@ -6,7 +6,7 @@ Custom silicon and near-memory computing for LLMs, hardware/software co-design.
 
 📖 Written overview of this area: [../../../overviews/serving-systems.md](../../../overviews/serving-systems.md)
 
-## 🏆 Best of the best (top 10)
+## 🏆 Best of the best by impact score (top 10)
 
 1. **[Insights into DeepSeek-V3: Scaling Challenges and Reflections on Hardware for AI Architectures](2505.09343-insights-into-deepseek-v3-scaling-challenges-and-reflections-on-hardwa.md)** (2025-12) — An in-depth analysis of the DeepSeek-V3/R1 model architecture and its AI infrastructure is presented, highlighting key innovations such as Multi-head Latent Attention (MLA) for enhanced memory efficiency, Mixture of …  
    _score 14.72 · ISCA '25 · 107 cites · 77▲ HF_

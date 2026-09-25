@@ -6,7 +6,7 @@ RL post-training methods, RL training efficiency (rollout systems, async RL), re
 
 📖 Written overview of this area: [../../../overviews/training.md](../../../overviews/training.md)
 
-## 🏆 Best of the best (top 10)
+## 🏆 Best of the best by impact score (top 10)
 
 1. **[Does Reinforcement Learning Really Incentivize Reasoning Capacity in LLMs Beyond the Base Model?](2504.13837-does-reinforcement-learning-really-incentivize-reasoning-capacity-in-l.md)** (2025-11) — The findings suggest that current RLVR methods have not yet realized the potential of RL to elicit truly novel reasoning abilities in LLMs, and highlights the need for improved RL paradigms, such as continual scaling …  
    _score 23.86 · NeurIPS 2025 · 1044 cites · 141▲ HF · [code](https://github.com/LeapLabTHU/limit-of-RLVR)_

@@ -6,7 +6,7 @@ Pruning/merging/quantizing experts, expert skipping, MoE-specific compression.
 
 📖 Written overview of this area: [../../../overviews/mixture-of-experts.md](../../../overviews/mixture-of-experts.md)
 
-## 🏆 Best of the best (top 10)
+## 🏆 Best of the best by impact score (top 10)
 
 1. **[REAP the Experts: Why Pruning Prevails for One-Shot MoE compression](2510.13999-reap-the-experts-why-pruning-prevails-for-one-shot-moe-compression.md)** (2026-05) — This work proposes Router-weighted Expert Activation Pruning (REAP), a novel pruning criterion that considers both router gate-values and expert activation norms to minimize the reconstruction error bound and …  
    _score 8.65 · 40 cites_

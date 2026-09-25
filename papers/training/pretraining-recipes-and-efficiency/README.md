@@ -6,7 +6,7 @@ Pre-training methodology, efficiency, curriculum, mid-training, architecture abl
 
 📖 Written overview of this area: [../../../overviews/training.md](../../../overviews/training.md)
 
-## 🏆 Best of the best (top 10)
+## 🏆 Best of the best by impact score (top 10)
 
 1. **[Beyond Language Modeling: An Exploration of Multimodal Pretraining](2603.03276-beyond-language-modeling-an-exploration-of-multimodal-pretraining.md)** (2026-03) — It is demonstrated that the MoE architecture harmonizes this scaling asymmetry by providing the high model capacity required by language while accommodating the data-intensive nature of vision, paving the way for truly …  
    _score 11.51 · 32 cites · 108▲ HF_

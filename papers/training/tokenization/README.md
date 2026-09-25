@@ -6,7 +6,7 @@ Tokenizer design, vocabulary size, byte-level / tokenizer-free models, dynamic p
 
 📖 Written overview of this area: [../../../overviews/training.md](../../../overviews/training.md)
 
-## 🏆 Best of the best (top 10)
+## 🏆 Best of the best by impact score (top 10)
 
 1. **[From Bytes to Ideas: Language Modeling with Autoregressive U-Nets](2506.14761-from-bytes-to-ideas-language-modeling-with-autoregressive-u-nets.md)** (2025-06) — An autoregressive U-Net learns to embed its own tokens during training, enabling a multi-scale view of text sequences and improved handling of character-level tasks and low-resource languages.  
    _score 5.22 · 0 cites · 16▲ HF · [code](https://github.com/facebookresearch/lingua)_

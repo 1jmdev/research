@@ -6,7 +6,7 @@ New layer types, normalization, residual/skip designs, memory layers, architectu
 
 📖 Written overview of this area: [../../../overviews/models-and-architectures.md](../../../overviews/models-and-architectures.md)
 
-## 🏆 Best of the best (top 10)
+## 🏆 Best of the best by impact score (top 10)
 
 1. **[Physics of Language Models: Part 4.1, Architecture Design and the Magic of Canon Layers](2512.17351-physics-of-language-models-part-4-1-architecture-design-and-the-magic.md)** (2026-07) — This synthetic playground offers an economical, principled path to isolate core model capabilities often obscured at academic scales, and may even predict how future architectures will behave as training pipelines …  
    _score 14.17 · appeared in NeurIPS 2025 main c · 40 cites · 29▲ HF · [code](https://github.com/facebookresearch/PhysicsLM4)_

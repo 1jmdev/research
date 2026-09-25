@@ -6,7 +6,7 @@ Training/inference with multiple future-token heads or objectives (DeepSeek-V3 M
 
 📖 Written overview of this area: [../../../overviews/decoding.md](../../../overviews/decoding.md)
 
-## 🏆 Best of the best (top 10)
+## 🏆 Best of the best by impact score (top 10)
 
 1. **[Multi-Token Prediction Needs Registers](2505.10518-multi-token-prediction-needs-registers.md)** (2025-05) — MuToR is proposed, a simple and effective approach to multi-token prediction that interleaves learnable register tokens into the input sequence, each tasked with predicting future targets, making it especially …  
    _score 7.47 · Neural Information Processing Systems (Neural Inf Process Sy · 13 cites · 13▲ HF · [code](https://github.com/nasosger/MuToR)_

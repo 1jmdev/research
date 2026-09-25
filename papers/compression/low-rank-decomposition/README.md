@@ -6,12 +6,12 @@ SVD / low-rank / tensor-train compression of weights (SVD-LLM, ASVD), weight sha
 
 📖 Written overview of this area: [../../../overviews/compression.md](../../../overviews/compression.md)
 
-## 🏆 Best of the best (top 10)
+## 🏆 Best of the best by impact score (top 10)
 
 1. **[SVD-LLM V2: Optimizing Singular Value Truncation for Large Language Model Compression](2503.12340-svd-llm-v2-optimizing-singular-value-truncation-for-large-language-mod.md)** (2025-03) — This work introduces SVD-LLM V2, a SVD-based LLM compression method that optimizes singular value truncation in SVD compression with two techniques, and shows SVD-LLM V2 outperforms state-of-the-art SVD-based LLM …  
    _score 8.3 · NAACL 2025 · 78 cites · [code](https://github.com/AIoT-MLSys-Lab/SVD-LLM)_
 2. **[Dobi-SVD: Differentiable SVD for LLM Compression and Some New Perspectives](2502.02723-dobi-svd-differentiable-svd-for-llm-compression-and-some-new-perspecti.md)** (2025-02) — It is pointed out that the optimal use of SVD lies in truncating activations, rather than merely using activations as an optimization distance, and the proposed Dobi-SVD is proposed, which establishes a new, principled …  
-   _score 6.95 · 55 cites_
+   _score 6.95 · 55 cites · ~8.0 H100-h_
 3. **[CoSpaDi: Compressing LLMs via Calibration-Guided Sparse Dictionary Learning](2509.22075-cospadi-compressing-llms-via-calibration-guided-sparse-dictionary-lear.md)** (2026-06) — CoSpaDi is proposed, a training-free compression framework that replaces this single-subspace assumption with a union-of-subspaces model via sparse dictionary learning, and improves accuracy--compression and …  
    _score 6.66 · 5 cites · 23▲ HF_
 4. **[UniQL: Unified Quantization and Low-rank Compression for Adaptive Edge LLMs](2512.03383-uniql-unified-quantization-and-low-rank-compression-for-adaptive-edge.md)** (2026-02) — This work introduces UniQL, a unified post-training quantization and low-rank compression framework with on-device configurable pruning rates for edge LLMs, and introduces an efficient structured weight-sorting method …  
@@ -41,6 +41,14 @@ Citations lag, so new work is under-ranked above. These are the most-upvoted or 
 - **[DLR: Zero-Inference-Cost Latent Residuals for Low-Rank Pre-Training](2606.28932-dlr-zero-inference-cost-latent-residuals-for-low-rank-pre-training.md)** (2026-06-27; 0▲, 0 cites) — Across LLaMA models from 60M to 7B parameters, DLR strengthens low-rank pre-training on C4 validation perplexity in most settings, with the clearest gains at 130M and above; …
 - **[LowRankArena: A Standardized Evaluation Platform for SVD-Based LLM Compression](2608.26389-lowrankarena-a-standardized-evaluation-platform-for-svd-based-llm-comp.md)** (2026-08-26; 0▲, 0 cites) — LowRankArena is presented, a standardized evaluation platform for SVD-based LLM compression that unifies task versions, uniform-precision compression budgets, comparison regimes, …
 - **[UniRank: Unified Rank Allocation for Low-Rank LLM Compression](2606.21847-unirank-unified-rank-allocation-for-low-rank-llm-compression.md)** (2026-09-14; 0▲, 0 cites) — It is shown, both geometrically and empirically, that high input--output cosine similarity implies low effective rank, and rank-preserving fine-tuning (RPFT) is proposed, which …
+
+## 💻 Compute cost (estimated H100-hours, auto-extracted)
+
+Sorted cheapest first by the *smallest* compute figure found in the paper. Ranges cover all figures the parser found (e.g. per-model-size runs). Verify against the quoted sentence in each paper file.
+
+| Paper | Min H100-h | Max H100-h | GPU seen | Evidence |
+| --- | ---: | ---: | --- | --- |
+| [Dobi-SVD: Differentiable SVD for LLM Compression and Some New Perspectives](2502.02723-dobi-svd-differentiable-svd-for-llm-compression-and-some-new-perspecti.md) | 8.0 | 8.0 | unspecified | For example, in the Llama-7b model, there are only 224 trainable parameters, and training requires just 8 GPU hours.… |
 
 ## Full ranking
 

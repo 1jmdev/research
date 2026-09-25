@@ -6,7 +6,7 @@ Block/top-k/dynamic sparse attention for prefill and decode (NSA, MoBA, DSA, MIn
 
 📖 Written overview of this area: [../../../overviews/attention.md](../../../overviews/attention.md)
 
-## 🏆 Best of the best (top 10)
+## 🏆 Best of the best by impact score (top 10)
 
 1. **[Native Sparse Attention: Hardware-Aligned and Natively Trainable Sparse Attention](2502.11089-native-sparse-attention-hardware-aligned-and-natively-trainable-sparse.md)** (2025-02) — This work presents NSA, a Natively trainable Sparse Attention mechanism that integrates algorithmic innovations with hardware-aligned optimizations to achieve efficient long-context modeling and enables end-to-end …  
    _score 18.94 · Annual Meeting of the Association for Computational Linguist · 506 cites · 157▲ HF_

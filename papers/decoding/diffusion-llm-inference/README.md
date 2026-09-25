@@ -6,7 +6,7 @@ Making dLLM inference fast: KV/feature caching for dLLMs, parallel unmasking sch
 
 📖 Written overview of this area: [../../../overviews/decoding.md](../../../overviews/decoding.md)
 
-## 🏆 Best of the best (top 10)
+## 🏆 Best of the best by impact score (top 10)
 
 1. **[Fast-dLLM: Training-free Acceleration of Diffusion LLM by Enabling KV Cache and Parallel Decoding](2505.22618-fast-dllm-training-free-acceleration-of-diffusion-llm-by-enabling-kv-c.md)** (2025-07) — A confidence-aware parallel decoding strategy that selectively decodes tokens exceeding a confidence threshold, mitigating dependency violations and maintaining generation quality is proposed, closing the performance …  
    _score 17.7 · 404 cites · 47▲ HF_

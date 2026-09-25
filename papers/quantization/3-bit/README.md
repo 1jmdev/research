@@ -6,7 +6,41 @@ Weight quantization around 3 bits per weight.
 
 📖 Written overview of this area: [../../../overviews/quantization.md](../../../overviews/quantization.md)
 
-## 🏆 Best of the best (top 10)
+## 🔬 Analyst notes: hand ranking and verdict
+
+_Written after reading the abstracts, and the full text where available, of this category's papers. The hand ranking weighs technical merit and usefulness for a runtime or model builder, not just citations. The automatic impact ranking follows below._
+
+**Verdict.** 3-bit is the "free lunch" edge. With a good solver, weight-only 3-bit on ≥7B models loses about 1–2 points
+on common benchmarks.
+
+* **Accuracy.** Statistically-lossless quantization (SLQ) is **task-lossless at 3.3–4.7 bits** but only
+  **distribution-lossless at 5.0–6.6 bits**. So 3-bit models answer benchmark questions correctly but do not
+  sample the same text. That matters for speculative decoding with a quantized draft, and for RL rollouts.
+* **Hidden cost.** Quantized *reasoning* models think longer. [Token Inflation](2606.25519-quantization-inflates-reasoning-token-inflation-as-a-hidden-cost-of-lo.md) shows INT3/INT4 can
+  preserve accuracy but raise chain-of-thought length enough to cancel the per-token speedup.
+* **Main research lines.** Non-uniform/LUT quantizers (GANQ, PoT) and better GPTQ compensation (FOEM).
+
+| # | Paper | Kind | Key idea | Headline | Cost |
+| ---: | --- | --- | --- | --- | --- |
+| 1 | [SLQ: Statistically-Lossless Quantization](2605.02404-statistically-lossless-quantization-of-large-language-models.md) | PTQ + theory | Defines task-lossless vs distribution-lossless; **Expected Acceptance Rate (EAR)** metric; γ² variance law ⇒ asymmetric quantization is required for distribution losslessness; ILP bit allocation | TL at 3.3–4.7 b, DL at 5.0–6.6 b, **1.7–3.7× speedup** vs BF16; works on MoE | ~2.5 h per bit-width on A6000 for 8B |
+| 2 | [GANQ](2501.12956-ganq-gpu-adaptive-non-uniform-quantization-for-large-language-models.md) (ICML'25) | PTQ | Mixed-integer QP for **LUT-based non-uniform** weights, GPU-adaptive alternating solver | Beats uniform at 3/4 bits; up to 2.57× on an RTX 4090 (LUT mpGEMM) | 7B in ~1 h on one RTX 4090 (≈0.2 H100-h) |
+| 3 | [FOEM](2507.11017-first-order-error-matters-accurate-compensation-for-quantized-large-la.md) (AAAI'26) | PTQ | GPTQ with the **first-order term** (latent weights drift during compensation) | Llama-3-8B 3-bit: −17.3% PPL vs GPTQ; composes with GPTAQ/QuaRot | GPTQ-level |
+| 4 | [DeepSeek quantization study](2505.02390-quantitative-analysis-of-performance-drop-in-deepseek-model-quantizati.md) | Empirical | Multi-bit evaluation of the full **DeepSeek-V3/R1 671B**; dynamic DQ3_K_M recipe | Q4 ≈ FP8; DQ3_K_M fits one 8×GPU node | — |
+| 5 | [ReRound](2608.11045-reround-reconstructive-rounding-to-resolve-midpoint-ambiguity-in-calib.md) | Calibration-free PTQ | Diffusion prior over the model's own weights decides midpoint-ambiguous rounding | Improves 3/4-bit RTN with **no data** | 2×RTX 4090 |
+| 6 | [ReSpinQuant](2604.11080-respinquant-efficient-layer-wise-llm-quantization-via-subspace-residua.md) (ICML'26) | PTQ | Layer-wise rotation accuracy but **fusable offline** via residual subspace rotation | No online rotation overhead | — |
+| 7 | [PoTPTQ](2507.11959-potptq-a-two-step-power-of-two-post-training-for-llms.md) | PTQ + kernel | Power-of-two levels with a bitwise dequant kernel | 3.67× on V100, 1.63× on RTX 4090 vs dequant baseline | — |
+| 8 | [FASQ](2605.04084-fasq-flexible-accelerated-subspace-quantization-for-calibration-free-l.md) | Calibration-free PQ | Product quantization with a continuous size knob (27–49% of FP16) and LUT-free CUDA kernels | Beats 4-bit GPTQ/AWQ at 37–42% size on Llama-3-8B | — |
+| 9 | [Llama-Mobile](2608.21134-llama-mobile-efficient-2-7-bit-quantization-of-vlms.md) (Meta) | QAD | **2.7-bit S3D8 format** for Arm CPUs; self-generated distillation data | Llama-3.2-11B-Vision in 3.7 GB, W2.7A8 | — |
+| 10 | [Tied Trit-Planes](2608.08910-tied-trit-planes-constraining-ptqtp-to-a-uniform-nine-level-quantizer.md) | Format | PTQTP planes folded into one 4.06-bit code; SSD-streamed MoE experts | DeepSeek-V4-Flash 284B-A13B served from disk | — |
+| 11 | [ITQ3_S](2603.27914-itq3-s-high-fidelity-3-bit-llm-inference-via-interleaved-ternary-quant.md) | Format | FWHT-rotated interleaved ternary 3-bit with inverse FWHT fused into the shared-memory load | llama.cpp-style 3-bit format | — |
+
+**Recommendations.**
+* **Default 3-bit path:** Hadamard rotation + GPTQ/FOEM + **asymmetric** group-wise quantization (g = 64–128).
+* **If you use a quantized model as a speculative draft or RL rollout policy,** measure EAR or acceptance rate, not
+  benchmark accuracy.
+* **Budget for token inflation.** Measure end-to-end time-to-answer on reasoning models, not tokens per second.
+
+## 🏆 Best of the best by impact score (top 10)
 
 1. **[GANQ: GPU-Adaptive Non-Uniform Quantization for Large Language Models](2501.12956-ganq-gpu-adaptive-non-uniform-quantization-for-large-language-models.md)** (2025-06) — GANQ (GPU-Adaptive Non-Uniform Quantization), a layer-wise post-training non-uniform quantization framework optimized for hardware-efficient lookup table-based mpGEMM, which achieves superior quantization performance by …  
    _score 3.44 · International Conference on Machine Learning (ICML) · 8 cites · [code](https://github.com/Evans-Z/GANQ) · ~0.17–0.51 H100-h_

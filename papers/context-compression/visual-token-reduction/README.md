@@ -6,7 +6,7 @@ Reducing image/video tokens in multimodal LLMs for faster inference.
 
 📖 Written overview of this area: [../../../overviews/context-compression.md](../../../overviews/context-compression.md)
 
-## 🏆 Best of the best (top 10)
+## 🏆 Best of the best by impact score (top 10)
 
 1. **[HoliTom: Holistic Token Merging for Fast Video Large Language Models](2505.21334-holitom-holistic-token-merging-for-fast-video-large-language-models.md)** (2025-10) — This work introduces a robust inner-LLM token similarity-based merging approach, designed for superior performance and compatibility with outer-LLM pruning, and introduces HoliTom, a novel training-free holistic token …  
    _score 12.83 · Neural Information Processing Systems (Neural Inf Process Sy · 67 cites · 19▲ HF · [code](https://github.com/cokeshao/HoliTom)_

@@ -6,7 +6,7 @@ Dropping or selecting tokens from the cache (H2O, SnapKV, StreamingLLM-style, qu
 
 📖 Written overview of this area: [../../../overviews/kv-cache.md](../../../overviews/kv-cache.md)
 
-## 🏆 Best of the best (top 10)
+## 🏆 Best of the best by impact score (top 10)
 
 1. **[KVzip: Query-Agnostic KV Cache Compression with Context Reconstruction](2505.23416-kvzip-query-agnostic-kv-cache-compression-with-context-reconstruction.md)** (2025-09) — KVzip is introduced, a query-agnostic KV cache eviction method enabling effective reuse of compressed KV caches across diverse queries and significantly outperforms existing query-aware KV eviction methods, which suffer …  
    _score 13.23 · NeurIPS 2025 · 81 cites · 13▲ HF · [code](https://github.com/snu-mllab/KVzip)_

@@ -6,7 +6,7 @@ Efficient MoE training, communication, stability.
 
 📖 Written overview of this area: [../../../overviews/mixture-of-experts.md](../../../overviews/mixture-of-experts.md)
 
-## 🏆 Best of the best (top 10)
+## 🏆 Best of the best by impact score (top 10)
 
 1. **[Demons in the Detail: On Implementing Load Balancing Loss for Training Specialized Mixture-of-Expert Models](2501.11873-demons-in-the-detail-on-implementing-load-balancing-loss-for-training.md)** (2025-02) — This work proposes calculating LBL using a global-batch containing much more diverse sequences than a micro-batch, which will encourage load balance at the corpus level and reveals that the global-batch LBL also greatly …  
    _score 11.85 · Annual Meeting of the Association for Computational Linguist · 64 cites · 69▲ HF_

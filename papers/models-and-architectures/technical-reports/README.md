@@ -6,10 +6,10 @@ Technical reports of released LLMs/VLMs/dLLMs with architecture and training det
 
 📖 Written overview of this area: [../../../overviews/models-and-architectures.md](../../../overviews/models-and-architectures.md)
 
-## 🏆 Best of the best (top 10)
+## 🏆 Best of the best by impact score (top 10)
 
 1. **[Qwen3 Technical Report](2505.09388-qwen3-technical-report.md)** (2025-05) — Empirical evaluations demonstrate that Qwen3 achieves state-of-the-art results across diverse benchmarks, including tasks in code generation, mathematical reasoning, agent tasks, etc., competitive against larger MoE …  
-   _score 31.36 · 8115 cites · 339▲ HF · [code](https://github.com/QwenLM/Qwen3)_
+   _score 31.36 · 8115 cites · 339▲ HF · [code](https://github.com/QwenLM/Qwen3) · ~10 H100-h_
 2. **[Qwen3-VL Technical Report](2511.21631-qwen3-vl-technical-report.md)** (2025-11) — Qwen3-VL is introduced, the most capable vision-language model in the Qwen series to date, achieving superior performance across a broad range of multimodal benchmarks, and three key upgrades are introduced, including …  
    _score 27.63 · 2306 cites · 164▲ HF · [code](https://github.com/QwenLM/Qwen3-VL)_
 3. **[InternVL3: Exploring Advanced Training and Test-Time Recipes for Open-Source Multimodal Models](2504.10479-internvl3-exploring-advanced-training-and-test-time-recipes-for-open-s.md)** (2025-04) — InternVL3 incorporates variable visual position encoding (V2PE) to support extended multimodal contexts, employs advanced post-training techniques such as supervised fine-tuning (SFT) and mixed preference optimization …  
@@ -41,6 +41,14 @@ Citations lag, so new work is under-ranked above. These are the most-upvoted or 
 - **[On the Design of Qwen3.8-Next Architecture: Evaluation, Efficiency, and Training Stability](2608.30320-on-the-design-of-qwen3-8-next-architecture-evaluation-efficiency-and-t.md)** (2026-08-31; 62▲, 6 cites) — The architecture and the Muon optimizer together shift the optimal learning rate and batch size upwards, render batch-size warmup unnecessary, and substantially improve stability …
 - **[Motif 3: Technical Report](2608.09119-motif-3-technical-report.md)** (2026-08-10; 46▲, 0 cites) — Motif 3 is a large sparse mixture-of-experts language model using grouped differential latent attention and specialized training techniques to achieve strong reasoning, coding, …
 - **[K-EXAONE 2.0 Technical Report](2608.04505-k-exaone-2-0-technical-report.md)** (2026-08-05; 29▲, 0 cites) — K-EXAONE 2.0 improves over K-EXAONE and remains competitive with open-weight models, showing its largest gains in agentic coding and long-context understanding and its clearest …
+
+## 💻 Compute cost (estimated H100-hours, auto-extracted)
+
+Sorted cheapest first by the *smallest* compute figure found in the paper. Ranges cover all figures the parser found (e.g. per-model-size runs). Verify against the quoted sentence in each paper file.
+
+| Paper | Min H100-h | Max H100-h | GPU seen | Evidence |
+| --- | ---: | ---: | --- | --- |
+| [Qwen3 Technical Report](2505.09388-qwen3-technical-report.md) | 10 | 10 | unspecified | In addition, it achieves these gains with much greater training efficiency, requiring only 1/10 of the GPU hours compared to the four-stage training method.… |
 
 ## Full ranking
 

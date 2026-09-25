@@ -6,7 +6,7 @@ Sparse upcycling, MoE-fication of FFNs, expert construction from dense checkpoin
 
 📖 Written overview of this area: [../../../overviews/model-conversion.md](../../../overviews/model-conversion.md)
 
-## 🏆 Best of the best (top 10)
+## 🏆 Best of the best by impact score (top 10)
 
 1. **[Drop-Upcycling: Training Sparse Mixture of Experts with Partial Re-initialization](2502.19261-drop-upcycling-training-sparse-mixture-of-experts-with-partial-re-init.md)** (2025-03) — Drop-Upcycling combines two seemingly contradictory approaches: utilizing the knowledge of pre-trained dense models while statistically re-initializing some parts of the weights, significantly enhancing the MoE model's …  
    _score 7.37 · ICLR 2025 · 21 cites · 5▲ HF · [code](https://github.com/Taishi-N324/Drop-Upcycling) · ~200k H100-h_

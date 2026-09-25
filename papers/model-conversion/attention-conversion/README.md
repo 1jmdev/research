@@ -6,7 +6,7 @@ Retrofitting the attention of a pretrained model: MHA2MLA, TransMLA, X-EcoMLA, G
 
 📖 Written overview of this area: [../../../overviews/model-conversion.md](../../../overviews/model-conversion.md)
 
-## 🏆 Best of the best (top 10)
+## 🏆 Best of the best by impact score (top 10)
 
 1. **[TransMLA: Multi-Head Latent Attention Is All You Need](2502.07864-transmla-multi-head-latent-attention-is-all-you-need.md)** (2025-06) — TransMLA, a framework that seamlessly converts any GQA-based pre-trained model into an MLA-based model, enables direct compatibility with DeepSeek's codebase, allowing these models to fully leverage DeepSeek-specific …  
    _score 10.76 · 28 cites · 69▲ HF · [code](https://github.com/fxmeng/TransMLA)_

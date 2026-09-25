@@ -6,7 +6,7 @@ Distilling or converting pretrained attention models into linear-attention, Mamb
 
 📖 Written overview of this area: [../../../overviews/model-conversion.md](../../../overviews/model-conversion.md)
 
-## 🏆 Best of the best (top 10)
+## 🏆 Best of the best by impact score (top 10)
 
 1. **[RADLADS: Rapid Attention Distillation to Linear Attention Decoders at Scale](2505.03005-radlads-rapid-attention-distillation-to-linear-attention-decoders-at-s.md)** (2026-01) — RADLADS is presented, a protocol for rapidly converting softmax attention transformers into linear attention decoder models, along with two new RWKV-variant architectures, and models converted from popular Qwen2.5 open …  
    _score 10.26 · 20 cites · 36▲ HF · [code](https://huggingface.co/collections/recursal)_

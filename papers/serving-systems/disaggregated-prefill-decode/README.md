@@ -6,7 +6,7 @@ Splitting prefill and decode across instances/hardware, chunked prefill, attenti
 
 📖 Written overview of this area: [../../../overviews/serving-systems.md](../../../overviews/serving-systems.md)
 
-## 🏆 Best of the best (top 10)
+## 🏆 Best of the best by impact score (top 10)
 
 1. **[Step-3 is Large yet Affordable: Model-system Co-design for Cost-effective Decoding](2507.19427-step-3-is-large-yet-affordable-model-system-co-design-for-cost-effecti.md)** (2025-07) — Step-3 significantly reduces theoretical decoding costs compared with models like DeepSeek-V3 and Qwen3 MoE 235B, with the gains widening at longer context, and sets a new Pareto frontier for LLM decoding.  
    _score 11.35 · 60 cites · 20▲ HF · [code](https://github.com/stepfun-ai/Step3)_

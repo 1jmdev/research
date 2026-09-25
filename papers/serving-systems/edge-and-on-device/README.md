@@ -6,7 +6,7 @@ LLMs on phones, laptops, embedded devices, consumer GPUs and CPUs.
 
 📖 Written overview of this area: [../../../overviews/serving-systems.md](../../../overviews/serving-systems.md)
 
-## 🏆 Best of the best (top 10)
+## 🏆 Best of the best by impact score (top 10)
 
 1. **[AutoNeural: Co-Designing Vision-Language Models for NPU Inference](2512.02924-autoneural-co-designing-vision-language-models-for-npu-inference.md)** (2026-07) — The proposed AutoNeural is an NPU-native VLM architecture co-designed for integer-only inference that reduces quantization error of vision encoder by up to 7x and end-to-end latency by 14x compared to conventional …  
    _score 8.41 · 21 cites · 6▲ HF_

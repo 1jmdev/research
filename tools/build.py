@@ -416,7 +416,14 @@ def render_leaf_readme(key, items, cross, by_id):
     ov = os.path.join(ROOT, "overviews", key.split("/")[0] + ".md")
     if os.path.exists(ov):
         L.append(f"📖 Written overview of this area: [{rel(d, ov)}]({rel(d, ov)})\n")
-    L.append("## 🏆 Best of the best (top 10)\n")
+    notes = category_notes(key, by_id)
+    if notes:
+        L.append("## 🔬 Analyst notes: hand ranking and verdict\n")
+        L.append("_Written after reading the abstracts, and the full text where available, of this category's papers. "
+                 "The hand ranking weighs technical merit and usefulness for a runtime or model builder, not just "
+                 "citations. The automatic impact ranking follows below._\n")
+        L.append(notes + "\n")
+    L.append("## 🏆 Best of the best by impact score (top 10)\n")
     for i, p in enumerate(items[:10], 1):
         extras = []
         if p["venue"]:
@@ -557,6 +564,30 @@ def render_root_readme(papers, cat_items, majors):
 REF_RX = re.compile(r"\[\[(\d{4}\.\d{4,5})(\\?\|[^\]]*)?\]\]")
 
 
+MISSING_REFS = set()
+
+
+def resolve_refs(text, from_dir, by_id):
+    """Turn [[arxiv-id]] / [[id|label]] into links to the per-paper files (or arXiv if not in the corpus)."""
+    def sub(m):
+        pid, label = m.group(1), (m.group(2) or "").lstrip("\\")[1:]
+        p = by_id.get(pid)
+        if not p:
+            MISSING_REFS.add(pid)
+            return f"[{label or 'arXiv:' + pid}](https://arxiv.org/abs/{pid})"
+        name = label or re.split(r"[:—]", p["title"])[0].strip()
+        return f"[{name}]({rel(from_dir, paper_path(p))})"
+    return REF_RX.sub(sub, text)
+
+
+def category_notes(key, by_id):
+    """Hand-written analyst notes for one sub-category: overviews_src/categories/<area>/<leaf>.md"""
+    fn = os.path.join(ROOT, "overviews_src", "categories", key + ".md")
+    if not os.path.exists(fn):
+        return ""
+    return resolve_refs(open(fn).read().strip(), os.path.join(OUT, key), by_id)
+
+
 def render_overviews(by_id):
     """overviews_src/<area>.md -> overviews/<area>.md, resolving [[arxiv-id]] / [[id|label]] links."""
     src = os.path.join(ROOT, "overviews_src")
@@ -564,25 +595,11 @@ def render_overviews(by_id):
     if not os.path.isdir(src):
         return
     os.makedirs(dst, exist_ok=True)
-    missing = []
     for fn in sorted(os.listdir(src)):
         if not fn.endswith(".md"):
             continue
-        text = open(os.path.join(src, fn)).read()
-
-        def sub(m):
-            pid, label = m.group(1), (m.group(2) or "").lstrip("\\")[1:]
-            p = by_id.get(pid)
-            if not p:
-                missing.append(pid)
-                return f"[{label or 'arXiv:' + pid}](https://arxiv.org/abs/{pid})"
-            name = label or re.split(r"[:—]", p["title"])[0].strip()
-            return f"[{name}]({rel(dst, paper_path(p))})"
-
         with open(os.path.join(dst, fn), "w") as f:
-            f.write(REF_RX.sub(sub, text))
-    if missing:
-        print("overview refs not in the corpus (linked to arXiv):", sorted(set(missing)))
+            f.write(resolve_refs(open(os.path.join(src, fn)).read(), dst, by_id))
 
 
 def main():
@@ -646,6 +663,8 @@ def main():
                    for p in v[:40]] for k, v in cat_items.items()},
               open(os.environ.get("TOP_JSON", os.path.join(ROOT, "data", "top_by_category.json")), "w"), indent=0, ensure_ascii=False)
     print(json.dumps(stats, indent=1))
+    if MISSING_REFS:
+        print("refs not in the corpus (linked to arXiv):", sorted(MISSING_REFS))
 
 
 if __name__ == "__main__":

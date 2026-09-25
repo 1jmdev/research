@@ -6,7 +6,7 @@ Merging fine-tuned checkpoints (task arithmetic, TIES, DARE, model soups, mergin
 
 📖 Written overview of this area: [../../../overviews/model-conversion.md](../../../overviews/model-conversion.md)
 
-## 🏆 Best of the best (top 10)
+## 🏆 Best of the best by impact score (top 10)
 
 1. **[Model Merging in Pre-training of Large Language Models](2505.12082-model-merging-in-pre-training-of-large-language-models.md)** (2025-05) — It is demonstrated that merging checkpoints trained with constant learning rates not only achieves significant performance improvements but also enables accurate prediction of annealing behavior, which leads to both …  
    _score 10.21 · Neural Information Processing Systems (Neural Inf Process Sy · 34 cites · 40▲ HF_

@@ -6,7 +6,47 @@ Per-layer / per-channel / per-expert bit allocation, any-precision and elastic-b
 
 📖 Written overview of this area: [../../../overviews/quantization.md](../../../overviews/quantization.md)
 
-## 🏆 Best of the best (top 10)
+## 🔬 Analyst notes: hand ranking and verdict
+
+_Written after reading the abstracts, and the full text where available, of this category's papers. The hand ranking weighs technical merit and usefulness for a runtime or model builder, not just citations. The automatic impact ranking follows below._
+
+**Verdict.** Mixed precision is how you hit an arbitrary memory budget, such as "fit a 70B model in 24 GB".
+
+* **Granularity.**
+  * Layer-wise allocation is solved: AMQ search, closed-form (BAQ), DP (SignRoundV2), and information-theoretic
+    fractional-bit allocation (Q-Palette).
+  * The frontier is **block-level** allocation inside a matrix that stays hardware-aligned (ScaleBITS, SFMP, MicroMix).
+  * Multi-precision "any-bit" models are one checkpoint serving many bit-widths (MatGPTQ, AnyBCQ, QuEPT).
+* **Caution.** [The Structure of Quantization Damage in LLMs](../5-to-8-bit/2609.01587-the-structure-of-quantization-damage-in-llms-why-the-next-bit-should-b.md) shows sensitivity proxies often pick the wrong layers. Always validate against a
+  global-uniform baseline at the same budget.
+
+| # | Paper | Kind | Key idea | Headline / cost |
+| ---: | --- | --- | --- | --- |
+| 1 | [Q-Palette](2509.20214-q-palette-fractional-bit-quantizers-toward-optimal-bit-allocation-for.md) (NeurIPS'25) | PTQ + kernels | Optimal bit allocation for Gaussianized (rotated) weights. Builds a **palette of fractional-bit quantizers** (trellis, vector, scalar) with optimized CUDA kernels and picks per layer under memory and latency budgets | Pareto-dominant weight-only PTQ; data-aware variant ~79 GPU-h, data-free near zero |
+| 2 | [AMQ](2509.12019-amq-enabling-automl-for-mixed-precision-weight-only-quantization-of-la.md) (EMNLP'25) | AutoML | Search space pruning, quantization proxy, quality predictor, iterative search over 10¹⁰⁰ configurations | Best-per-memory model; ~5 GPU-h search |
+| 3 | [MicroMix](2508.02343-micromix-efficient-mixed-precision-quantization-with-microscaling-form.md) (ICLR'26) | PTQ + kernel | Per-channel **MXFP4/MXFP6/MXFP8** mix with a single Blackwell GEMM producing BF16 | Uses FP4 tensor cores where safe |
+| 4 | [BlockDialect](2501.01144-blockdialect-block-wise-fine-grained-mixed-format-quantization-for-ene.md) (ICML'25) | Format | Per-block choice from a "formatbook" of FP4 variants (DialectFP4), integer-friendly | Energy-efficient W4A4 |
+| 5 | [ScaleBITS](2602.17698-scalebits-scalable-bitwidth-search-for-hardware-aligned-mixed-precisio.md) | PTQ | Bi-directional channel reordering, then **hardware-aligned block partitions** and a scalable global allocator | Continuous Pareto front below 4 bits |
+| 6 | [MatGPTQ](2602.03537-matgptq-accurate-and-efficient-post-training-matryoshka-quantization.md) | PTQ | One-shot **Matryoshka** INT8 → 4 → 2 via bit slicing, with open kernels | One checkpoint, many precisions |
+| 7 | [FGMP](2504.14152-fgmp-fine-grained-mixed-precision-weight-and-activation-quantization-f.md) (NVIDIA) | PTQ + HW | Fisher-weighted block-level choice of FP8 vs FP4 for weights and activations | Fisher computed in <3 min on an A100 for 7B |
+| 8 | [RAMP](2603.17891-ramp-reinforcement-adaptive-mixed-precision-quantization-for-efficient.md) | RL policy | SAC policy over layer features; transfers zero-shot across models; GGUF export | Useful for llama.cpp pipelines |
+| 9 | [TAQ](2511.06516-you-had-one-job-per-task-quantization-using-llms-hidden-representation.md) | PTQ | Task-aware allocation from hidden states of task prompts | 1.5–6 A40-h per model |
+| 10 | [Q-Strata](2608.30564-q-strata-hierarchical-bit-allocation-for-mixed-precision-quantization.md) (EMNLP'26) | MoE | Bi-level allocation: per-block Pareto frontier cache plus a model-level outer search over experts | MoE-specific; see also [BitsMoE](2606.00079-bitsmoe-efficient-spectral-energy-guided-bit-allocation-for-moe-llm-qu.md) |
+| 11 | [FlexQuant](2506.12024-flexquant-a-flexible-and-efficient-dynamic-precision-switching-framewo.md) (EMNLP'25) | Dynamic | **Token-wise** precision switching guided by entropy, KL-based layer choice | Runtime precision scheduling |
+| 12 | [RaanA](2504.03717-raana-a-fast-flexible-and-data-efficient-post-training-quantization-al.md) | PTQ | RaBitQ-H randomized VQ + optimal AllocateBits; little calibration | Fast, flexible bit budgets |
+
+Also notable:
+* [DAMP](2608.27513-damp-decay-aware-mixed-precision-recurrent-state-quantization.md): decay-aware mixed precision for linear-attention **recurrent state**.
+* [A KL Lens on Quantization](2604.13440-a-kl-lens-on-quantization-fast-forward-only-sensitivity-for-mixed-prec.md): forward-only KL sensitivity for hybrid SSM-Transformers.
+* [Variable Bit-width Quantization](2607.02893-variable-bit-width-quantization-learning-per-group-precision-for-bigge.md): learned per-group precision.
+
+**Runtime recommendations.**
+1. Support **per-layer** heterogeneous weight formats in the model loader (GGUF already does). Also support **per-block
+   format flags** in at least one kernel: one bit in the scale selects the grid (IF4, BlockDialect, MicroMix style).
+2. Prefer bit-plane or Matryoshka layouts if you want run-time precision switching. They let a scheduler degrade
+   precision under load without reloading weights.
+
+## 🏆 Best of the best by impact score (top 10)
 
 1. **[AMQ: Enabling AutoML for Mixed-precision Weight-Only Quantization of Large Language Models](2509.12019-amq-enabling-automl-for-mixed-precision-weight-only-quantization-of-la.md)** (2025-09) — AMQ, Automated Mixed-Precision Weight-Only Quantization, a framework that assigns layer-wise quantization bit-widths to optimally balance model quality and memory usage, efficiently explores the quality-efficiency …  
    _score 5.62 · EMNLP 2025 · 17 cites · [code](https://github.com/dlwns147/amq) · ~0.48 H100-h_

@@ -6,7 +6,7 @@ Weight-level pruning of LLMs (SparseGPT, Wanda successors), semi-structured 2:4 
 
 📖 Written overview of this area: [../../../overviews/compression.md](../../../overviews/compression.md)
 
-## 🏆 Best of the best (top 10)
+## 🏆 Best of the best by impact score (top 10)
 
 1. **[Can Compressed LLMs Truly Act? An Empirical Evaluation of Agentic Capabilities in LLM Compression](2505.19433-can-compressed-llms-truly-act-an-empirical-evaluation-of-agentic-capab.md)** (2025-06) — The Agent Compression Benchmark (ACBench) is introduced, the first comprehensive benchmark for evaluating how compression impacts LLMs' agentic abilities and ERank, Top-k Ranking Correlation and Energy are introduced to …  
    _score 6.62 · International Conference on Machine Learning (ICML) · 28 cites · 5▲ HF · [code](https://github.com/pprp/ACBench)_

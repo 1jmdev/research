@@ -6,7 +6,7 @@ LoRA/DoRA/QLoRA variants, adapters, PEFT for LLMs, serving many LoRAs.
 
 📖 Written overview of this area: [../../../overviews/training.md](../../../overviews/training.md)
 
-## 🏆 Best of the best (top 10)
+## 🏆 Best of the best by impact score (top 10)
 
 1. **[Make LoRA Great Again: Boosting LoRA with Adaptive Singular Values and Mixture-of-Experts Optimization Alignment](2502.16894-make-lora-great-again-boosting-lora-with-adaptive-singular-values-and.md)** (2026-03) — GOAT, a framework that adaptively integrates relevant priors using an SVD-structured MoE, and aligns optimization with full fine-tuned MoE by deriving a theoretical scaling factor, demonstrates that proper scaling, …  
    _score 11.28 · Accepted by ICML 2025 · 30 cites · 33▲ HF · [code](https://github.com/Facico/GOAT-PEFT)_

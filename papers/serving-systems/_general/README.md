@@ -6,7 +6,7 @@ Inference-system papers that do not fit narrower buckets; benchmarks of inferenc
 
 📖 Written overview of this area: [../../../overviews/serving-systems.md](../../../overviews/serving-systems.md)
 
-## 🏆 Best of the best (top 10)
+## 🏆 Best of the best by impact score (top 10)
 
 1. **[TokenCake: A KV-Cache-centric Serving Framework for LLM-based Multi-Agent Applications](2510.18586-tokencake-a-kv-cache-centric-serving-framework-for-llm-based-multi-age.md)** (2026-08) — TokenCake is presented, a KV-Cache-centric serving framework that bridges the gap by co-optimizing scheduling and memory management through an agent-aware design and reduces end-to-end latency and improves effective GPU …  
    _score 7.76 · Accepted at EuroSys '27 · 19 cites_

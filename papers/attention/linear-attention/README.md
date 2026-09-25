@@ -6,7 +6,7 @@ Linear/kernel attention, gated linear attention, DeltaNet family, test-time-trai
 
 📖 Written overview of this area: [../../../overviews/attention.md](../../../overviews/attention.md)
 
-## 🏆 Best of the best (top 10)
+## 🏆 Best of the best by impact score (top 10)
 
 1. **[Kimi Linear: An Expressive, Efficient Attention Architecture](2510.26692-kimi-linear-an-expressive-efficient-attention-architecture.md)** (2025-11) — Kimi Linear, a hybrid linear attention architecture, outperforms full attention in various scenarios with improved efficiency and performance, using Kimi Delta Attention and Multi-Head Latent Attention.  
    _score 17.6 · 156 cites · 138▲ HF · [code](https://github.com/MoonshotAI/Kimi-Linear)_

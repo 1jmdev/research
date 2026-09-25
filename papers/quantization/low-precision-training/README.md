@@ -6,7 +6,64 @@ Training (pre-training or fine-tuning) with low-precision arithmetic: FP8/MXFP8/
 
 📖 Written overview of this area: [../../../overviews/quantization.md](../../../overviews/quantization.md)
 
-## 🏆 Best of the best (top 10)
+## 🔬 Analyst notes: hand ranking and verdict
+
+_Written after reading the abstracts, and the full text where available, of this category's papers. The hand ranking weighs technical merit and usefulness for a runtime or model builder, not just citations. The automatic impact ranking follows below._
+
+**Verdict.** **FP8 training is production-standard. NVFP4 pretraining is now demonstrated at frontier scale.** NVIDIA
+trained a 12B hybrid Mamba-Transformer on **10T tokens** in NVFP4 with loss matching FP8.
+
+The recipe has converged. Linear layers use NVFP4:
+* **2-D (16×16) weight scaling**, so the forward and backward quantizations agree;
+* a **random Hadamard transform** on the wgrad inputs;
+* **stochastic rounding** on gradients;
+* a few BF16 layers, usually the last ones.
+
+Current research improves the *unbiased gradient estimator*: MS-EDEN in Quartet II has more than 2× lower error than
+stochastic rounding. It also removes the last high-precision pieces: master weights (ECO), optimizer states, attention.
+
+A separate line matters for post-training: **FP8/FP4 in RL rollouts**. BF16 training with FP8 rollouts is off-policy
+and collapses on long horizons. Unify the precision (Jet-RL) or correct the mismatch (FP8-RL, QaRL, AIS).
+
+### Hand ranking
+
+| # | Paper | Scope | Key idea | Headline | Compute |
+| ---: | --- | --- | --- | --- | --- |
+| 1 | [Pretraining LLMs with NVFP4](2509.25149-pretraining-large-language-models-with-nvfp4.md) (NVIDIA) | Pretrain | 2-D weight scaling, RHT on wgrad, SR on gradients, a few BF16 layers | **12B hybrid, 10T tokens**, FP8-level loss and downstream accuracy | Frontier-scale run on GB200 |
+| 2 | [Quartet II / MS-EDEN](2601.22813-quartet-ii-accurate-llm-pre-training-in-nvfp4-by-improved-unbiased-gra.md) | Pretrain | Unbiased microscaled rounding that moves randomness to the scale (EDEN), **>2× lower error than SR**; full NVFP4 linear layers; CUDA kernels | Beats prior NVFP4 recipes | 38B-token runs on B200 |
+| 3 | [Quartet](2505.14669-quartet-native-fp4-training-can-be-optimal-for-large-language-models.md) (NeurIPS'25) | Pretrain | Low-precision scaling law. **Forward = QuEST (min-MSE, Hadamard + clip), backward = RTN/SR**. All matmuls MXFP4 | "FP4 training can be optimal" in the large-data regime | ~6K H100-h of experiments |
+| 4 | [TetraJet-v2](2510.27527-tetrajet-v2-accurate-nvfp4-training-for-large-language-models-with-osc.md) (ICML'26) | Pretrain | Unbiased double-block NVFP4, **OsciReset** (weight oscillation), OutControl (outliers) | Best NVFP4 fully-quantized training (FQT) at the time; 212B tokens | — |
+| 5 | [FP4 All the Way](2505.19115-fp4-all-the-way-fully-quantized-training-of-llms.md) (Intel) | Pretrain | Sweeps block, scale format and rounding; NVFP4 (16, E4M3) optimal; **SR backward, RTN forward**; FQT fails when grad-norm < √3 × quantization noise (switch to higher precision late in training) | 7B on 1T tokens | 256 Gaudi2 × 30 days ≈ **79K H100-h** |
+| 6 | [Why Low-Precision FlashAttention Fails](2510.04212-why-low-precision-transformer-training-fails-an-analysis-on-flash-atte.md) (ICLR'26) | Analysis | Loss explosions come from low-rank attention representations **plus biased BF16 rounding** in FlashAttention; a minimal kernel fix | Explains a notorious instability | — |
+| 7 | [Jet-RL](2601.14243-jet-rl-enabling-on-policy-fp8-reinforcement-learning-with-unified-trai.md) | RL | Identical FP8 precision flow for training and rollout (on-policy) | BF16-train + FP8-rollout collapses; Jet-RL is stable and faster | — |
+| 8 | [FP8-RL](2601.18150-fp8-rl-a-practical-and-stable-low-precision-stack-for-llm-reinforcemen.md) (veRL) | RL system | FP8 weight sync every step, FP8 KV cache, importance-sampling mismatch correction; vLLM/SGLang | Practical stack | — |
+| 9 | [ECO](2601.22101-eco-quantized-training-without-full-precision-master-weights.md) | Optimizer | **No master weights**: inject the requantization error into momentum | Near-baseline quality; large savings for MoE | — |
+| 10 | [Training LLMs with MXFP4](2502.20586-training-llms-with-mxfp4.md) (AISTATS) | Pretrain | Stochastic rounding + RHT to bound SR variance | Near-lossless to 6.7B; >50% of FLOPs in MXFP4 | 210B tokens |
+| 11 | [MXFP8 recipes](2506.08027-recipes-for-pre-training-llms-with-mxfp8.md) (NVIDIA) | Pretrain | MXFP8-E4M3 everywhere with a specific conversion (rounding of the scale) | Matches BF16 at 8B / **15T tokens**; in Transformer Engine | — |
+| 12 | [FOG: fully FP8 GEMMs](2505.20524-towards-fully-fp8-gemm-llm-training-at-scale.md) (NeurIPS'25) | Architecture | Architecture changes (no pre-norm gains, etc.) that prevent outliers, so **all GEMMs incl. attention** run in FP8 | +43% throughput vs BF16 | 450B-token runs |
+| 13 | [Metis](2509.00404-metis-training-llms-with-fp4-quantization.md) | Pretrain | Spectral split of anisotropic tensors; random-projection subspace | W4A4G4 on Llama-3-8B/100B tokens with a <0.4% gap | — |
+| 14 | [FP4 training (MSRA)](2501.17116-optimizing-large-language-model-training-using-fp4-quantization.md) (ICML'25) | Pretrain | Differentiable gradient estimator + outlier clamp and compensation | First FP4 LLM training framework (simulated) | 100B tokens |
+| 15 | [Attn-QAT](2603.00040-attn-qat-4-bit-attention-with-quantization-aware-training.md) | Attention | Stable **FP4 attention** QAT: low-precision recomputation in backward plus a high-precision auxiliary output | 1.1–1.5× over SageAttention3 | ~1–53 H100-h |
+
+Also important:
+* [Scaling Laws for Floating Point Quantization Training](2501.02423-scaling-laws-for-floating-point-quantization-training.md): FP scaling law. Exponent bits matter a bit more than mantissa, and there is an optimal precision per
+  compute.
+* [HALO](2501.02625-halo-hadamard-assisted-lower-precision-optimization-for-llms.md): Hadamard-assisted INT8/FP8 fine-tuning with FSDP.
+* [Pretraining large language models with MXFP4 on Native FP4 Hardware](2605.09825-pretraining-large-language-models-with-mxfp4-on-native-fp4-hardware.md), [Full-Stack FP4](2607.04422-full-stack-fp4-stable-llm-pretraining-with-quantized-projections-optim.md), [UFP4](2606.20381-rethinking-shrinkage-bias-in-llm-fp4-pretraining-geometric-origin-syst.md), [The Curse and Blessing of Mean Bias in FP4-Quantized LLM Training](2603.10444-the-curse-and-blessing-of-mean-bias-in-fp4-quantized-llm-training.md) (mean bias), [UE5M3](2609.02846-ue5m3-fp4-block-scaling-for-stable-language-model-pretraining.md):
+  FP4 stability fixes.
+* [Towards Full Pipeline FP8 Reinforcement Learning for LLMs](2609.22870-towards-full-pipeline-fp8-reinforcement-learning-for-llms.md): full-pipeline FP8 RL.
+* [Practical FP4 Training for Large-Scale MoE Models on Hopper GPUs](2603.02731-practical-fp4-training-for-large-scale-moe-models-on-hopper-gpus.md): FP4 MoE training on **Hopper**.
+* [TorchAO](2507.16099-torchao-pytorch-native-training-to-serving-model-optimization.md): the practical toolkit.
+
+**For a training stack.**
+1. **FP8.** Use FP8 (E4M3 forward, E5M2 or E4M3 gradients with per-block scaling) everywhere except the LM head and
+   embeddings.
+2. **NVFP4.** On Blackwell, follow the NVIDIA recipe: 2-D weight scales, RHT on wgrad, SR on gradients, the last ~15%
+   of layers in BF16. Switch to higher precision for the final LR-decay phase.
+3. **RL.** Keep rollout and trainer precision identical, or apply an importance-sampling correction. Otherwise rewards
+   collapse on long chains of thought.
+
+## 🏆 Best of the best by impact score (top 10)
 
 1. **[Pretraining Large Language Models with NVFP4](2509.25149-pretraining-large-language-models-with-nvfp4.md)** (2026-03) — A novel approach for stable and accurate training of large language models (LLMs) using the NVFP4 format, which integrates Random Hadamard transforms to bound block-level outliers, employs a two-dimensional quantization …  
    _score 14.15 · 66 cites · 18▲ HF · [code](https://github.com/NVIDIA/TransformerEngine)_

@@ -6,7 +6,7 @@ Measuring and reducing energy/carbon/$ cost of LLMs.
 
 📖 Written overview of this area: [../../../overviews/serving-systems.md](../../../overviews/serving-systems.md)
 
-## 🏆 Best of the best (top 10)
+## 🏆 Best of the best by impact score (top 10)
 
 1. **[Energy Considerations of Large Language Model Inference and Efficiency Optimizations](2504.17674-energy-considerations-of-large-language-model-inference-and-efficiency.md)** (2025-04) — This work systematically analyzes the energy implications of common inference efficiency optimizations across diverse Natural Language Processing and generative Artificial Intelligence workloads, including …  
    _score 8.19 · Annual Meeting of the Association for Computational Linguist · 96 cites_

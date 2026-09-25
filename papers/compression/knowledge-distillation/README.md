@@ -6,7 +6,7 @@ Logit/feature/on-policy distillation, reasoning-trace distillation, distillation
 
 📖 Written overview of this area: [../../../overviews/compression.md](../../../overviews/compression.md)
 
-## 🏆 Best of the best (top 10)
+## 🏆 Best of the best by impact score (top 10)
 
 1. **[Self-Distillation Enables Continual Learning](2601.19897-self-distillation-enables-continual-learning.md)** (2026-08) — Self-Distillation Fine-Tuning (SDFT) is introduced, a simple method that enables on-policy learning directly from demonstrations and consistently outperforms supervised fine-tuning, achieving higher new-task accuracy …  
    _score 19.49 · 178 cites · 41▲ HF · [code](https://github.com/idanshen/Self-Distillation)_

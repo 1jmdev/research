@@ -6,7 +6,7 @@ Shortening reasoning traces, adaptive think/no-think, budget control, early stop
 
 📖 Written overview of this area: [../../../overviews/reasoning.md](../../../overviews/reasoning.md)
 
-## 🏆 Best of the best (top 10)
+## 🏆 Best of the best by impact score (top 10)
 
 1. **[Thoughts Are All Over the Place: On the Underthinking of o1-Like LLMs](2501.18585-thoughts-are-all-over-the-place-on-the-underthinking-of-o1-like-llms.md)** (2025-02) — A decoding strategy with thought switching penalty TIP that discourages premature transitions between thoughts, encouraging deeper exploration of each reasoning path and contributes to understanding reasoning …  
    _score 13.65 · 171 cites · 61▲ HF_

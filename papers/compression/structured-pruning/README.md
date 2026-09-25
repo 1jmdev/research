@@ -6,10 +6,10 @@ Removing layers/blocks/heads/channels, depth pruning, width pruning (Minitron-st
 
 📖 Written overview of this area: [../../../overviews/compression.md](../../../overviews/compression.md)
 
-## 🏆 Best of the best (top 10)
+## 🏆 Best of the best by impact score (top 10)
 
 1. **[DarwinLM: Evolutionary Structured Pruning of Large Language Models](2502.07780-darwinlm-evolutionary-structured-pruning-of-large-language-models.md)** (2026-07) — DarwinLM builds upon an evolutionary search process, generating multiple offspring models in each generation through mutation, and selecting the fittest for survival, achieving state-of-the-art performance for …  
-   _score 10.41 · Accepted by COLM 2026 Code: · 18 cites · 18▲ HF · [code](https://github.com/IST-DASLab/DarwinLM)_
+   _score 10.41 · Accepted by COLM 2026 Code: · 18 cites · 18▲ HF · [code](https://github.com/IST-DASLab/DarwinLM) · ~0.01–520 H100-h_
 2. **[ReplaceMe: Network Simplification via Depth Pruning and Transformer Block Linearization](2505.02819-replaceme-network-simplification-via-depth-pruning-and-transformer-blo.md)** (2026-02) — Applied to several large language models, ReplaceMe achieves up to 25% pruning while retaining approximately 90% of the original model's performance on open benchmarks - without any training or healing steps, resulting …  
    _score 8.56 · accepted and presented at NeurIPS 2025 · 9 cites · 19▲ HF · [code](https://github.com/mts-ai/ReplaceMe)_
 3. **[ShortOPD: Recovering Pruned LLMs with Short-to-Long On-Policy Distillation](2607.13124-shortopd-recovering-pruned-llms-with-short-to-long-on-policy-distillat.md)** (2026-08) — A short-to-long OPD schedule that detects teacher-confirmed repetitive suffixes, treats the surviving prefix as each rollout's effective length, and allocates future rollout budgets to the effective lengths the policy …  
@@ -41,6 +41,14 @@ Citations lag, so new work is under-ranked above. These are the most-upvoted or 
 - **[High-Layer Attention Pruning with Rescaling](2507.01900-high-layer-attention-pruning-with-rescaling.md)** (2026-08-09; 0▲, 1 cites) — This work proposes a novel pruning algorithm that strategically prunes attention heads in the model's higher layers, and introduces an adaptive rescaling parameter that calibrates …
 - **[Unified Static-Dynamic Pruning for Efficient LLM Inference](2607.21985-unified-static-dynamic-pruning-for-efficient-llm-inference.md)** (2026-08-09; 0▲, 0 cites) — SPDP advances the inference efficiency-quality Pareto frontier, showing that unified static-dynamic pruning can deliver substantial throughput and performance-per-watt …
 - **[WIDE: Boosting Adaptive LLM Inference via Token-level Dynamic Width Pruning](2607.28418-wide-boosting-adaptive-llm-inference-via-token-level-dynamic-width-pru.md)** (2026-07-30; 0▲, 1 cites) — WIDE is presented, the first end-to-end differentiable token-level dynamic width pruning framework designed for both prefill and decode scenarios, and a pruning--kernel co-design …
+
+## 💻 Compute cost (estimated H100-hours, auto-extracted)
+
+Sorted cheapest first by the *smallest* compute figure found in the paper. Ranges cover all figures the parser found (e.g. per-model-size runs). Verify against the quoted sentence in each paper file.
+
+| Paper | Min H100-h | Max H100-h | GPU seen | Evidence |
+| --- | ---: | ---: | --- | --- |
+| [DarwinLM: Evolutionary Structured Pruning of Large Language Models](2502.07780-darwinlm-evolutionary-structured-pruning-of-large-language-models.md) | 0.01 | 520 | unspecified | We provide the inference throughput and latency on vLLM inference framework and also add the comparison with Dense model and Shearedllama (with sequence length … |
 
 ## Full ranking
 

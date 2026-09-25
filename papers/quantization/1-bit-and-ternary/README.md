@@ -6,7 +6,59 @@ Binary and ternary weights (BitNet b1.58 family, binarized LLMs, ternary QAT, 1-
 
 📖 Written overview of this area: [../../../overviews/quantization.md](../../../overviews/quantization.md)
 
-## 🏆 Best of the best (top 10)
+## 🔬 Analyst notes: hand ranking and verdict
+
+_Written after reading the abstracts, and the full text where available, of this category's papers. The hand ranking weighs technical merit and usefulness for a runtime or model builder, not just citations. The automatic impact ranking follows below._
+
+**Verdict.** Two ways to get a ternary {-1, 0, +1} model now both work:
+
+* **Native training.** BitNet b1.58 2B4T is the proof point: 2B parameters, 4T tokens, on par with FP models of the same
+  size.
+* **Post-training ternarization of existing checkpoints.** CAT-Q and ScaleQ-1.58 cover 1.7B–235B, including MoE and
+  reasoning models, in hours to days on one 8×A100 node.
+
+Plain 1-bit (binary) PTQ is still lossy. Anything below ~1.5 bits needs structure: salient channels, wavelets, codebooks.
+The main runtime problem is no longer accuracy but **packing and kernels**. 1.58-bit does not align to bytes; see Sherry
+(1.25-bit, 3:4 sparse) and the "Breaking the 1.58-bit barrier" line.
+
+### Hand ranking
+
+| # | Paper | Kind | Why it matters | Cost (hand-checked, H100-h at A100 = 0.32×) |
+| ---: | --- | --- | --- | --- |
+| 1 | [BitNet b1.58 2B4T](2504.12285-bitnet-b1-58-2b4t-technical-report.md) | Native pretrain | Reference open ternary LLM (weights and GPU/CPU kernels). Matches FP 2B models at a fraction of memory and energy | 4T-token pretrain (not disclosed in GPU-h) |
+| 2 | [CAT-Q](2606.26650-cat-q-cost-efficient-and-accurate-ternary-quantization-for-llms.md) (ICML'26 oral) | PTQ | Learnable modulation plus softened (differentiable) ternarization with a sliding-layer pipeline. **First to ternarize 14B–235B models** | 1–60 h on 8×A100 → **~2.6–154 H100-h** |
+| 3 | [ScaleQ-1.58 / AYOT](2608.01078-attend-to-your-own-thoughts-breaking-the-barrier-for-post-training-qua.md) | PTQ | CAT-Q plus calibrating on the model's **own reasoning traces**. Without this, ternary reasoning models collapse on math and code | 4–240 h on 8×A100 → **~10–614 H100-h**; 4M calibration tokens |
+| 4 | [BitNet Distillation](2510.13998-bitnet-distillation.md) | FT → 1.58b | Qwen → ternary per downstream task (SubLN + MiniLM attention distillation + short continual pretraining). 10× memory, 2.65× CPU speed | Short CPT (~10B tokens) |
+| 5 | [BitNet v2](2504.18415-bitnet-v2-native-4-bit-activations-with-hadamard-transformation-for-1.md) | Native pretrain | **W1.58A4** via online Hadamard before activation quantization (H-BitLinear). Enables INT4 batched matmuls | 100B-token runs |
+| 6 | [QuEST](2502.05003-quest-stable-training-of-llms-with-1-bit-weights-and-activations.md) (ICML'25) | QAT theory | Hadamard + Gaussian-fitted clipping + "trust" gradient estimator. **4-bit W&A is Pareto-optimal** for QAT, and training is stable down to W1A1 | Up to 160B-token runs |
+| 7 | [Bitnet.cpp](2502.11880-bitnet-cpp-efficient-edge-inference-for-ternary-llms.md) (ACL'25) | Kernels | Ternary LUT (TL) and I2_S mpGEMM for CPU. Up to 6.25× over FP16 on edge CPUs. **Copy these kernels** | — |
+| 8 | [PTQTP](2509.16989-ptqtp-post-training-quantization-to-trit-planes-for-large-language-mod.md) | PTQ | Two ternary **trit-planes** + scales; multiplication-free. Keeps math and code ability where other sub-2-bit PTQ collapses. 4.63× end-to-end | About 1 GPU-hour per model |
+| 9 | [Sherry](2601.07892-sherry-hardware-efficient-1-25-bit-ternary-quantization-via-fine-grain.md) (ACL'26) | QAT + format | **1.25-bit**: 3:4 sparse ternary, so 4 weights pack into 5 bits and align with SIMD. Fixes the 2-bit-packing waste | Edge models ≤3B |
+| 10 | [TWLA](2606.13054-twla-achieving-ternary-weights-and-low-bit-activations-for-llms-via-po.md) (ICML'26) | PTQ | W1.58**A4** without retraining. Beats 2-bit PTQ methods | 2×A6000 |
+| 11 | [Tequila](2509.23809-tequila-trapping-free-ternary-quantization-for-large-language-models.md) | QAT | Diagnoses **deadzone trapping** (weights stuck at the 0/±1 boundary) and repurposes them as dynamic biases | — |
+| 12 | [HBLLM](2512.00862-hbllm-wavelet-enhanced-high-fidelity-1-bit-quantization-for-llms.md) (NeurIPS'25) | PTQ binary | Haar-wavelet 1-bit. Llama-2-13B PPL 6.71 at 1.08 bits | 1×A800 |
+| 13 | [PTQ1.61](2502.13179-ptq1-61-push-the-real-limit-of-extremely-low-bit-post-training-quantiz.md) (ACL'25) | PTQ | 1-D structured salient-channel mask at 0.0002 bit per weight; salient channels in 4-bit | ~2 h preprocessing per model |
+| 14 | [AnyBCQ](2510.10467-anybcq-hardware-efficient-flexible-binary-coded-quantization-for-multi.md) (ICLR'26) | PTQ + kernel | Multi-precision **bit-plane** BCQ: one model serves 2/3/4-bit by activating more planes | — |
+| 15 | [BWLA](2605.00422-bwla-breaking-the-barrier-of-w1ax-post-training-quantization-for-llms.md) (ACL'26) | PTQ | **W1A6** by Orthogonal-Kronecker transform and proximal SVD | 2×A6000 |
+| 16 | [Fairy2i](2512.02901-fairy2i-training-complex-llms-from-real-llms-with-all-parameters-in-pm.md) | QAT | Converts real layers to widely-linear **complex** form with weights in {±1, ±i}; reuses real checkpoints | — |
+
+Worth a look in the tail:
+* [FairyFuse](2604.20913-fairyfuse-multiplication-free-llm-inference-on-cpus-via-fused-ternary.md): fused ternary CPU kernels.
+* [Spectra 1.1](2506.23025-spectra-1-1-scaling-laws-and-efficient-inference-for-ternary-language.md): ternary scaling laws plus TriRun kernels.
+* [Breaking the 1.58-bit Barrier for Ternary LLMs](2609.16338-breaking-the-1-58-bit-barrier-for-ternary-llms.md): entropy-coded ternary below 1.58 bits.
+* [Ternary Mamba](2606.18114-ternary-mamba-grouped-quantization-aware-training-of-w1-58a16-state-sp.md): ternary SSMs.
+* [MoBiE](2604.06798-mobie-efficient-inference-of-mixture-of-binary-experts-under-post-trai.md): binary MoE experts.
+* [An Extra RMSNorm is All You Need for Fine Tuning to 1.58 Bits](2505.08823-an-extra-rmsnorm-is-all-you-need-for-fine-tuning-to-1-58-bits.md): an extra RMSNorm before each quantized linear is enough to fine-tune to 1.58 bits.
+
+**Runtime checklist.**
+1. **Weight formats.** Ship I2_S (2-bit-packed ternary with a scale) as the baseline and a TL (LUT) path for CPUs.
+   Consider a 1.25-bit 3:4 format for bandwidth-bound decode.
+2. **Activations.** Ternary weights with INT8 activations are the norm. W1.58A4 needs an online Hadamard (BitNet v2,
+   TWLA), so fuse the FWHT into the previous op.
+3. **Validation.** Evaluate ternary PTQ'd reasoning models on long chain-of-thought (AIME, LiveCodeBench), not on
+   perplexity. ScaleQ shows perplexity and MMLU hide the collapse.
+
+## 🏆 Best of the best by impact score (top 10)
 
 1. **[BitNet b1.58 2B4T Technical Report](2504.12285-bitnet-b1-58-2b4t-technical-report.md)** (2025-04) — The results demonstrate that BitNet b1.58 2B4T achieves performance on par with leading open-weight, full-precision LLMs of similar size, while offering significant advantages in computational efficiency, including …  
    _score 11.19 · 45 cites · 87▲ HF_

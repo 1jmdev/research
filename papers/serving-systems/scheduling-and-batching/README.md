@@ -6,10 +6,10 @@ Continuous batching, request scheduling, preemption, SLO-aware serving, LLM rout
 
 📖 Written overview of this area: [../../../overviews/serving-systems.md](../../../overviews/serving-systems.md)
 
-## 🏆 Best of the best (top 10)
+## 🏆 Best of the best by impact score (top 10)
 
 1. **[Continuum: Efficient and Robust Multi-Turn LLM Agent Scheduling with KV Cache Time-to-Live](2511.02230-continuum-efficient-and-robust-multi-turn-llm-agent-scheduling-with-kv.md)** (2026-09) — Continnum, a serving system to optimize job completion time for multi-turn agent workloads by introducing time-to-live mechanism for KV cache retention, and when combined with program-level first-come-first-serve …  
-   _score 11.16 · 55 cites_
+   _score 11.66 · 55 cites · [code](https://github.com/Hanchenli/vllm-continuum)_
 2. **[MinT: Managed Infrastructure for Training and Serving Millions of LLMs](2605.13779-mint-managed-infrastructure-for-training-and-serving-millions-of-llms.md)** (2026-05) — MindLab Toolkit is presented, a managed infrastructure system for Low-Rank Adaptation (LoRA) post-training and online serving that manages million-scale LoRA policy catalogs while training and serving selected adapter …  
    _score 7.46 · 1 cites · 225▲ HF · [code](https://github.com/MindLab-Research/mindlab-toolkit)_
 3. **[PrefillOnly: An Inference Engine for Prefill-only Workloads in Large Language Model Applications](2505.07203-prefillonly-an-inference-engine-for-prefill-only-workloads-in-large-la.md)** (2025-05) — PrefillOnly is presented, the first LLM inference engine that improves the inference throughput and latency by fully embracing the properties of prefill-only workloads and drastically reduces the GPU memory footprint of …  
@@ -46,7 +46,7 @@ Citations lag, so new work is under-ranked above. These are the most-upvoted or 
 
 | # | Paper | Date | Score | Cites | HF▲ | Venue | Code | Headline |
 | ---: | --- | --- | ---: | ---: | ---: | --- | --- | --- |
-| 1 | [Continuum: Efficient and Robust Multi-Turn LLM Agent Scheduling with KV Cache Time-to-Live](2511.02230-continuum-efficient-and-robust-multi-turn-llm-agent-scheduling-with-kv.md) | 2026-09-08 | 11.16 | 55 | 0 |  |  | Continnum, a serving system to optimize job completion time for multi-turn agent workloads by introducing time-to-live mechanism for KV cache retention, and … |
+| 1 | [Continuum: Efficient and Robust Multi-Turn LLM Agent Scheduling with KV Cache Time-to-Live](2511.02230-continuum-efficient-and-robust-multi-turn-llm-agent-scheduling-with-kv.md) | 2026-09-08 | 11.66 | 55 | 0 |  | [✓](https://github.com/Hanchenli/vllm-continuum) | Continnum, a serving system to optimize job completion time for multi-turn agent workloads by introducing time-to-live mechanism for KV cache retention, and … |
 | 2 | [MinT: Managed Infrastructure for Training and Serving Millions of LLMs](2605.13779-mint-managed-infrastructure-for-training-and-serving-millions-of-llms.md) | 2026-05-26 | 7.46 | 1 | 225 |  | [✓](https://github.com/MindLab-Research/mindlab-toolkit) | MindLab Toolkit is presented, a managed infrastructure system for Low-Rank Adaptation (LoRA) post-training and online serving that manages million-scale LoRA … |
 | 3 | [PrefillOnly: An Inference Engine for Prefill-only Workloads in Large Language Model Applications](2505.07203-prefillonly-an-inference-engine-for-prefill-only-workloads-in-large-la.md) | 2025-05-12 | 6.77 | 42 | 0 | Symposium on Operating Systems Principle |  | PrefillOnly is presented, the first LLM inference engine that improves the inference throughput and latency by fully embracing the properties of prefill-only … |
 | 4 | [ThunderAgent: A Simple, Fast and Program-Aware Agentic Inference System](2602.13692-thunderagent-a-simple-fast-and-program-aware-agentic-inference-system.md) | 2026-06-30 | 6.68 | 20 | 0 |  | [✓](https://github.com/Agentic-Kinetics/ThunderAgent) | This work first abstracts agentic workflows as LLM Programs, enabling a unified view of heterogeneous resources, including KV caches, system states, and … |

@@ -6,7 +6,7 @@ Adaptive computation per token: early exit, layer skipping, mixture-of-depths, r
 
 📖 Written overview of this area: [../../../overviews/decoding.md](../../../overviews/decoding.md)
 
-## 🏆 Best of the best (top 10)
+## 🏆 Best of the best by impact score (top 10)
 
 1. **[Adaptive Layer-skipping in Pre-trained LLMs](2503.23798-adaptive-layer-skipping-in-pre-trained-llms.md)** (2025-10) — FlexiDepth, a method that dynamically adjusts the number of Transformer layers used in text generation by incorporating a plug-in router and adapter, enables adaptive computation in LLMs without modifying their original …  
    _score 7.33 · 25 cites · 6▲ HF · [code](https://github.com/luoxuan-cs/Flexidepth)_

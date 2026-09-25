@@ -6,7 +6,7 @@ Fixed-point (Jacobi) iteration decoding, lookahead decoding, consistency LLMs, J
 
 📖 Written overview of this area: [../../../overviews/decoding.md](../../../overviews/decoding.md)
 
-## 🏆 Best of the best (top 10)
+## 🏆 Best of the best by impact score (top 10)
 
 1. **[Set Block Decoding is a Language Model Inference Accelerator](2509.04185-set-block-decoding-is-a-language-model-inference-accelerator.md)** (2025-09) — This work introduces Set Block Decoding (SBD), a simple and flexible paradigm that accelerates generation by integrating standard next token prediction (NTP) and masked token prediction (MATP) within a single …  
    _score 8.46 · 19 cites · 54▲ HF_

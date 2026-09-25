@@ -6,7 +6,7 @@ Changes to the attention operator/head layout: MLA, GQA, MQA, differential atten
 
 📖 Written overview of this area: [../../../overviews/attention.md](../../../overviews/attention.md)
 
-## 🏆 Best of the best (top 10)
+## 🏆 Best of the best by impact score (top 10)
 
 1. **[Gated Attention for Large Language Models: Non-linearity, Sparsity, and Attention-Sink-Free](2505.06708-gated-attention-for-large-language-models-non-linearity-sparsity-and-a.md)** (2025-05) — This central finding is that a simple modification-applying a head-specific sigmoid gate after the Scaled Dot-Product Attention (SDPA)-consistently improves performance, and this modification also enhances training …  
    _score 12.89 · Neural Information Processing Systems (Neural Inf Process Sy · 314 cites · [code](https://github.com/qiuzh20/gated_attention)_

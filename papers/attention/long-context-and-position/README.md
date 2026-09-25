@@ -6,7 +6,7 @@ RoPE scaling / extrapolation, length generalization, long-context training & eva
 
 📖 Written overview of this area: [../../../overviews/attention.md](../../../overviews/attention.md)
 
-## 🏆 Best of the best (top 10)
+## 🏆 Best of the best by impact score (top 10)
 
 1. **[Recursive Language Models](2512.24601-recursive-language-models.md)** (2026-05) — It is found that RLMs can successfully process inputs up to two orders of magnitude beyond model context windows and, even for shorter prompts, dramatically outperform the quality of vanilla frontier LLMs and common …  
    _score 16.79 · 81 cites · 99▲ HF · [code](https://github.com/alexzhang13/rlm)_

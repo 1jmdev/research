@@ -6,7 +6,7 @@ Masked/discrete/continuous diffusion LMs: LLaDA, Dream, Mercury, Gemini Diffusio
 
 📖 Written overview of this area: [../../../overviews/decoding.md](../../../overviews/decoding.md)
 
-## 🏆 Best of the best (top 10)
+## 🏆 Best of the best by impact score (top 10)
 
 1. **[Block Diffusion: Interpolating Between Autoregressive and Diffusion Language Models](2503.09573-block-diffusion-interpolating-between-autoregressive-and-diffusion-lan.md)** (2025-05) — A class of block diffusion language models that interpolate between discrete denoising diffusion and autoregressive models that overcomes key limitations of both approaches by supporting flexible-length generation and …  
    _score 19.81 · ICLR 2025 · 377 cites · 77▲ HF · [code](https://github.com/kuleshov-group/bd3lms)_

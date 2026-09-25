@@ -6,7 +6,7 @@ SSM/RNN language models, selective state spaces, recurrent memory LMs.
 
 📖 Written overview of this area: [../../../overviews/attention.md](../../../overviews/attention.md)
 
-## 🏆 Best of the best (top 10)
+## 🏆 Best of the best by impact score (top 10)
 
 1. **[RWKV-7 "Goose" with Expressive Dynamic State Evolution](2503.14456-rwkv-7-goose-with-expressive-dynamic-state-evolution.md)** (2025-03) — RWKV-7 is presented, a new sequence modeling architecture with constant memory usage and constant inference time per token, and it is shown that RWKV-7 can perform state tracking and recognize all regular languages, …  
    _score 15.81 · 147 cites · 154▲ HF · [code](https://github.com/RWKV/RWKV-LM)_

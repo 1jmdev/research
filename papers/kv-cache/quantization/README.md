@@ -6,7 +6,7 @@ Low-bit (2–4 bit, sub-2 bit) quantization of keys/values.
 
 📖 Written overview of this area: [../../../overviews/kv-cache.md](../../../overviews/kv-cache.md)
 
-## 🏆 Best of the best (top 10)
+## 🏆 Best of the best by impact score (top 10)
 
 1. **[KVarN: Variance-Normalized KV-Cache Quantization Mitigates Error Accumulation in Reasoning Tasks](2606.03458-kvarn-variance-normalized-kv-cache-quantization-mitigates-error-accumu.md)** (2026-06) — KVarN is introduced, a calibration-free KV-cache quantizer that applies a Hadamard rotation followed by a dual-scaling variance normalization across both axes of the K and V matrices that establishes a new …  
    _score 8.96 · 5 cites · 66▲ HF · [code](https://github.com/huawei-csl/KVarN)_

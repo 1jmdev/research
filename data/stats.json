@@ -75,6 +75,6 @@
   "training/scaling-laws": 85,
   "training/tokenization": 90
  },
- "with_fulltext": 494,
- "with_compute": 76
+ "with_fulltext": 573,
+ "with_compute": 88
 }

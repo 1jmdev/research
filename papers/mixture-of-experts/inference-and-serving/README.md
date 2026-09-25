@@ -6,7 +6,7 @@ Expert offloading/prefetching, expert parallel serving, MoE kernels, expert cach
 
 📖 Written overview of this area: [../../../overviews/mixture-of-experts.md](../../../overviews/mixture-of-experts.md)
 
-## 🏆 Best of the best (top 10)
+## 🏆 Best of the best by impact score (top 10)
 
 1. **[HybriMoE: Hybrid CPU-GPU Scheduling and Cache Management for Efficient MoE Inference](2504.05897-hybrimoe-hybrid-cpu-gpu-scheduling-and-cache-management-for-efficient.md)** (2025-04) — HybriMoE is proposed, a hybrid CPU-GPU inference framework that improves resource utilization through a novel CPU-GPU scheduling and cache management system that introduces a dynamic intra-layer scheduling strategy to …  
    _score 9.64 · Accepted by DAC 25 · 25 cites · 21▲ HF · [code](https://github.com/PKU-SEC-Lab/HybriMoE)_

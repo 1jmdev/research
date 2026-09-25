@@ -6,10 +6,10 @@ Depth/width growth, layer stacking, re-using checkpoints across architectures, c
 
 📖 Written overview of this area: [../../../overviews/model-conversion.md](../../../overviews/model-conversion.md)
 
-## 🏆 Best of the best (top 10)
+## 🏆 Best of the best by impact score (top 10)
 
 1. **[BidirLM: From Text to Omnimodal Bidirectional Encoders by Adapting and Composing Causal LLMs](2604.02045-bidirlm-from-text-to-omnimodal-bidirectional-encoders-by-adapting-and.md)** (2026-04) — Adapting causal generative language models into bidirectional encoders through systematic ablation and novel merging strategies achieves superior performance across multiple modalities.  
-   _score 3.88 · 0 cites · 33▲ HF_
+   _score 4.38 · 0 cites · 33▲ HF · [code](https://github.com/embeddings-benchmark/mteb) · ~0.01–92 H100-h_
 2. **[Growing Transformers: Modular Composition and Layer-wise Expansion on a Frozen Substrate](2507.07129-growing-transformers-modular-composition-and-layer-wise-expansion-on-a.md)** (2026-05) — Transformers with frozen embeddings enable efficient scaling through modular composition and layer-wise growth, improving performance on reasoning tasks without catastrophic forgetting.  
    _score 2.04 · 0 cites · 3▲ HF · [code](https://github.com/AVBochkov/PGT)_
 3. **[Efficient Construction of Model Family through Progressive Training Using Model Expansion](2504.00623-efficient-construction-of-model-family-through-progressive-training-us.md)** (2026-03) — Through extensive experiments on a model family ranging from 1B to 8B parameters, we show that our approach reduces total computational cost by approximately 25% while maintaining comparable performance to independently …  
@@ -25,11 +25,19 @@ Depth/width growth, layer stacking, re-using checkpoints across architectures, c
 8. **[KITE: KV-Invariant Transformer Expansion for Efficient Agentic LLM Scaling](2609.27294-kite-kv-invariant-transformer-expansion-for-efficient-agentic-llm-scal.md)** (2026-09) — KV-Invariant Transformer Expansion (KITE) is introduced, a scaling paradigm that trains the model from a smaller size to a larger size (i.e., saving training costs via upcycling), while places newly added parameters in …  
    _score 0.0 · 0 cites_
 
+## 💻 Compute cost (estimated H100-hours, auto-extracted)
+
+Sorted cheapest first by the *smallest* compute figure found in the paper. Ranges cover all figures the parser found (e.g. per-model-size runs). Verify against the quoted sentence in each paper file.
+
+| Paper | Min H100-h | Max H100-h | GPU seen | Evidence |
+| --- | ---: | ---: | --- | --- |
+| [BidirLM: From Text to Omnimodal Bidirectional Encoders by Adapting and Composing](2604.02045-bidirlm-from-text-to-omnimodal-bidirectional-encoders-by-adapting-and.md) | 0.01 | 92 | MI250 | We merge them at a 50% ratio 8 We provide a detailed analysis for merge ratios \in\{0,0.25,0.5,0.75,1\} in §​ F.3 (cos sim: 0.97) and perform 500 fine-tuning st… |
+
 ## Full ranking
 
 | # | Paper | Date | Score | Cites | HF▲ | Venue | Code | Headline |
 | ---: | --- | --- | ---: | ---: | ---: | --- | --- | --- |
-| 1 | [BidirLM: From Text to Omnimodal Bidirectional Encoders by Adapting and Composing Causal LLMs](2604.02045-bidirlm-from-text-to-omnimodal-bidirectional-encoders-by-adapting-and.md) | 2026-04-02 | 3.88 | 0 | 33 |  |  | Adapting causal generative language models into bidirectional encoders through systematic ablation and novel merging strategies achieves superior performance … |
+| 1 | [BidirLM: From Text to Omnimodal Bidirectional Encoders by Adapting and Composing Causal LLMs](2604.02045-bidirlm-from-text-to-omnimodal-bidirectional-encoders-by-adapting-and.md) | 2026-04-02 | 4.38 | 0 | 33 |  | [✓](https://github.com/embeddings-benchmark/mteb) | Adapting causal generative language models into bidirectional encoders through systematic ablation and novel merging strategies achieves superior performance … |
 | 2 | [Growing Transformers: Modular Composition and Layer-wise Expansion on a Frozen Substrate](2507.07129-growing-transformers-modular-composition-and-layer-wise-expansion-on-a.md) | 2026-05-02 | 2.04 | 0 | 3 |  | [✓](https://github.com/AVBochkov/PGT) | Transformers with frozen embeddings enable efficient scaling through modular composition and layer-wise growth, improving performance on reasoning tasks … |
 | 3 | [Efficient Construction of Model Family through Progressive Training Using Model Expansion](2504.00623-efficient-construction-of-model-family-through-progressive-training-us.md) | 2026-03-16 | 0.7 | 0 | 0 | accepted by COLM 2025 as a c |  | Through extensive experiments on a model family ranging from 1B to 8B parameters, we show that our approach reduces total computational cost by approximately … |
 | 4 | [Encoder-Decoder Gemma: Improving the Quality-Efficiency Trade-Off via Adaptation](2504.06225-encoder-decoder-gemma-improving-the-quality-efficiency-trade-off-via-a.md) | 2025-04-08 | 0.0 | 0 | 0 |  |  | For example, Gemma 2B-2B outperforms Gemma 2B by $\sim$7\% after instruction tuning. |

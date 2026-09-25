@@ -6,7 +6,7 @@ Adapting pretrained autoregressive LMs into diffusion LMs (DiffuLLaMA, Dream-fro
 
 📖 Written overview of this area: [../../../overviews/model-conversion.md](../../../overviews/model-conversion.md)
 
-## 🏆 Best of the best (top 10)
+## 🏆 Best of the best by impact score (top 10)
 
 1. **[SDAR: A Synergistic Diffusion-AutoRegression Paradigm for Scalable Sequence Generation](2510.06303-sdar-a-synergistic-diffusion-autoregression-paradigm-for-scalable-sequ.md)** (2025-10) — The SDAR model surpasses its AR counterpart on challenging scientific reasoning benchmarks such as GPQA and ChemBench, and gains further improvements under test-time scaling methods like majority voting and pass@k, …  
    _score 11.46 · Annual Meeting of the Association for Computational Linguist · 114 cites · [code](https://github.com/InternLM/lmdeploy)_

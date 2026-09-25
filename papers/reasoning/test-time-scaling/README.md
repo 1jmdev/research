@@ -6,7 +6,7 @@ Best-of-N, self-consistency, parallel thinking, verifier-guided search, efficien
 
 📖 Written overview of this area: [../../../overviews/reasoning.md](../../../overviews/reasoning.md)
 
-## 🏆 Best of the best (top 10)
+## 🏆 Best of the best by impact score (top 10)
 
 1. **[rStar-Math: Small LLMs Can Master Math Reasoning with Self-Evolved Deep Thinking](2501.04519-rstar-math-small-llms-can-master-math-reasoning-with-self-evolved-deep.md)** (2025-01) — rStar-Math enhances small language models' math reasoning capabilities through Monte Carlo Tree Search and self-evolution, achieving state-of-the-art performance on various benchmarks without distillation from larger …  
    _score 19.17 · International Conference on Machine Learning (ICML) · 352 cites · 290▲ HF · [code](https://github.com/microsoft/rStar)_

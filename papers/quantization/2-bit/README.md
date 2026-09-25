@@ -6,7 +6,58 @@ Weight quantization around 2 bits per weight: vector/codebook (AQLM, QuIP#, QTIP
 
 📖 Written overview of this area: [../../../overviews/quantization.md](../../../overviews/quantization.md)
 
-## 🏆 Best of the best (top 10)
+## 🔬 Analyst notes: hand ranking and verdict
+
+_Written after reading the abstracts, and the full text where available, of this category's papers. The hand ranking weighs technical merit and usefulness for a runtime or model builder, not just citations. The automatic impact ranking follows below._
+
+**Verdict.** 2-bit is where post-training quantization (PTQ) either works or collapses.
+
+* **Weight-only 2-bit on ≥30B models is usable.** BPDQ runs Qwen2.5-72B at 2 bits on a single RTX 3090 with 83.9%
+  GSM8K, against 90.8% at FP16. KronQ keeps Llama-3-70B at 7.93 PPL where GPTQ diverges.
+* **Small models (≤8B) at 2 bits still need QAT or VQ.**
+* **Vector and trellis quantizers remain the accuracy frontier** (QTIP/AQLM lineage, Leech lattice), but 2026 work
+  shows most of the gap to scalar quantization is an *optimization* gap (UniSVQ, GSQ, BPDQ).
+* **Scalar formats that run on integer kernels are catching up.**
+
+2-bit *weights* with 4-bit activations and KV cache (W2A4KV4) needs QAT (RCP). The "Two Failure Modes" paper explains
+why 2-bit PTQ fails: early-layer **computation collapse**, which training-free repair cannot fix.
+
+### Hand ranking
+
+| # | Paper | Kind | Key idea | Headline | Cost (hand-checked) |
+| ---: | --- | --- | --- | --- | --- |
+| 1 | [KronQ](2607.07964-kronq-llm-quantization-via-kronecker-factored-hessian.md) (COLM'26) | PTQ | GPTQ objective with **K-FAC Hessian H_X ⊗ H_G**: output-side incoherence rotation plus inter-layer bit allocation; H_G cancels in the update, so the cost stays GPTAQ-like | Llama-3-70B 2-bit PPL 7.93 (GPTQ > 2000) | One backward pass over the calibration set, then GPTQ cost: a few GPU-h for 70B |
+| 2 | [BPDQ](2602.04163-bpdq-bit-plane-decomposition-quantization-on-a-variable-grid-for-large.md) | PTQ | **Variable grid** from bit-planes × scalar coefficients, refined with a Hessian | Qwen2.5-72B 2-bit on one RTX 3090: GSM8K 83.9% (GPTQ/AWQ < 41%) | Single-GPU PTQ |
+| 3 | [UniSVQ](2606.10520-unisvq-2-bit-unified-scalar-vector-quantization.md) (ICML'26) | PTQ | Codewords = affine transform of **integer lattices**, so VQ-like accuracy runs on INT kernels | Beats SQ and VQ baselines at 2 bits | Block-wise fine-tune |
+| 4 | [SignRoundV2](2512.04746-signroundv2-toward-closing-the-performance-gap-in-extremely-low-bit-po.md) (Intel) | PTQ | Gradient × error sensitivity → DP bit allocation; pre-tuning scale search | Near-lossless at 4–5 bits, robust at 2 bits and MXFP4. Ships in AutoRound | 1×A100 |
+| 5 | [HARP](2605.29843-harp-hadamard-preconditioned-adaptive-rotation-processor-for-extreme-l.md) | PTQ add-on | **Learned butterfly rotation** initialized at randomized Hadamard, drop-in for QuIP#-style incoherence | Consistent gains over RHT at 2–4 bits | 70B fit: **31–80 H100-h**; 8B stats ~3 H100-h |
+| 6 | [RaBiT](2602.05367-rabit-residual-aware-binarization-training-for-accurate-and-efficient.md) (ICML'26) | QAT | Residual binarization with enforced residual hierarchy (fixes inter-path co-adaptation). Matmul-free | Matches VQ at 2 bits, **4.49×** vs FP16 on an RTX 4090 | QAT, about 200M tokens |
+| 7 | [LC-QAT](2606.10531-lc-qat-data-efficient-2-bit-qat-for-llms-via-linear-constrained-vector.md) (ICML'26) | QAT | VQ-QAT via learned affine maps over discrete vectors; no codebook lookup in the training forward pass | Data-efficient 2-bit QAT | — |
+| 8 | [RCP](2502.15779-rotate-clip-and-partition-towards-w2a4kv4-quantization-by-integrating.md) (EMNLP'25) | QAT | Rotation + learnable non-uniform partitions + W2A4 GEMV kernel | First **W2A4KV4**: Llama-2-7B +2.84 PPL, 5.29× memory reduction | QAT |
+| 9 | [ICQuant](2505.00850-icquant-index-coding-enables-low-bit-llm-quantization.md) | PTQ add-on | Index-code outliers at **~0.3 bit** overhead instead of ~1 bit | Lifts plain scalar quantizers to state-of-the-art at 2–3 bits | 1×RTX 4090 |
+| 10 | [ButterflyQuant](2509.09679-butterflyquant-ultra-low-bit-llm-quantization-through-learnable-orthog.md) | PTQ | Learnable butterfly orthogonal transforms (Hadamard is a special case); O(n log n) | Best rotation-based 2-bit | 4×H100 |
+| 11 | [Two Failure Modes](2604.19884-from-signal-degradation-to-computation-collapse-uncovering-the-two-fai.md) (ACL F'26) | Analysis | Signal degradation (repairable) vs **computation collapse** (not repairable without training) | Tells you when to stop trying PTQ | — |
+| 12 | [Quant-dLLM](2510.03274-quant-dllm-post-training-extreme-low-bit-quantization-for-diffusion-la.md) | PTQ | 2-bit for **diffusion LLMs**: masked calibration simulation plus any-order quantizer | First usable 2-bit dLLMs | 1×A800 |
+| 13 | [OA-EM](2604.08118-initialisation-determines-the-basin-efficient-codebook-optimisation-fo.md) | PTQ (AQ) | Output-aware EM codebook **initialization** fixes AQLM's 2-bit failures | Better after PV-tuning | — |
+| 14 | [TaCQ](2504.07389-task-circuit-quantization-leveraging-knowledge-localization-and-interp.md) (COLM'25) | Mixed PTQ | Keep "task circuit" weights in 16-bit | Big gains at 2–3 bits | Qwen2.5-7B: ~3.3 h on A6000 (≈1 H100-h) |
+| 15 | [EVA](2605.24144-eva-accelerating-llm-decoding-via-an-efficient-vector-quantization-arc.md) (ISCA'26) | Hardware | VQ-decode GEMV architecture without codebook bank conflicts | For accelerator designers | — |
+
+Also relevant:
+* [AngelSlim](2602.21233-angelslim-a-more-accessible-comprehensive-and-efficient-toolkit-for-la.md): Tencent's toolkit; HY-1.8B-int2 is the "first industrially viable 2-bit model".
+* [UPQ](2506.09104-unifying-block-wise-ptq-and-distillation-based-qat-for-progressive-qua.md): FP16→INT4→INT2 progressive plus distillation QAT for instruction-tuned models, 30B tokens.
+* [Unfolding the Leech Lattice](2609.02652-unfolding-the-leech-lattice-fused-multi-shell-decoding-and-vram-layout.md): fused Leech-lattice decode kernels.
+* [Qift](2606.02823-qift-shift-friendly-no-zero-w2-post-training-quantization-for-rotated.md): shift-friendly zero-free W2 grid for rotated W2A4.
+
+**Recommendations.**
+1. **Runtime.** Support a 2-bit group-wise scalar format with **non-uniform levels** (LUT of 4 values per group:
+   BPDQ, UniSVQ, GANQ-style). Pure uniform INT2 is the weakest option. Add one VQ decode path (QTIP/AQLM-style, E8/Leech
+   lattice) if you target maximum accuracy per byte.
+2. **Pipeline.** Rotation (Hadamard or learned butterfly) → Hessian-aware solver (GPTQ/GPTAQ/KronQ) → outlier index
+   coding or mixed precision on sensitive layers → optional short QAT/distillation.
+3. **Evaluation.** Do not trust perplexity at 2 bits. Check reasoning (GSM8K/AIME) and long-context tasks; collapse shows
+   up there first.
+
+## 🏆 Best of the best by impact score (top 10)
 
 1. **[KronQ: LLM Quantization via Kronecker-Factored Hessian](2607.07964-kronq-llm-quantization-via-kronecker-factored-hessian.md)** (2026-08) — KronQ, a PTQ framework that challenges the assumption that all output channels contribute equally to the layer-wise reconstruction objective by introducing the gradient covariance into the quantization pipeline, and …  
    _score 6.1 · COLM 2026 · 1 cites · 27▲ HF · [code](https://github.com/Intelligent-Computing-Lab-Panda/KronQ) · ~0.01–79 H100-h_

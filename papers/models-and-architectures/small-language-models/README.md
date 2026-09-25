@@ -6,12 +6,12 @@ Designing and training small LMs, SLM recipes, sub-billion models.
 
 📖 Written overview of this area: [../../../overviews/models-and-architectures.md](../../../overviews/models-and-architectures.md)
 
-## 🏆 Best of the best (top 10)
+## 🏆 Best of the best by impact score (top 10)
 
 1. **[SmolLM2: When Smol Goes Big -- Data-Centric Training of a Small Language Model](2502.02737-smollm2-when-smol-goes-big-data-centric-training-of-a-small-language-m.md)** (2025-02) — SmolLM2, a small language model with 1.7 billion parameters, achieves strong performance through overtraining on diverse datasets, outperforming other recent small models.  
    _score 8.15 · 0 cites · 260▲ HF · [code](https://github.com/huggingface/smollm)_
 2. **[Nemotron-Flash: Towards Latency-Optimal Hybrid Small Language Models](2511.18890-nemotron-flash-towards-latency-optimal-hybrid-small-language-models.md)** (2025-11) — This work aims to identify the key determinants of SLMs'real-device latency and offer generalizable principles and methodologies for SLM design and training when real-device latency is the primary consideration, and …  
-   _score 7.85 · Accepted by NeurIPS 2025 · 18 cites · 37▲ HF_
+   _score 7.85 · Accepted by NeurIPS 2025 · 18 cites · 37▲ HF · ~20 H100-h_
 3. **[VibeThinker-3B: Exploring the Frontier of Verifiable Reasoning in Small Language Models](2606.16140-vibethinker-3b-exploring-the-frontier-of-verifiable-reasoning-in-small.md)** (2026-06) — VibeThinker-3B demonstrates that compact models can achieve state-of-the-art performance on verifiable reasoning tasks through specialized training techniques, challenging conventional scaling assumptions.  
    _score 7.06 · 0 cites · 127▲ HF · [code](https://github.com/WeiboAI/VibeThinker)_
 4. **[SmallThinker: A Family of Efficient Large Language Models Natively Trained for Local Deployment](2507.20984-smallthinker-a-family-of-efficient-large-language-models-natively-trai.md)** (2025-07) — This work introduces a two-level sparse structure combining fine-grained Mixture-of-Experts (MoE) with sparse feed-forward networks, drastically reducing computational demands without sacrificing model capacity, and …  
@@ -36,6 +36,14 @@ Citations lag, so new work is under-ranked above. These are the most-upvoted or 
 - **[Small Language Models are the Future of Agentic AI](2506.02153-small-language-models-are-the-future-of-agentic-ai.md)** (2026-09-22; 25▲, 0 cites) — Small language models are argued to be more suitable, powerful, and economical for specialized, repetitive tasks in agentic systems, with heterogeneous systems using multiple …
 - **[Daedalus-150M: A Convolution-Attention Hybrid Designed for CPU Inference](2608.20210-daedalus-150m-a-convolution-attention-hybrid-designed-for-cpu-inferenc.md)** (2026-08-20; 8▲, 0 cites) — A conventional all-attention model of the same size on the same data and a conventional all-attention hybrid that beats GPT-2 124M, Pythia-160M, OPT-125M and GPT-neo-125M, and …
 - **[Nanbeige4.2-3B: Unlocking Agentic Capabilities in a Compact Model](2607.22083-nanbeige4-2-3b-unlocking-agentic-capabilities-in-a-compact-model.md)** (2026-07-27; 0▲, 0 cites) — Extensive evaluations show that Nanbeige4.2-3B outperforms larger models, including Qwen3.5-9B and Gemma4-12B, across diverse agentic benchmarks while remaining competitive on …
+
+## 💻 Compute cost (estimated H100-hours, auto-extracted)
+
+Sorted cheapest first by the *smallest* compute figure found in the paper. Ranges cover all figures the parser found (e.g. per-model-size runs). Verify against the quoted sentence in each paper file.
+
+| Paper | Min H100-h | Max H100-h | GPU seen | Evidence |
+| --- | ---: | ---: | --- | --- |
+| [Nemotron-Flash: Towards Latency-Optimal Hybrid Small Language Models](2511.18890-nemotron-flash-towards-latency-optimal-hybrid-small-language-models.md) | 20 | 20 | A100 | Training and evaluating a sampled architecture takes approximately 2 hours using 32 NVIDIA A100 GPUs.… |
 
 ## Full ranking
 

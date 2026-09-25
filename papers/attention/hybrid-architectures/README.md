@@ -6,7 +6,7 @@ Models interleaving full attention with linear/SSM/sliding-window layers (Jamba,
 
 📖 Written overview of this area: [../../../overviews/attention.md](../../../overviews/attention.md)
 
-## 🏆 Best of the best (top 10)
+## 🏆 Best of the best by impact score (top 10)
 
 1. **[Vamba: Understanding Hour-Long Videos with Hybrid Mamba-Transformers](2503.11579-vamba-understanding-hour-long-videos-with-hybrid-mamba-transformers.md)** (2025-07) — An orthogonal direction is explored to build a hybrid Mamba-Transformer model (VAMBA) that employs Mamba-2 blocks to encode video tokens with linear complexity that achieves at least 50 % reduction in GPU memory usage …  
    _score 10.53 · ICCV 2025 · 41 cites · 21▲ HF · [code](https://github.com/TIGER-AI-Lab/Vamba)_

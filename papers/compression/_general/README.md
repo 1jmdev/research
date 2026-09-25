@@ -6,7 +6,7 @@ Compression surveys, benchmarks and combined pipelines (prune + quantize + disti
 
 📖 Written overview of this area: [../../../overviews/compression.md](../../../overviews/compression.md)
 
-## 🏆 Best of the best (top 10)
+## 🏆 Best of the best by impact score (top 10)
 
 1. **[Systematic Outliers in Large Language Models](2502.06415-systematic-outliers-in-large-language-models.md)** (2025-02) — This work defines and categorizes three types of outliers-activation outliers, weight outliers, and attention outliers-and analyzes their distributions across different dimensions, uncovering inherent connections …  
    _score 7.08 · Accepted at ICLR 2025 · 37 cites · [code](https://github.com/an-yongqi/systematic-outliers)_
