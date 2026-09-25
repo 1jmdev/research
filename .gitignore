@@ -1,0 +1,6 @@
+# large / regenerable intermediates
+data/raw/
+data/*.part
+data/candidates.jsonl
+__pycache__/
+*.pyc
