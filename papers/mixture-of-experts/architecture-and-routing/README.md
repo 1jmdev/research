@@ -6,6 +6,95 @@ Router design, load balancing, expert granularity, shared experts, MoE scaling l
 
 📖 Written overview of this area: [../../../overviews/mixture-of-experts.md](../../../overviews/mixture-of-experts.md)
 
+## 🔬 Analyst notes: hand ranking and verdict
+
+_Written after reading the abstracts, and the full text where available, of this category's papers. The hand ranking weighs technical merit and usefulness for a runtime or model builder, not just citations. The automatic impact ranking follows below._
+
+**Verdict.** The frontier MoE design has converged:
+* **fine-grained experts** (64–512, top-4 to top-10) plus 1–2 **shared experts**;
+* **sigmoid or softmax top-k routing with auxiliary-loss-free bias balancing**, with balance measured over the **global
+  batch** (DeepSeek-V3 / Qwen3);
+* **~3–10% activation ratio** (DeepSeek-V3 37B/671B, Qwen3-235B-A22B, Ling, Nemotron 3).
+
+2025–26 research refined *how sparse* and *which experts*, rather than replacing the recipe.
+
+**Sparsity and scaling laws** (most in [`training/scaling-laws`](../../training/scaling-laws/README.md)):
+* [Efficiency Leverage](../../training/scaling-laws/2507.17702-towards-greater-leverage-scaling-laws-for-efficient-mixture-of-experts.md) (Ling): a 0.85B-active MoE matches a 6.1B dense at >7× less compute. Leverage is
+  set by activation ratio and granularity.
+* [Parameters vs FLOPs](../../training/scaling-laws/2501.12370-parameters-vs-flops-scaling-laws-for-optimal-sparsity-for-mixture-of-e.md): an optimal sparsity exists for a given budget.
+* [Joint MoE scaling laws](../../training/scaling-laws/2502.05172-joint-moe-scaling-laws-mixture-of-experts-can-be-memory-efficient.md) (ICML'25): MoE can be **more memory-efficient** than dense.
+* [Optimal sparsity for reasoning](2508.18672-optimal-sparsity-of-mixture-of-experts-language-models-for-reasoning-t.md): reasoning needs *active FLOPs* and data per parameter, not just total
+  parameters; memorization likes sparsity.
+* [Compute-optimal ≠ cluster-optimal](../../training/scaling-laws/2608.10605-compute-optimal-is-not-cluster-optimal-systems-aware-scaling-for-spars.md): with FLOPs alone, sparser is always better; the real optimum comes
+  from **systems constraints**.
+* [Mixture-of-Experts Can Surpass Dense LLMs Under Strictly Equal Resource](2506.12119-mixture-of-experts-can-surpass-dense-llms-under-strictly-equal-resourc.md): MoE beats dense under *strictly equal* compute, memory and data (with data reuse).
+
+**Architecture refinements that stuck:**
+* **LatentMoE** ([LatentMoE](2601.18089-latentmoe-toward-optimal-accuracy-per-flop-and-parameter-in-mixture-of.md), NVIDIA): experts operate in a down-projected latent space, giving better accuracy per
+  FLOP and per parameter. Used in Nemotron-3 Super/Ultra.
+* **Router–expert coupling and specialization:**
+  * [ERC loss](2512.23447-coupling-experts-and-routers-in-mixture-of-experts-via-an-auxiliary-lo.md): each expert must respond most to its own router's proxy token;
+  * [orthogonality + variance losses](2505.22323-advancing-expert-specialization-for-better-moe.md) (NeurIPS'25 oral): +23.79%;
+  * [Autonomy-of-Experts](2501.13074-autonomy-of-experts-models.md) (ICML'25): experts self-select by activation norm, no router.
+* **Parameter sharing across depth:**
+  * [UniPool](2605.06665-unipool-a-globally-shared-expert-pool-for-mixture-of-experts.md): one global expert pool read by per-layer routers; 42–67% of the expert parameters at equal
+    or better quality;
+  * [Chain-of-Experts](2506.18945-chain-of-experts-unlocking-the-communication-power-of-mixture-of-exper.md): iterative intra-layer expert communication.
+* **Scaling embeddings instead of experts:** [LongCat-Flash-Lite](../../models-and-architectures/novel-architectures/2601.21204-scaling-embeddings-outperforms-scaling-experts-in-language-models.md) puts 30B of 68.5B parameters into
+  n-gram embeddings.
+
+**Serving-aware designs:**
+* [Temporally extended MoE](2604.20156-temporally-extended-mixture-of-experts-models.md): switch experts rarely (options framework), so offloaded experts stay resident.
+* [BlockFFN](../../compression/activation-sparsity/2507.08771-blockffn-towards-end-side-acceleration-friendly-mixture-of-experts-wit.md): chunk-consistent sparsity for speculative decoding.
+* [MobileMoE](2605.27358-mobilemoe-scaling-on-device-mixture-of-experts.md): an on-device sweet spot of moderate sparsity + fine-grained + shared experts; 2.2–3.4×
+  faster decode than dense on phones.
+
+**Reality check.** Expert "specialization" mostly reflects hidden-state geometry, not domains ([The Myth of
+Expert Specialization](2604.09780-the-myth-of-expert-specialization-in-moes-why-routing-reflects-geometr.md)). Prompt-level routing does not predict rollout routing, which matters for prefetching.
+**Super experts** ([Unveiling Super Experts in Mixture-of-Experts Large Language Models](2507.23279-unveiling-super-experts-in-mixture-of-experts-large-language-models.md)) are a few experts that create the massive activations and attention sinks. Never
+prune or aggressively quantize them.
+
+### Hand ranking
+
+| # | Paper | Kind | Key idea | Result |
+| ---: | --- | --- | --- | --- |
+| 1 | [LatentMoE](2601.18089-latentmoe-toward-optimal-accuracy-per-flop-and-parameter-in-mixture-of.md) (NVIDIA) | Architecture | Route and compute experts in a compressed latent dimension | Best accuracy per FLOP and per parameter; adopted by Nemotron-3 Super/Ultra |
+| 2 | [Towards Greater Leverage](../../training/scaling-laws/2507.17702-towards-greater-leverage-scaling-laws-for-efficient-mixture-of-experts.md) (Ling) | Scaling law | "Efficiency leverage" as a function of activation ratio, granularity and compute | 0.85B-active ≈ 6.1B dense at >7× less compute (1T tokens) |
+| 3 | [Advancing Expert Specialization](2505.22323-advancing-expert-specialization-for-better-moe.md) (NeurIPS'25 oral) | Training loss | Orthogonality loss (distinct token types per expert) + variance loss (sharper routing), compatible with balance loss | Up to +23.79% over auxiliary-loss MoE baselines; no architecture change |
+| 4 | [ERC loss: coupling experts and routers](2512.23447-coupling-experts-and-routers-in-mixture-of-experts-via-an-auxiliary-lo.md) | Training loss | Router embeddings as proxy tokens; each expert must respond most to its own proxy, and vice versa | Scales with the number of experts, not tokens; better MoEs at 3–15B over trillions of tokens |
+| 5 | [Optimal sparsity for reasoning](2508.18672-optimal-sparsity-of-mixture-of-experts-language-models-for-reasoning-t.md) | Scaling study | Separate active FLOPs and tokens per parameter | Reasoning wants active compute and data; GRPO/TTC don't change the trend |
+| 6 | [Compute-optimal is not cluster-optimal](../../training/scaling-laws/2608.10605-compute-optimal-is-not-cluster-optimal-systems-aware-scaling-for-spars.md) | Systems-aware scaling | Add all-to-all, memory and cluster constraints (MOSAIC) | Real optimal sparsity comes from the cluster, not FLOPs |
+| 7 | [UniPool](2605.06665-unipool-a-globally-shared-expert-pool-for-mixture-of-experts.md) | Architecture | Global shared expert pool + per-layer routers + pool-level balance loss | Matches layer-wise MoE with 41.6–66.7% of the expert parameters |
+| 8 | [Autonomy-of-Experts](2501.13074-autonomy-of-experts-models.md) (ICML'25) | Router-free | Experts pre-compute (low-rank) activations; the top norms proceed | Beats router-based MoE at 700M–4B |
+| 9 | [Super Experts](2507.23279-unveiling-super-experts-in-mixture-of-experts-large-language-models.md) | Analysis | A handful of experts cause massive activations and attention sinks; model-specific, data-agnostic | Pruning them collapses the model; protect them in compression |
+| 10 | [FlexOlmo](2507.07024-flexolmo-open-language-models-for-flexible-data-use.md) (NeurIPS'25) | Modular data | Independently trained domain experts merged with domain-informed routing, no joint training; opt-in/out at inference | Surpasses a standard MoE trained without data restrictions at equal FLOPs |
+| 11 | [MobileMoE](2605.27358-mobilemoe-scaling-on-device-mixture-of-experts.md) | On-device | Memory+compute-optimal MoE shape for phones + QAT | Beats OLMoE-1B-7B with 60% fewer parameters; 2.2–3.4× faster decode than dense |
+| 12 | [Temporally extended MoE](2604.20156-temporally-extended-mixture-of-experts-models.md) | Serving-aware | Options framework: keep the same experts for spans of tokens | Low switching rates at up to 90% of base accuracy after light conversion |
+| 13 | [Chain-of-Experts](2506.18945-chain-of-experts-unlocking-the-communication-power-of-mixture-of-exper.md) | Architecture | Sequential expert iterations inside a layer with re-routing | 2 iterations ≈ 3× width; 17.6–42% less memory |
+| 14 | [Expert threshold routing](2603.11535-expert-threshold-routing-for-autoregressive-language-modeling-with-dyn.md) | Routing | Causal per-token thresholds: dynamic compute + balance without auxiliary loss | 1.6× token efficiency vs token-choice at 2.4B |
+
+**Also useful.**
+* Routing variants: [Route Experts by Sequence, not by Token](2511.06494-route-experts-by-sequence-not-by-token.md) (route by sequence), [max-score routing](2508.12801-maximum-score-routing-for-mixture-of-experts.md), [SoftMoE](2606.17952-softmoe-soft-differentiable-routing-for-mixture-of-experts-in-llms.md),
+  [latent prototype routing](2506.21328-latent-prototype-routing-achieving-near-perfect-load-balancing-in-mixt.md), [Load Balancing Mixture of Experts with Similarity Preserving Routers](2506.14038-load-balancing-mixture-of-experts-with-similarity-preserving-routers.md) (similarity-preserving balance).
+* Router post-training: [RoMA](2511.07419-routing-manifold-alignment-improves-generalization-of-mixture-of-exper.md) (router-only fine-tuning for generalization), [C3PO](2504.07964-c3po-critical-layer-core-expert-collaborative-pathway-optimization-for.md)
+  (test-time expert re-mixing).
+* Expert granularity: [OmniMoE](2602.05711-omnimoe-an-efficient-moe-by-orchestrating-atomic-experts-at-scale.md) (atomic experts + Cartesian-product router),
+  [MoSE](2602.06154-mose-mixture-of-slimmable-experts-for-efficient-and-adaptive-language.md) (slimmable experts), [Mixture of Universal Experts](2603.04971-mixture-of-universal-experts-scaling-virtual-width-via-depth-width-tra.md) (virtual width).
+* Attention MoE: [UMoE](2505.07260-umoe-unifying-attention-and-ffn-with-shared-experts.md) (NeurIPS'25).
+* Other: [Grove MoE](2508.07785-grove-moe-towards-efficient-and-superior-moe-llms-with-adjugate-expert.md) (big.LITTLE adjugate experts), [EMO](2605.06663-emo-pretraining-mixture-of-experts-for-emergent-modularity.md) (emergent modularity),
+  [ConceptMoE](2601.21420-conceptmoe-adaptive-token-to-concept-compression-for-implicit-compute.md), [Linear-MoE](2503.05447-linear-moe-linear-sequence-modeling-meets-mixture-of-experts.md).
+* Survey: [A Comprehensive Survey of Mixture-of-Experts](2503.07137-a-comprehensive-survey-of-mixture-of-experts-algorithms-theory-and-app.md).
+
+**Recommendation for model builders.**
+* Default to DeepSeek-V3-style fine-grained + shared experts, aux-loss-free global-batch balancing, 1:16–1:32
+  activation, and a specialization loss (orthogonality/ERC). Consider LatentMoE for better FLOP efficiency.
+* Choose sparsity with systems-aware laws: your all-to-all and HBM budget, not FLOPs alone.
+* For reasoning-heavy models, don't starve active parameters.
+
+**For runtime builders.** Plan for top-8+ routing over 128–512 experts, shared experts, and latent-space experts. Keep
+**super experts** in high precision and pinned in GPU memory. Routing is stable within spans but not predictable from
+the prompt, so prefetch on recent-token routing.
+
 ## 🏆 Best of the best by impact score (top 10)
 
 1. **[A Comprehensive Survey of Mixture-of-Experts: Algorithms, Theory, and Applications](2503.07137-a-comprehensive-survey-of-mixture-of-experts-algorithms-theory-and-app.md)** (2026-01) — The basic design of MoE is introduced, including gating functions, expert networks, routing mechanisms, training strategies, and system design, and the algorithm design of MoE in important machine learning paradigms …  

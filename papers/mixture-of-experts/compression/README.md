@@ -6,6 +6,76 @@ Pruning/merging/quantizing experts, expert skipping, MoE-specific compression.
 
 📖 Written overview of this area: [../../../overviews/mixture-of-experts.md](../../../overviews/mixture-of-experts.md)
 
+## 🔬 Analyst notes: hand ranking and verdict
+
+_Written after reading the abstracts, and the full text where available, of this category's papers. The hand ranking weighs technical merit and usefulness for a runtime or model builder, not just citations. The automatic impact ranking follows below._
+
+**Verdict.** MoE models are memory-bound by their *total* parameters, so compression targets the expert pool. Four levers,
+in order of reliability:
+
+1. **Expert-level mixed-precision quantization.** Cold experts get fewer bits, hot and super experts more. Calibrate so
+   every expert sees data.
+   * [MoEQuant](2505.03804-moequant-enhancing-quantization-for-mixture-of-experts-large-language.md): expert-balanced self-sampling + affinity-guided quantization; +10 HumanEval points on
+     DeepSeekMoE-16B at 4-bit.
+   * [GEMQ](2605.23078-gemq-global-expert-level-mixed-precision-quantization-for-moe-llms.md) (ICML'26): global linear program over experts + router fine-tuning.
+   * [EAC-MoE](2508.01625-eac-moe-expert-selection-aware-compressor-for-mixture-of-experts-large.md): calibrate routers after quantization, because low-bit weights shift expert selection.
+   * [DynaExq](2511.15015-dynamic-expert-quantization-for-scalable-mixture-of-experts-inference.md): *runtime* precision switching of hot/cold experts under an HBM budget; Qwen3-80B
+     73.1 → 77.6% vs static PTQ at equal memory.
+   * See also [`quantization/mixed-precision`](../../quantization/mixed-precision/README.md).
+2. **One-shot expert pruning beats expert merging for generative tasks.**
+   * [REAP](2510.13999-reap-the-experts-why-pruning-prevails-for-one-shot-moe-compression.md): router-weighted expert activation pruning, 20B–1T models; near-lossless code generation on
+     Qwen3-Coder-480B and Kimi-K2 at **50% of experts removed**.
+   * [REAM](2604.04356-ream-merging-improves-pruning-of-experts-in-llms.md): merge-then-prune; the MC vs generation trade-off depends on the calibration mix.
+   * Domain-specific pruning is very effective: [EASY-EP](2504.06792-domain-specific-pruning-of-large-mixture-of-experts-models-with-few-sh.md), [Extracting Small Translation Specialists from LLMs by Aggressively Pruning Experts](2605.28042-extracting-small-translation-specialists-from-llms-by-aggressively-pru.md) (translation specialists keep
+     25–50% of experts).
+   * **Always re-calibrate the router** after pruning or merging ([Is Retraining-Free Enough? The Necessity of Router Calibration for Efficient MoE Compression](2603.02217-is-retraining-free-enough-the-necessity-of-router-calibration-for-effi.md)).
+3. **Shared-basis factorization of experts** (experts are highly redundant):
+   * [MoBE](2508.05257-mobe-mixture-of-basis-experts-for-compressing-moe-based-llms.md): shared basis matrices; −24–30% parameters on Qwen3-235B, DeepSeek-V3 and Kimi-K2 at 1–2%
+     accuracy drop;
+   * [D²-MoE](2502.17298-delta-decompression-for-moe-based-llms-compression.md) (ICML'25): shared base + SVD deltas;
+   * [Sub-MoE](2506.23266-sub-moe-efficient-mixture-of-expert-llms-compression-via-subspace-expe.md): subspace merging.
+4. **Prune + distill** for a *smaller sibling MoE*:
+   * [SlimMoE](2506.18349-slimmoe-structured-compression-of-large-moe-models-via-expert-slimming.md) (Microsoft): Phi-3.5-MoE 42B → Phi-mini-MoE 7.6B;
+   * [SlimQwen](2605.08738-slimqwen-exploring-the-pruning-and-distillation-in-large-moe-model-pre.md): Qwen3-Next-80B-A3B → 23B-A2B; pruning a pretrained MoE beats training from scratch, and
+     progressive schedules beat one-shot;
+   * [Pruning and Distilling Mixture-of-Experts into Dense Language Models](2605.28207-pruning-and-distilling-mixture-of-experts-into-dense-language-models.md): MoE → *dense* students via diversity-aware expert scoring, +6.3 pp over dense-to-dense pruning
+     after ~4B tokens.
+
+**Compute reduction (not memory):** [ZEDA](2605.18643-post-trained-moe-can-skip-half-experts-via-self-distillation.md) adds zero-output experts + self-distillation so post-trained
+MoEs skip >50% of expert FLOPs (1.2× end to end). [MoDES](2511.15690-modes-accelerating-mixture-of-experts-multimodal-large-language-models.md) does training-free expert skipping for
+multimodal MoEs.
+
+### Hand ranking
+
+| # | Paper | Lever | Key idea | Result |
+| ---: | --- | --- | --- | --- |
+| 1 | [REAP the Experts](2510.13999-reap-the-experts-why-pruning-prevails-for-one-shot-moe-compression.md) (Cerebras) | One-shot expert pruning | Score = router gate × expert activation norm (bounds reconstruction error) | Near-lossless code at 50% experts pruned on Qwen3-Coder-480B / Kimi-K2; beats merging on generative tasks |
+| 2 | [MoBE](2508.05257-mobe-mixture-of-basis-experts-for-compressing-moe-based-llms.md) | Shared basis | W = A_i·(Σ α_ij B_j): expert-specific A, shared basis B | −24–30% parameters on 235B–1T MoEs at 1–2% accuracy drop |
+| 3 | [DynaExq](2511.15015-dynamic-expert-quantization-for-scalable-mixture-of-experts-inference.md) | Runtime mixed precision | Online precision allocation for hot/cold experts under a hard HBM budget | +4.5 pts vs static PTQ at equal memory; 2.73× over offloading at batch 32 |
+| 4 | [MoEQuant](2505.03804-moequant-enhancing-quantization-for-mixture-of-experts-large-language.md) | PTQ | Expert-balanced self-sampling calibration + affinity-guided quantization | +10 pts HumanEval on DeepSeekMoE-16B at 4-bit |
+| 5 | [SlimQwen](2605.08738-slimqwen-exploring-the-pruning-and-distillation-in-large-moe-model-pre.md) | Prune + distill at pretraining scale | Depth, width and expert pruning of Qwen3-Next + large-scale continual KD; progressive schedules | Qwen3-Next-80B-A3B → 23B-A2B, competitive |
+| 6 | [SlimMoE](2506.18349-slimmoe-structured-compression-of-large-moe-models-via-expert-slimming.md) | Prune + staged distill | Slim experts in stages instead of dropping them | Phi-mini-MoE (7.6B/2.4B active) and Phi-tiny-MoE released |
+| 7 | [ZEDA](2605.18643-post-trained-moe-can-skip-half-experts-via-self-distillation.md) | Dynamic compute | Zero-output experts + two-stage self-distillation + group balance loss | >50% of expert FLOPs skipped at marginal loss; 1.2× end to end |
+| 8 | [D²-MoE](2502.17298-delta-decompression-for-moe-based-llms-compression.md) (ICML'25) | Delta decomposition | Fisher-weighted shared base + SVD-compressed deltas + semi-dynamic pruning | +13% over other compressors at 40–60% compression |
+| 9 | [GEMQ](2605.23078-gemq-global-expert-level-mixed-precision-quantization-for-moe-llms.md) (ICML'26) | Mixed-precision PTQ | Global LP over expert bit-widths + router fine-tuning | Better than per-layer allocation at the same average bits |
+| 10 | [EAC-MoE](2508.01625-eac-moe-expert-selection-aware-compressor-for-mixture-of-experts-large.md) | Quant + pruning | Router calibration against quantization-induced selection bias; task-frequency expert pruning | Lower memory and faster inference with minimal loss |
+| 11 | [MoE → dense](2605.28207-pruning-and-distilling-mixture-of-experts-into-dense-language-models.md) | Distillation | Diversity-aware expert scoring to build a dense student | +6.3 pp over dense→dense at matched parameters after ~4B tokens |
+
+**Also useful.**
+* Pruning scoring: [How to Score Experts for One-Shot MoE Expert Pruning](2606.15716-how-to-score-experts-for-one-shot-moe-expert-pruning-a-unified-formula.md) (unified expert-scoring formulation), [EvoESAP](2603.06003-evoesap-non-uniform-expert-pruning-for-sparse-moe.md) (speculative-acceptance
+  proxy for non-uniform pruning), [DiEP](2509.16105-diep-adaptive-mixture-of-experts-compression-through-differentiable-ex.md), [HEAPr](2509.22299-heapr-hessian-based-efficient-atomic-expert-pruning-in-output-space.md), [DERN](2509.10377-dropping-experts-recombining-neurons-retraining-free-pruning-for-spars.md), [MoNE](2507.00390-mone-replacing-redundant-experts-with-lightweight-novices-for-structur.md),
+  [Mosaic Pruning](2511.19822-mosaic-pruning-a-hierarchical-framework-for-generalizable-pruning-of-m.md).
+* Merging: [MergeMoE](2510.14436-mergemoe-efficient-compression-of-moe-models-via-expert-output-merging.md), [PuzzleMoE](2511.04805-puzzlemoe-efficient-compression-of-large-mixture-of-experts-models-via.md) (bit-packed sparse expert merging), [Expert Merging in Sparse Mixture of Experts with Nash Bargaining](2510.16138-expert-merging-in-sparse-mixture-of-experts-with-nash-bargaining.md)
+  (Nash bargaining).
+* Quantization: [KBVQ-MoE](2602.11184-kbvq-moe-klt-guided-svd-with-bias-corrected-vector-quantization-for-mo.md) (vector quantization), [MoPEQ](2509.02512-mopeq-mixture-of-mixed-precision-quantized-experts.md), [Value-and-Structure Alignment for Routing-Consistent Quantization of Mixture-of-Experts Models](2606.05688-value-and-structure-alignment-for-routing-consistent-quantization-of-m.md)
+  (routing-consistent quantization).
+
+**Recommendation.**
+* *Runtime:* support **per-expert bit-width** (e.g. FP8 / INT4 / 2-bit) with grouped-GEMM kernels that handle mixed
+  formats, plus optional runtime re-quantization of cold experts (DynaExq).
+* *Deployment:* for domain deployments, prune 25–50% of experts with REAP using in-domain calibration, then
+  re-calibrate the router. Keep super experts and shared experts at full precision.
+
 ## 🏆 Best of the best by impact score (top 10)
 
 1. **[REAP the Experts: Why Pruning Prevails for One-Shot MoE compression](2510.13999-reap-the-experts-why-pruning-prevails-for-one-shot-moe-compression.md)** (2026-05) — This work proposes Router-weighted Expert Activation Pruning (REAP), a novel pruning criterion that considers both router gate-values and expert activation norms to minimize the reconstruction error bound and …  

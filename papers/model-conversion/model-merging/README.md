@@ -118,6 +118,7 @@ Sorted cheapest first by the *smallest* compute figure found in the paper. Range
 | Paper | Min H100-h | Max H100-h | GPU seen | Evidence |
 | --- | ---: | ---: | --- | --- |
 | [Activation-Informed Merging of Large Language Models](2502.02421-activation-informed-merging-of-large-language-models.md) | 1.0 | 1.0 | H100 | All experiments are run using 4 H100 GPUs, and each set of benchmarks takes roughly 15 minutes to run for each checkpoint.… |
+| [InfiGFusion: Graph-on-Logits Distillation via Efficient Gromov-Wasserstein for M](2505.13893-infigfusion-graph-on-logits-distillation-via-efficient-gromov-wasserst.md) | 195 | 650 | unspecified | Despite introducing structure-aware alignment, its GPU hours remain modest (195 GPU hours), substantially lower than multi-step fusion pipelines like FuseChat (… |
 
 ## Full ranking
 

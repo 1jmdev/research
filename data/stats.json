@@ -1,5 +1,5 @@
 {
- "total": 8145,
+ "total": 8146,
  "categories": {
   "attention/attention-variants": 70,
   "attention/hybrid-architectures": 52,
@@ -72,9 +72,9 @@
   "training/parameter-efficient-finetuning": 117,
   "training/pretraining-recipes-and-efficiency": 143,
   "training/rl-for-reasoning": 516,
-  "training/scaling-laws": 87,
+  "training/scaling-laws": 88,
   "training/tokenization": 90
  },
- "with_fulltext": 1042,
- "with_compute": 153
+ "with_fulltext": 1077,
+ "with_compute": 160
 }

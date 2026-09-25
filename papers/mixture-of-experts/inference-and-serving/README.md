@@ -6,6 +6,82 @@ Expert offloading/prefetching, expert parallel serving, MoE kernels, expert cach
 
 📖 Written overview of this area: [../../../overviews/mixture-of-experts.md](../../../overviews/mixture-of-experts.md)
 
+## 🔬 Analyst notes: hand ranking and verdict
+
+_Written after reading the abstracts, and the full text where available, of this category's papers. The hand ranking weighs technical merit and usefulness for a runtime or model builder, not just citations. The automatic impact ranking follows below._
+
+**Verdict.** MoE serving splits into two regimes with different bottlenecks.
+
+**1. Datacenter (expert parallelism, EP).** The problems are all-to-all communication, load imbalance across EP ranks
+and decode being memory-bound. The 2025–26 toolkit:
+* **Device-initiated EP communication**: DeepEP, [UCCL-EP](2512.19849-uccl-ep-portable-expert-parallel-communication.md) (portable to AMD/EFA, up to 2.1×),
+  [NCCL EP](2603.13606-nccl-ep-towards-a-unified-expert-parallel-communication-api-for-nccl.md). [FlashMoE](2506.04667-flashmoe-fast-distributed-moe-in-a-single-kernel.md) fuses dispatch, compute and combine into **one persistent kernel**.
+* **Load balancing at serving time**:
+  * EPLB-style replication: [GRACE-MoE](2509.25041-grace-moe-grouping-and-replication-with-locality-aware-routing-for-eff.md), [CRAFT](2603.28768-craft-fine-grained-cost-aware-expert-replication-for-efficient-mixture.md), [UltraEP](2606.04101-ultraep-unleash-moe-training-and-inference-on-rack-scale-nodes-with-ne.md) (94% of the
+    ideal balanced throughput at rack scale);
+  * [Least-Loaded EP](2601.17111-least-loaded-expert-parallelism-load-balancing-an-imbalanced-mixture-o.md) for extreme imbalance: 1.9× on gpt-oss-120b;
+  * [METRO](2512.09277-efficient-moe-serving-in-the-memory-bound-regime-balance-activated-exp.md): in memory-bound decode, balance **activated experts, not tokens**; up to 4.1× decode
+    throughput over EPLB at fixed SLO.
+* **Stragglers**: [capacity-aware token drop/expansion](2503.05066-capacity-aware-inference-mitigating-the-straggler-effect-in-mixture-of.md) gives 1.85× on Mixtral at no quality loss.
+* **Batch-aware routing** (cut the *unique* experts per decode batch): [Opportunistic Expert Activation](2511.02237-opportunistic-expert-activation-batch-aware-expert-routing-for-faster.md)
+  (−39% MoE-layer decode latency on Qwen3-30B), [SERE](2602.07616-sere-similarity-based-expert-re-routing-for-efficient-batch-decoding-i.md), [XShare](2602.07265-xshare-collaborative-in-batch-expert-sharing-for-faster-moe-inference.md).
+* **Attention–FFN disaggregation (AFD)**: [MegaScale-Infer](2504.02263-megascale-infer-serving-mixture-of-experts-at-scale-with-disaggregated.md) (ping-pong micro-batches, 1.9× per GPU) and
+  [Janus](2512.13525-janus-disaggregating-attention-and-experts-for-scalable-moe-inference.md) (4.7× per GPU). But [AFD is not universal](2602.09721-revealing-the-challenges-of-attention-ffn-disaggregation-for-modern-mo.md): it pays off on superpod-class
+  interconnects with coarser experts.
+
+**2. Memory-constrained (single GPU / edge / CPU+GPU).** The problem is fitting experts, so they are offloaded to CPU
+DRAM or SSD and fetched on demand. What matters:
+* **Routing locality**: [not all models suit offloading](2505.16056-not-all-models-suit-expert-offloading-on-local-routing-consistency-of.md); a cache of ~2× the active experts suffices for
+  models with good local consistency.
+* **Prediction and prefetch**: [Edge0](2609.18063-the-other-half-of-the-memory-wall-serving-35b-moes-from-ssd-with-train.md) uses *trained* next-layer routing prediction as the routing itself,
+  running a 35B MoE at 20 tok/s in 3 GiB of active memory from SSD. See also [SpecMD](2602.03921-specmd-a-comprehensive-study-on-speculative-expert-prefetching.md).
+* **Hybrid CPU–GPU execution**: [HybriMoE](2504.05897-hybrimoe-hybrid-cpu-gpu-scheduling-and-cache-management-for-efficient.md) on kTransformers, 1.33× prefill / 1.70× decode.
+* **Pipelined batching**: [Klotski](2502.06888-klotski-efficient-mixture-of-expert-inference-via-expert-aware-multi-b.md), [MoE-Gen](2503.09716-moe-gen-high-throughput-moe-inference-on-a-single-gpu-with-module-base.md) (8–31× offline throughput on one GPU).
+* **Routers biased toward cached experts**: [ReMoE](2605.27081-remoe-boosting-expert-reuse-through-router-fine-tuning-in-memory-const.md) (+26% reuse), [SMoE substitution](2508.18983-smoe-an-algorithm-system-co-design-for-pushing-moe-to-the-edge-via-exp.md).
+* **Energy**: [SSD offload is energy-harmful](2508.06978-ssd-offloading-for-llm-mixture-of-experts-weights-considered-harmful-i.md); Flash read energy must drop ~10× before SSD tiers are
+  efficient.
+
+### Hand ranking
+
+| # | Paper | Regime | Key idea | Result |
+| ---: | --- | --- | --- | --- |
+| 1 | [MegaScale-Infer](2504.02263-megascale-infer-serving-mixture-of-experts-at-scale-with-disaggregated.md) (ByteDance) | Datacenter | Disaggregate attention and FFN per layer; ping-pong micro-batch pipeline; M2N communication library | Up to 1.90× per-GPU throughput at production scale |
+| 2 | [FlashMoE](2506.04667-flashmoe-fast-distributed-moe-in-a-single-kernel.md) (NeurIPS'25) | Datacenter kernel | Single persistent kernel fusing dispatch/compute/combine with device-initiated RDMA | Up to 9× GPU utilization, 6× lower latency, 5.7× throughput |
+| 3 | [METRO: balance activated experts, not tokens](2512.09277-efficient-moe-serving-in-the-memory-bound-regime-balance-activated-exp.md) | Datacenter decode | In the memory-bound regime, minimize the maximum *number of activated experts per GPU* | −11–22% decode latency; up to 4.11× decode throughput vs EPLB at fixed SLO |
+| 4 | [Opportunistic Expert Activation](2511.02237-opportunistic-expert-activation-batch-aware-expert-routing-for-faster.md) | Decode, training-free | Tokens piggyback on experts already loaded for other tokens in the batch | −39% / −15% MoE decode latency on Qwen3-30B / 235B at batch 16, no accuracy loss |
+| 5 | [Janus](2512.13525-janus-disaggregating-attention-and-experts-for-scalable-moe-inference.md) | Datacenter | Attention/MoE disaggregation + adaptive two-phase comm + SLO-aware joint scaling of both pools | Up to 4.7× per-GPU throughput under token-level SLOs |
+| 6 | [HybriMoE](2504.05897-hybrimoe-hybrid-cpu-gpu-scheduling-and-cache-management-for-efficient.md) | CPU+GPU | Dynamic intra-layer CPU–GPU scheduling, impact-driven prefetch, score-based caching | 1.33× prefill, 1.70× decode over kTransformers |
+| 7 | [Edge0: serving 35B MoEs from SSD](2609.18063-the-other-half-of-the-memory-wall-serving-35b-moes-from-ssd-with-train.md) | Edge/SSD | Trained one-token-ahead routing prediction used *as* routing + int4 + recovery LoRA | 35B MoE at 20 tok/s in 3 GiB active memory on a 24 GB machine |
+| 8 | [Capacity-aware inference](2503.05066-capacity-aware-inference-mitigating-the-straggler-effect-in-mixture-of.md) | Datacenter | Drop excess tokens from overloaded experts; expand to under-loaded ones | 30% faster at 0.9% loss (OLMoE); 1.85× on Mixtral with a slight quality gain |
+| 9 | [Local routing consistency](2505.16056-not-all-models-suit-expert-offloading-on-local-routing-consistency-of.md) | Model selection | SRP/SCH metrics for how well a fixed expert set covers a token segment | Which MoEs suit offloading; cache ≈ 2× active experts |
+| 10 | [UCCL-EP](2512.19849-uccl-ep-portable-expert-parallel-communication.md) | Communication | Portable GPU-initiated EP with a CPU proxy | DeepEP-level on NVIDIA; up to 2.1× on AMD/EFA; +40% SGLang throughput |
+| 11 | [UltraEP](2606.04101-ultraep-unleash-moe-training-and-inference-on-rack-scale-nodes-with-ne.md) | Rack-scale EP | Near-optimal replication and relay fan-out on rack-scale nodes | 94.3% of ideal balanced throughput at 256 GPUs; imbalance 4.0 → 1.04 |
+| 12 | [Challenges of AFD](2602.09721-revealing-the-challenges-of-attention-ffn-disaggregation-for-modern-mo.md) | Analysis | When attention–FFN disaggregation beats EP | Superpod interconnect + coarse experts favour AFD; otherwise EP wins |
+| 13 | [MoE-Gen](2503.09716-moe-gen-high-throughput-moe-inference-on-a-single-gpu-with-module-base.md) | Single-GPU offline | Module-based batching (accumulate tokens per module) | 8–31× throughput over FlexGen/MoE-Lightning/DeepSpeed |
+| 14 | [MoE-CAP](2505.11415-moe-cap-benchmarking-cost-accuracy-and-performance-of-sparse-mixture-o.md) | Benchmark | Cost–accuracy–performance trade-off; sparse MBU/MFU metrics | Use S-MBU/S-MFU to evaluate MoE systems |
+
+**Also useful.**
+* Prefetch/offload: [FineMoE](2502.05370-taming-latency-memory-trade-off-in-moe-based-llm-serving-via-fine-grai.md), [FloE](2505.05950-floe-on-the-fly-moe-inference-on-memory-constrained-gpu.md), [ZipMoE](2601.21198-zipmoe-efficient-on-device-moe-serving-via-lossless-compression-and-ca.md) (lossless compression on
+  device), [WiSP](2606.21868-wisp-a-working-set-view-of-mixture-of-experts-serving-on-extremely-low.md) (working-set paging), [SliceMoE](2512.12990-slicemoe-bit-sliced-expert-caching-under-miss-rate-constraints-for-eff.md) (bit-sliced caching),
+  [A Spatio-Temporal Expert Prefetching Framework for Efficient MoE-based LLM Inference](2606.15453-a-spatio-temporal-expert-prefetching-framework-for-efficient-moe-based.md), [Who Should Own the Expert Cache? Kernel-Managed Tiering for Trillion-Parameter MoE Inference](2608.12103-who-should-own-the-expert-cache-kernel-managed-tiering-for-trillion-pa.md) (kernel-managed tiering for trillion-parameter MoE), [Beyond Capacity](2608.14333-beyond-capacity-scalable-moe-llm-inference-via-high-bandwidth-flash-wi.md) (high-bandwidth flash).
+* Placement: [MoETuner](2502.06643-moetuner-optimized-mixture-of-expert-serving-with-balanced-expert-plac.md), [Semantic Parallelism](2503.04398-semantic-parallelism-redefining-efficient-moe-inference-via-model-data.md), [ELDR](2607.00466-eldr-expert-locality-aware-decode-routing-for-pd-disaggregated-moe-ser.md) (expert-locality-aware
+  decode routing in PD-disaggregated vLLM).
+* Overlap: [Fine-grained Computation-Communication Overlap via Tile-level Signaling and Scheduling for Mixture-of-Experts](2607.19539-fine-grained-computation-communication-overlap-via-tile-level-signalin.md) (tile-level signalling), [FarSkip-Collective](2511.11505-farskip-collective-unhobbling-blocking-communication-in-mixture-of-exp.md).
+* Speculative decoding for MoE: see [`decoding/speculative-decoding`](../../decoding/speculative-decoding/README.md)
+  (MoESD, MoE-Spec, cost-aware SD).
+* MoE dLLM offload: [TIDE](2605.20179-tide-efficient-and-lossless-moe-diffusion-llm-inference-with-i-o-aware.md).
+* Edge-native: [FreeToken](2608.16157-freetoken-efficient-edge-native-moe-serving-with-bandwidth-adaptive-ex.md).
+
+**Runtime checklist.**
+1. DeepEP/UCCL-style dispatch/combine with FP8 payloads, overlapped with shared-expert and attention compute (two
+   micro-batches).
+2. EPLB-style redundant experts, rebalanced online. In decode, balance **activated experts per rank**.
+3. Grouped-GEMM kernels for fine-grained experts, or a persistent fused MoE kernel.
+4. Batch-aware routing option (opportunistic activation) for memory-bound decode.
+5. For single-node or edge: expert cache (~2× active) + learned or speculative prefetch + CPU-side expert execution for
+   misses (kTransformers-style).
+6. Keep super experts and shared experts resident and in high precision.
+
 ## 🏆 Best of the best by impact score (top 10)
 
 1. **[HybriMoE: Hybrid CPU-GPU Scheduling and Cache Management for Efficient MoE Inference](2504.05897-hybrimoe-hybrid-cpu-gpu-scheduling-and-cache-management-for-efficient.md)** (2025-04) — HybriMoE is proposed, a hybrid CPU-GPU inference framework that improves resource utilization through a novel CPU-GPU scheduling and cache management system that introduces a dynamic intra-layer scheduling strategy to …  

@@ -6,6 +6,77 @@ Efficient MoE training, communication, stability.
 
 📖 Written overview of this area: [../../../overviews/mixture-of-experts.md](../../../overviews/mixture-of-experts.md)
 
+## 🔬 Analyst notes: hand ranking and verdict
+
+_Written after reading the abstracts, and the full text where available, of this category's papers. The hand ranking weighs technical merit and usefulness for a runtime or model builder, not just citations. The automatic impact ranking follows below._
+
+**Verdict.** Training MoEs well is now mostly **systems + three algorithmic details**.
+
+**The algorithmic details:**
+1. **Balance loss over the global batch, not the micro-batch.** Micro-batch balancing forces uniform routing *within a
+   sequence* and kills domain specialization ([Demons in the Detail](2501.11873-demons-in-the-detail-on-implementing-load-balancing-loss-for-training.md), Qwen). Combine with DeepSeek-style
+   aux-loss-free bias updates (theory in [A Theoretical Framework for Auxiliary-Loss-Free Load Balancing of Sparse Mixture-of-Experts in Large-Scale AI Models](2512.03915-a-theoretical-framework-for-auxiliary-loss-free-load-balancing-of-spar.md)).
+2. **Give the router dense gradients.** [Default MoE](2504.12463-dense-backpropagation-improves-training-for-sparse-mixture-of-experts.md) (NeurIPS'25) substitutes an EMA of each expert's
+   output for non-selected experts, so the router learns from all experts at ~no extra cost.
+3. **Hyperparameter transfer across width, depth, expert count and expert size:** µP for MoE ([$μ$-Parametrization for Mixture of Experts](2508.09752-parametrization-for-mixture-of-experts.md)),
+   DMFT-justified parameterization ([Hyperparameter Transfer with Mixture-of-Expert Layers](2601.20205-hyperparameter-transfer-with-mixture-of-expert-layers.md), ICML'26), [How to Scale Mixture-of-Experts](../../training/scaling-laws/2605.14200-how-to-scale-mixture-of-experts-from-mup-to-the-maximally-scale-stable.md) (see training/scaling-laws).
+
+**The systems side:**
+* **Kernels**:
+  * [SonicMoE](2512.14080-sonicmoe-accelerating-moe-with-io-and-tile-aware-optimizations.md): IO- and tile-aware forward/backward, minimal activation caching, token rounding to tile
+    multiples;
+  * [UniEP](2604.19241-uniep-unified-expert-parallel-moe-megakernel-for-llm-training.md) megakernel;
+  * [MoEBlaze](2601.05296-moeblaze-breaking-the-memory-wall-for-efficient-moe-training-on-modern.md) (memory wall).
+* **Parallelism and communication**:
+  * [MegaScale-MoE](2505.11432-megascale-moe-large-scale-communication-efficient-training-of-mixture.md): 352B MoE on 1,440 Hopper GPUs at 1.41M tok/s, 1.88× Megatron-LM;
+  * Megatron-Core MoE and MoE Parallel Folding (see [`serving-systems/distributed-inference-and-parallelism`](../../serving-systems/parallelism-and-distributed/README.md));
+  * load-adaptive expert re-layout: [LAER-MoE](2602.11686-laer-moe-load-adaptive-expert-re-layout-for-efficient-mixture-of-exper.md), [SYMI](2504.19925-symi-efficient-mixture-of-experts-training-via-model-and-optimizer-sta.md), [Themis](2502.02581-themis-efficient-sparse-model-training-through-fully-sharded-sparse-da.md);
+  * all-to-all load balancing: [RailS](2510.19262-rails-load-balancing-for-all-to-all-communication-in-distributed-mixtu.md).
+* **Memory**:
+  * [tiered optimizer state](2607.19058-where-should-optimizer-state-live-tiered-state-allocation-for-memory-e.md): factored second moment for experts, exact for backbone and router; 2.6% of
+    AdamW's state;
+  * [Flattening Every Memory Peak in Long-Context Mixture-of-Experts Training](2609.14306-flattening-every-memory-peak-in-long-context-mixture-of-experts-traini.md): flatten every memory peak in long-context MoE training.
+* **RL on MoE** is its own problem: routing differs between the inference engine and the trainer, which destabilizes
+  RL.
+  * [R3: rollout routing replay](../../training/rl-for-reasoning/2510.11370-stabilizing-moe-reinforcement-learning-by-aligning-training-and-infere.md) replays the inference routes in training.
+  * Load-balance RL stages with routing foresight: [ForeMoE](2606.11867-harnessing-routing-foresight-for-micro-step-level-moe-load-balancing-i.md), [ReLibra](2605.08639-relibra-routing-replay-guided-load-balancing-for-moe-training-in-reinf.md).
+* **Growth / reuse**: [orthogonal MoE growth](2510.08008-beyond-sunk-costs-boosting-llm-pre-training-efficiency-via-orthogonal.md) recycles checkpoints (layer copying + noisy expert
+  duplication); +10.6% accuracy vs from scratch at equal extra compute, up to 70B.
+* **Train for inference locality**: [Sticky Routing](2607.08780-sticky-routing-training-moe-models-for-memory-efficient-inference.md), [Cacheable by Design? Training Mixture-of-Experts Routers for Locality Against the Edge Memory-Bandwidth Wall](2608.18261-cacheable-by-design-training-mixture-of-experts-routers-for-locality-a.md) (cacheable routers) and
+  [Matryoshka MoE](2509.26520-training-matryoshka-mixture-of-experts-for-elastic-inference-time-expe.md) (elastic top-k at inference).
+
+### Hand ranking
+
+| # | Paper | Kind | Key idea | Result |
+| ---: | --- | --- | --- | --- |
+| 1 | [Demons in the Detail: global-batch LBL](2501.11873-demons-in-the-detail-on-implementing-load-balancing-loss-for-training.md) (Qwen) | Algorithm | Compute load-balancing loss on global-batch expert frequencies (sync across DP) | Better perplexity, downstream and **domain specialization** up to 42.8B / 400B tokens. Now standard |
+| 2 | [SonicMoE](2512.14080-sonicmoe-accelerating-moe-with-io-and-tile-aware-optimizations.md) | Kernels | Memory-efficient forward/backward with minimal cached activations + IO-overlapped kernels + tile-aware token rounding | Faster than DeepGEMM baseline on 7B MoE; +1.16× from token rounding at high sparsity |
+| 3 | [MegaScale-MoE](2505.11432-megascale-moe-large-scale-communication-efficient-training-of-mixture.md) (ByteDance) | System | Per-module parallelism for attention vs FFN, inter/intra-operator overlap, low-precision communication | 1.88× over Megatron-LM (352B MoE, 1,440 GPUs) |
+| 4 | [R3: routing replay for MoE RL](../../training/rl-for-reasoning/2510.11370-stabilizing-moe-reinforcement-learning-by-aligning-training-and-infere.md) | RL stability | Record inference-engine routes, replay in training | Removes training–inference policy KL spikes; beats GSPO/TIS stabilization |
+| 5 | [Default MoE: dense backprop](2504.12463-dense-backpropagation-improves-training-for-sparse-mixture-of-experts.md) (NeurIPS'25) | Algorithm | EMA "default" outputs for unselected experts → dense router gradient | Beats TopK routing with negligible overhead |
+| 6 | [HP transfer with MoE layers](2601.20205-hyperparameter-transfer-with-mixture-of-expert-layers.md) (ICML'26) | Parameterization | DMFT-derived scaling over width, depth, number of experts and expert size | Reliable HP transfer 51M → 2B+ and to longer horizons |
+| 7 | [Beyond Sunk Costs: orthogonal MoE growth](2510.08008-beyond-sunk-costs-boosting-llm-pre-training-efficiency-via-orthogonal.md) | Reuse | Grow depth (interpositional copying) and width (noisy expert duplication) from checkpoints | +10.6% vs from scratch at equal extra compute (to 70B, 1T tokens) |
+| 8 | [Tiered optimizer state](2607.19058-where-should-optimizer-state-live-tiered-state-allocation-for-memory-e.md) | Memory | Different optimizer-state fidelity for backbone, experts and router | State at 2.6% of AdamW's; 81.4 → 31.3 GB peak |
+| 9 | [FLAME-MoE](2505.20225-flame-moe-a-transparent-end-to-end-research-platform-for-mixture-of-ex.md) | Open platform | Fully open MoE suite (64 experts, top-8, 2 shared), logs, checkpoints, routing traces | +3.4 pts over dense at equal FLOPs; research testbed |
+| 10 | [LAER-MoE](2602.11686-laer-moe-load-adaptive-expert-re-layout-for-efficient-mixture-of-exper.md) | System | Fully sharded expert parameters restored per device on the fly → re-layout for balance each step | Load-adaptive expert placement without migration stalls |
+
+**Also useful.**
+* Systems: [FSMoE](2501.10714-fsmoe-a-flexible-and-scalable-training-system-for-sparse-mixture-of-ex.md), [FlowMoE](2510.00207-flowmoe-a-scalable-pipeline-scheduling-framework-for-distributed-mixtu.md), [X-MoE](2508.13337-x-moe-enabling-scalable-training-for-emerging-mixture-of-experts-archi.md) (Frontier supercomputer),
+  [HeterMoE](2504.03871-hetermoe-efficient-training-of-mixture-of-experts-models-on-heterogene.md) (mixed GPU generations), [HierMoE](2508.09591-hiermoe-accelerating-moe-training-with-hierarchical-token-deduplicatio.md), [TAOT](2608.03676-taot-topology-aware-optimal-transport-for-dynamic-expert-replica-place.md), [Mixture-of-Parallelisms](2607.01844-mixture-of-parallelisms-towards-memory-efficient-training-stack-for-mi.md).
+* Routing training: [DTop-p](2512.13996-dtop-p-moe-sparsity-controlled-dynamic-top-p-moe-for-foundation-model.md) (PI-controlled dynamic top-p), [CompeteSMoE](2505.13380-competesmoe-statistically-guaranteed-mixture-of-experts-training-via-c.md),
+  [Eigenvectors of Experts are Training-free Non-collapsing Routers](2605.30992-eigenvectors-of-experts-are-training-free-non-collapsing-routers.md) (eigenvector routers), [Three Phases of Expert Routing](2604.04230-three-phases-of-expert-routing-how-load-balance-evolves-during-mixture.md) (three phases of routing balance).
+* Continual pretraining: [Continual Pre-training of MoEs](2503.05029-continual-pre-training-of-moes-how-robust-is-your-router.md) (router robustness).
+* Modular post-training: [Train Separately, Merge Together](2604.18473-train-separately-merge-together-modular-post-training-with-mixture-of.md) (train separately, merge as MoE).
+* Hardware: [MixNet](2501.03905-mixnet-a-runtime-reconfigurable-optical-electrical-fabric-for-distribu.md) (optical fabric), [Mozart](2603.07006-mozart-modularized-and-efficient-moe-training-on-3-5d-wafer-scale-chip.md) (wafer-scale chiplets).
+
+**Recommendation.**
+* Global-batch balancing + aux-free bias + a small sequence-level balance term; dense-gradient router trick.
+* µP-style HP transfer from small proxies.
+* FP8 grouped GEMM (see [`quantization/low-precision-training`](../../quantization/low-precision-training/README.md)).
+* DeepEP-style overlapped all-to-all.
+* **Routing replay** for any RL stage.
+* If the model will be served on memory-limited hardware, add a routing-locality objective during training.
+
 ## 🏆 Best of the best by impact score (top 10)
 
 1. **[Demons in the Detail: On Implementing Load Balancing Loss for Training Specialized Mixture-of-Expert Models](2501.11873-demons-in-the-detail-on-implementing-load-balancing-loss-for-training.md)** (2025-02) — This work proposes calculating LBL using a global-batch containing much more diverse sequences than a micro-batch, which will encourage load balance at the corpus level and reveals that the global-batch LBL also greatly …  

@@ -25,7 +25,7 @@ New layer types, normalization, residual/skip designs, memory layers, architectu
 8. **[Conditional Memory via Scalable Lookup: A New Axis of Sparsity for Large Language Models](2601.07372-conditional-memory-via-scalable-lookup-a-new-axis-of-sparsity-for-larg.md)** (2026-07) — This work introduces conditional memory as a complementary sparsity axis, instantiated via Engram, a module that modernizes classic $N$-gram embedding for O(1) lookup, envisioning conditional memory as an indispensable …  
    _score 12.16 · Annual Meeting of the Association for Computational Linguist · 75 cites · [code](https://github.com/GeeeekExplorer/nano-vllm)_
 9. **[HRM-Text: Efficient Pretraining Beyond Scaling](2605.20613-hrm-text-efficient-pretraining-beyond-scaling.md)** (2026-05) — HRM-Text is introduced, which replaces standard Transformers with a Hierarchical Recurrent Model (HRM) that decouples computation into slow-evolving strategic and fast-evolving execution layers, and demonstrates that …  
-   _score 11.31 · 6 cites · 322▲ HF · [code](https://github.com/sapientinc/HRM-Text)_
+   _score 11.31 · 6 cites · 322▲ HF · [code](https://github.com/sapientinc/HRM-Text) · ~2.0 H100-h_
 10. **[Energy-Based Transformers are Scalable Learners and Thinkers](2507.02092-energy-based-transformers-are-scalable-learners-and-thinkers.md)** (2025-07) — EBTs are a promising new paradigm for scaling both the learning and thinking capabilities of models, and achieve better results than existing models on most downstream tasks given the same or worse pretraining …  
    _score 11.14 · 37 cites · 71▲ HF · [code](https://github.com/alexiglad/ebt) · ~416 H100-h_
 
@@ -48,6 +48,7 @@ Sorted cheapest first by the *smallest* compute figure found in the paper. Range
 
 | Paper | Min H100-h | Max H100-h | GPU seen | Evidence |
 | --- | ---: | ---: | --- | --- |
+| [HRM-Text: Efficient Pretraining Beyond Scaling](2605.20613-hrm-text-efficient-pretraining-beyond-scaling.md) | 2.0 | 2.0 | H100 | HRM-Text 1B took 46 hours to pretrain on two 8×H100 nodes, costing around $1,472 (assuming $2 per H100 hour).… |
 | [Energy-Based Transformers are Scalable Learners and Thinkers](2507.02092-energy-based-transformers-are-scalable-learners-and-thinkers.md) | 416 | 416 | A100 | Due to a lack of computational resources, we were unable to train models with more than 10^{21} FLOPs (\approx 1300 A100 GPU Hours).… |
 
 ## Full ranking
