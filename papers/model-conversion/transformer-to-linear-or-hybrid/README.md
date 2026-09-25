@@ -88,6 +88,6 @@ Sorted cheapest first by the *smallest* compute figure found in the paper. Range
 
 | Paper | Primary category | Score |
 | --- | --- | ---: |
-| [Zebra-Llama: Towards Extremely Efficient Hybrid Models](../attention-conversion/2505.17272-zebra-llama-towards-extremely-efficient-hybrid-models.md) | Attention conversion (MHA/GQA → MLA, GQA uptraining, sparse retrofit) | 4.02 |
+| [Zebra-Llama: Towards Extremely Efficient Hybrid Models](../attention-conversion/2505.17272-zebra-llama-towards-extremely-efficient-hybrid-models.md) | Attention conversion (MHA/GQA → MLA, GQA uptraining, sparse retrofit) | 4.52 |
 | [MiniCPM-SALA: Hybridizing Sparse and Linear Attention for Efficient Long-Context Modeling](../../attention/hybrid-architectures/2602.11761-minicpm-sala-hybridizing-sparse-and-linear-attention-for-efficient-lon.md) | Hybrid architectures (attention + SSM/linear layers) | 3.88 |
 | [X-EcoMLA: Upcycling Pre-Trained Attention into MLA for Efficient and Extreme KV Compression](../attention-conversion/2503.11132-x-ecomla-upcycling-pre-trained-attention-into-mla-for-efficient-and-ex.md) | Attention conversion (MHA/GQA → MLA, GQA uptraining, sparse retrofit) | 1.53 |

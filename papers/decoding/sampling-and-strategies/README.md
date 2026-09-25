@@ -6,6 +6,70 @@ Temperature/min-p/top-p style samplers, contrastive decoding, decoding-time inte
 
 📖 Written overview of this area: [../../../overviews/decoding.md](../../../overviews/decoding.md)
 
+## 🔬 Analyst notes: hand ranking and verdict
+
+_Written after reading the abstracts, and the full text where available, of this category's papers. The hand ranking weighs technical merit and usefulness for a runtime or model builder, not just citations. The automatic impact ranking follows below._
+
+**Verdict.** Token-level sampling research splits into three camps, and only one of them changes what a runtime ships.
+
+1. **Truncation samplers** (top-k / top-p / min-p / top-nσ / top-H / min-k / p-less). Gains over well-tuned min-p or
+   top-p are small and often within noise. [Min-p, Max Exaggeration](2506.13681-min-p-max-exaggeration-a-critical-analysis-of-min-p-sampling-in-langua.md) shows how easily they are overstated.
+   The robust finding is **temperature-invariance**: logit-space truncations (top-nσ, [Min-k](2604.11012-min-k-sampling-decoupling-truncation-from-temperature-scaling-via-rela.md)) stay
+   coherent at high temperature, where probability-space ones collapse. Ship a few, default to one, and expose the rest.
+2. **Learned or adaptive decoding.** [AutoDeco](2510.26697-the-end-of-manual-decoding-towards-truly-end-to-end-language-models.md) adds tiny heads that predict per-token temperature and top-p,
+   which matches or beats hand-tuned settings. Selective sampling switches greedy ↔ sampling at "sensitive" positions.
+   This is the direction that removes knobs from users.
+3. **Sequence-level sampling as reasoning.** Sampling from the *power distribution* p(y|x)^α recovers much of RL's
+   reasoning gain with **no training**. [Reasoning with Sampling](../../reasoning/test-time-scaling/2510.14901-reasoning-with-sampling-your-base-model-is-smarter-than-you-think.md) does it with MCMC (slow);
+   [Power-SMC](2602.10273-power-smc-low-latency-sequence-level-power-sampling-for-training-free.md) makes it low-latency with SMC. Reward-guided SMC ([Sampling for Quality](2604.16453-sampling-for-quality-training-free-reward-guided-llm-decoding-via-sequ.md)) is the same machinery. This is
+   test-time compute, and it needs runtime support for particles, resampling and prefix-shared KV.
+
+Contrastive/layer-contrastive decoding (DoLa lineage: LayerCake, ActLCD) improves factuality a little, but costs an extra
+pass or intermediate-layer logits. It is niche for serving.
+
+**Systems notes.** Sampling is a real kernel cost at 150K–260K vocabularies. Use sort-free top-k/top-p
+([Qrita](2602.01518-qrita-high-performance-top-k-and-top-p-using-pivot-based-truncation-an.md): pivot-based selection), certified sub-vocabulary LM heads ([CSV-Decode](2511.21702-csv-decode-certifiable-sub-vocabulary-decoding-for-efficient-large-lan.md)), and
+KV sharing across beams via a trie ([Efficient Beam Search for Large Language Models Using Trie-Based Decoding](2502.00085-efficient-beam-search-for-large-language-models-using-trie-based-decod.md)). Also, the **sign-branched multiplicative repetition penalty** shipped by
+HF/vLLM/llama.cpp is gauge-dependent and **corrupts structured output** ([Gauge dependence and structured-output corruption in sign-branched repetition penalties](2607.09791-gauge-dependence-and-structured-output-corruption-in-sign-branched-rep.md)); use additive/frequency
+penalties instead.
+
+### Hand ranking
+
+| # | Paper | Kind | Key idea | Result / use |
+| ---: | --- | --- | --- | --- |
+| 1 | [AutoDeco: The End of Manual Decoding](2510.26697-the-end-of-manual-decoding-towards-truly-end-to-end-language-models.md) | Learned decoding | Lightweight heads predict **token-level temperature and top-p** alongside logits; trained cheaply on a frozen model | Matches or beats expert-tuned static settings on 8 benchmarks; also steerable by instructions ("be less random"). **Ship-able** |
+| 2 | [Power-SMC](2602.10273-power-smc-low-latency-sequence-level-power-sampling-for-training-free.md) | Sequence-level sampling | SMC for p^α (α>1) instead of Metropolis–Hastings; low-latency particles | RL-like reasoning gains, training-free, at a fraction of MCMC latency. See [Reasoning with Sampling](../../reasoning/test-time-scaling/2510.14901-reasoning-with-sampling-your-base-model-is-smarter-than-you-think.md) |
+| 3 | [Roll the dice & look before you leap](2504.15266-roll-the-dice-look-before-you-leap-going-beyond-the-creative-limits-of.md) (ICML'25) | Analysis | NTP + temperature is myopic for "creative leap" tasks; teacherless/diffusion training and **seed-conditioning** (noise at the input) beat output-temperature randomness | Motivates MTP/diffusion and input-noise sampling for diversity |
+| 4 | [Top-H](2509.02510-top-h-decoding-adapting-the-creativity-and-coherence-with-bounded-entr.md) (NeurIPS'25) | Truncation | Entropy-constrained mass maximization (NP-hard) → greedy approximation: keep tokens while entropy stays bounded | Up to +25% over min-p at high temperature on creative writing, with coherence kept |
+| 5 | [Min-k sampling](2604.11012-min-k-sampling-decoupling-truncation-from-temperature-scaling-via-rela.md) (ACL'26) | Truncation | Truncate by **relative logit dynamics** among top candidates; temperature-invariant, robust to long-tail noise | Decouples truncation from temperature; beats top-nσ |
+| 6 | [Selective sampling](2510.01218-control-the-temperature-selective-sampling-for-diverse-and-high-qualit.md) | Adaptive | Learned "sampling risk" metric switches greedy ↔ high-temperature per position | Diversity without math accuracy loss |
+| 7 | [Qrita](2602.01518-qrita-high-performance-top-k-and-top-p-using-pivot-based-truncation-an.md) | Kernel | Pivot-based top-k/top-p with Gaussian σ-truncation; no sort, deterministic | Faster than sort-based and exact, unlike stochastic approximations. **Runtime-relevant** |
+| 8 | [CSV-Decode](2511.21702-csv-decode-certifiable-sub-vocabulary-decoding-for-efficient-large-lan.md) | LM-head efficiency | Offline clusters of vocab embeddings; centroid+radius bounds give certified sub-vocabularies each step | Exact top-k certification with sparse LM-head compute |
+| 9 | [Foundations of top-k decoding](2505.19371-foundations-of-top-k-decoding-for-language-models.md) (NeurIPS'25) | Theory | Decoding = recovering a sparse distribution; top-k as ℓ0-regularized Bregman projection; generalizations | Principled way to design new truncations |
+| 10 | [Trie-based beam search](2502.00085-efficient-beam-search-for-large-language-models-using-trie-based-decod.md) | Systems | Beams share one KV cache through a prefix trie | Large memory savings for beam search (MHA, GQA, SWA) |
+| 11 | [LayerCake](2507.04404-layercake-token-aware-contrastive-decoding-within-large-language-model.md) / [ActLCD](2505.23657-active-layer-contrastive-decoding-reduces-hallucination-in-large-langu.md) (EMNLP'25) | Contrastive | Token-type-aware layer-contrastive decoding; RL policy decides *when* to contrast | Factuality gains, training-free, extra compute |
+| 12 | [Min-p, Max Exaggeration](2506.13681-min-p-max-exaggeration-a-critical-analysis-of-min-p-sampling-in-langua.md) | Critique | Re-analysis of min-p's human and LLM-judge evidence | Claimed min-p gains largely do not hold. **Be skeptical of sampler papers** |
+| 13 | [Sign-branched repetition penalties](2607.09791-gauge-dependence-and-structured-output-corruption-in-sign-branched-rep.md) | Bug report | Multiplicative penalty flips direction with the sign of the logit (gauge-dependent) | Corrupts JSON across engines; prefer additive alternatives |
+
+**Also useful.**
+* Test-time search via decoding: [Entropy-Tree](2601.15296-entropy-tree-tree-based-decoding-with-entropy-guided-exploration.md) (branch only at uncertain positions),
+  [Thinking by Subtraction](2602.18232-thinking-by-subtraction-confidence-driven-contrastive-decoding-for-llm.md), [reward-guided SMC](2604.16453-sampling-for-quality-training-free-reward-guided-llm-decoding-via-sequ.md), [streaming look-ahead](2503.00029-streaming-looking-ahead-with-token-level-self-reward.md).
+* Adaptive/learned: [Learning Adaptive LLM Decoding](2603.09065-learning-adaptive-llm-decoding.md), [Adaptive Decoding via Test-Time Policy Learning for Self-Improving Generation](2603.18428-adaptive-decoding-via-test-time-policy-learning-for-self-improving-gen.md), [GUARD](2508.20757-guard-glocal-uncertainty-aware-robust-decoding-for-effective-and-effic.md),
+  [Cautious NTP](2507.03038-cautious-next-token-prediction.md).
+* Temperature science: [When Does the Best Sampling Temperature Rise with the Budget? Sufficient Conditions for Pass@k](2608.14665-when-does-the-best-sampling-temperature-rise-with-the-budget-sufficien.md) (the best pass@k temperature rises with budget), [temperature fragility](2609.15476-temperature-fragility-and-the-conditional-benefits-of-truncation-sampl.md),
+  [ReSET](2606.13233-reset-accurate-latency-critical-nvfp4-reasoning-via-step-aware-tempera.md) (step-aware temperature to rescue NVFP4 reasoning models).
+* Cheaper contrastive decoding: [Decoupled Contrastive Decoding via Expert-Aligned Drafting](2608.12913-decoupled-contrastive-decoding-via-expert-aligned-drafting.md), [Temporal Guidance](2601.21744-temporal-guidance-for-large-language-models.md).
+* Consistency: [recycled Gumbel noise](2503.00831-waste-not-want-not-recycled-gumbel-noise-improves-consistency-in-natur.md).
+
+**For a runtime.**
+* Fused sampling kernel: temperature → logit-space truncation (top-nσ / min-k) → probability-space (top-p / min-p), using
+  sort-free selection.
+* **Per-request, per-token parameters** so that AutoDeco-style models can drive them.
+* **Seeded, reproducible Gumbel sampling**, deterministic across batch sizes.
+* Additive repetition and frequency penalties.
+* Particle/SMC primitives (fork, weight, resample) over **prefix-shared KV**. These serve power sampling, reward-guided
+  SMC, beam search and Entropy-Tree with the same code.
+
 ## 🏆 Best of the best by impact score (top 10)
 
 1. **[Roll the dice & look before you leap: Going beyond the creative limits of next-token prediction](2504.15266-roll-the-dice-look-before-you-leap-going-beyond-the-creative-limits-of.md)** (2025-08) — This work offers a principled, minimal test-bed for analyzing open-ended creative skills, and offers new arguments for going beyond next-token learning and temperature sampling.  
@@ -16,10 +80,10 @@ Temperature/min-p/top-p style samplers, contrastive decoding, decoding-time inte
    _score 5.51 · Neural Information Processing Systems (Neural Inf Process Sy · 13 cites · [code](https://github.com/ErfanBaghaei/Top-H-Decoding)_
 4. **[Power-SMC: Low-Latency Sequence-Level Power Sampling for Training-Free LLM Reasoning](2602.10273-power-smc-low-latency-sequence-level-power-sampling-for-training-free.md)** (2026-03) — It is proved that temperature $\tau=1/\alpha$ is the unique prefix-only proposal minimizing incremental weight variance, interpret residual instability via prefix-conditioned R\'enyi entropies, and introduce an …  
    _score 5.39 · 12 cites · [code](https://github.com/ArminAzizi98/Power-SMC)_
-5. **[LayerCake: Token-Aware Contrastive Decoding within Large Language Model Layers](2507.04404-layercake-token-aware-contrastive-decoding-within-large-language-model.md)** (2025-10) — This work introduces a token-aware, layer-localized contrastive decoding method that aligns specific token types with their most influential transformer layers to improve factual generation and consistently improves …  
+5. **[Min-$k$ Sampling: Decoupling Truncation from Temperature Scaling via Relative Logit Dynamics](2604.11012-min-k-sampling-decoupling-truncation-from-temperature-scaling-via-rela.md)** (2026-04) — It is formally proved that Min-$k$ achieves strict temperature invariance and empirically demonstrate its low sensitivity to hyperparameter choices, and it is shown that Min-$k$ consistently improves text quality, …  
+   _score 5.07 · Accepted at ACL 2026 (Main · 9 cites · [code](https://github.com/YecanLee/Mink)_
+6. **[LayerCake: Token-Aware Contrastive Decoding within Large Language Model Layers](2507.04404-layercake-token-aware-contrastive-decoding-within-large-language-model.md)** (2025-10) — This work introduces a token-aware, layer-localized contrastive decoding method that aligns specific token types with their most influential transformer layers to improve factual generation and consistently improves …  
    _score 4.82 · 3 cites · 22▲ HF · [code](https://github.com/Styxiian/LayerCake)_
-6. **[Min-$k$ Sampling: Decoupling Truncation from Temperature Scaling via Relative Logit Dynamics](2604.11012-min-k-sampling-decoupling-truncation-from-temperature-scaling-via-rela.md)** (2026-04) — It is formally proved that Min-$k$ achieves strict temperature invariance and empirically demonstrate its low sensitivity to hyperparameter choices, and it is shown that Min-$k$ consistently improves text quality, …  
-   _score 4.57 · Accepted at ACL 2026 (Main · 9 cites_
 7. **[Control the Temperature: Selective Sampling for Diverse and High-Quality LLM Outputs](2510.01218-control-the-temperature-selective-sampling-for-diverse-and-high-qualit.md)** (2025-09) — This paper proposes selective sampling, a method that dynamically switches between greedy and high-temperature sampling based on a sampling risk metric that estimates the likelihood of output errors when applying …  
    _score 4.28 · 20 cites · [code](https://github.com/serjtroshin/selective_sampling)_
 8. **[CSV-Decode: Certifiable Sub-Vocabulary Decoding for Efficient Large Language Model Inference](2511.21702-csv-decode-certifiable-sub-vocabulary-decoding-for-efficient-large-lan.md)** (2026-07) — Large language models face significant computational bottlenecks during inference due to the expensive output layer computation over large vocabularies.  
@@ -48,8 +112,8 @@ Citations lag, so new work is under-ranked above. These are the most-upvoted or 
 | 2 | [The End of Manual Decoding: Towards Truly End-to-End Language Models](2510.26697-the-end-of-manual-decoding-towards-truly-end-to-end-language-models.md) | 2025-10-31 | 7.3 | 6 | 89 |  | [✓](https://github.com/Zacks917/AutoDeco) | An emergent capability for instruction-based decoding control is uncovered: the model learns to interpret natural language commands and adjusts its predicted … |
 | 3 | [Top-H Decoding: Adapting the Creativity and Coherence with Bounded Entropy in Text Generation](2509.02510-top-h-decoding-adapting-the-creativity-and-coherence-with-bounded-entr.md) | 2026-05-10 | 5.51 | 13 | 0 | Neural Information Processing Systems (N | [✓](https://github.com/ErfanBaghaei/Top-H-Decoding) | Top-H decoding is presented, a computationally efficient greedy algorithm to solve the ECMM problem and advances SoTA in open-ended text generation and can be … |
 | 4 | [Power-SMC: Low-Latency Sequence-Level Power Sampling for Training-Free LLM Reasoning](2602.10273-power-smc-low-latency-sequence-level-power-sampling-for-training-free.md) | 2026-03-23 | 5.39 | 12 | 0 |  | [✓](https://github.com/ArminAzizi98/Power-SMC) | It is proved that temperature $\tau=1/\alpha$ is the unique prefix-only proposal minimizing incremental weight variance, interpret residual instability via … |
-| 5 | [LayerCake: Token-Aware Contrastive Decoding within Large Language Model Layers](2507.04404-layercake-token-aware-contrastive-decoding-within-large-language-model.md) | 2025-10-03 | 4.82 | 3 | 22 |  | [✓](https://github.com/Styxiian/LayerCake) | This work introduces a token-aware, layer-localized contrastive decoding method that aligns specific token types with their most influential transformer layers … |
-| 6 | [Min-$k$ Sampling: Decoupling Truncation from Temperature Scaling via Relative Logit Dynamics](2604.11012-min-k-sampling-decoupling-truncation-from-temperature-scaling-via-rela.md) | 2026-04-13 | 4.57 | 9 | 0 | Accepted at ACL 2026 (Main |  | It is formally proved that Min-$k$ achieves strict temperature invariance and empirically demonstrate its low sensitivity to hyperparameter choices, and it is … |
+| 5 | [Min-$k$ Sampling: Decoupling Truncation from Temperature Scaling via Relative Logit Dynamics](2604.11012-min-k-sampling-decoupling-truncation-from-temperature-scaling-via-rela.md) | 2026-04-13 | 5.07 | 9 | 0 | Accepted at ACL 2026 (Main | [✓](https://github.com/YecanLee/Mink) | It is formally proved that Min-$k$ achieves strict temperature invariance and empirically demonstrate its low sensitivity to hyperparameter choices, and it is … |
+| 6 | [LayerCake: Token-Aware Contrastive Decoding within Large Language Model Layers](2507.04404-layercake-token-aware-contrastive-decoding-within-large-language-model.md) | 2025-10-03 | 4.82 | 3 | 22 |  | [✓](https://github.com/Styxiian/LayerCake) | This work introduces a token-aware, layer-localized contrastive decoding method that aligns specific token types with their most influential transformer layers … |
 | 7 | [Control the Temperature: Selective Sampling for Diverse and High-Quality LLM Outputs](2510.01218-control-the-temperature-selective-sampling-for-diverse-and-high-qualit.md) | 2025-09-20 | 4.28 | 20 | 0 |  | [✓](https://github.com/serjtroshin/selective_sampling) | This paper proposes selective sampling, a method that dynamically switches between greedy and high-temperature sampling based on a sampling risk metric that … |
 | 8 | [CSV-Decode: Certifiable Sub-Vocabulary Decoding for Efficient Large Language Model Inference](2511.21702-csv-decode-certifiable-sub-vocabulary-decoding-for-efficient-large-lan.md) | 2026-07-26 | 4.11 | 7 | 0 |  | [✓](https://github.com/FastLM/CSV-Decode) | Large language models face significant computational bottlenecks during inference due to the expensive output layer computation over large vocabularies. |
 | 9 | [Foundations of Top-$k$ Decoding For Language Models](2505.19371-foundations-of-top-k-decoding-for-language-models.md) | 2026-02-20 | 3.74 | 13 | 0 | Neural Information Processing Systems (N |  | It is shown that the optimal decoding strategies are greedy, and further that the loss function is discretely convex in $k$, so that binary search provably and … |

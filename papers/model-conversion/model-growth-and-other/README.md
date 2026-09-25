@@ -21,7 +21,7 @@ Depth/width growth, layer stacking, re-using checkpoints across architectures, c
 6. **[Retrofitting Recurrent Depth into a Pretrained Language Model: Installation, Extrapolation, Transfer, and Retention at Two Parameter Budgets](2608.11233-retrofitting-recurrent-depth-into-a-pretrained-language-model-installa.md)** (2026-07) — An iterative transformer can perform deeper reasoning in latent space faster than comparable or larger models fine-tuned on the same task, in a system-level comparison.  
    _score 1.58 · 1 cites · [code](https://github.com/mshapiro123/recurrent-qwen-svgd)_
 7. **[When is Warmstarting Effective for Scaling Language Models?](2605.13405-when-is-warmstarting-effective-for-scaling-language-models.md)** (2026-05) — It is shown that preserving the base model's initial post-growth performance is not necessary for strong final performance, and that simple, architecture-agnostic growth strategies can outperform more complex …  
-   _score 0.0 · 0 cites_
+   _score 0.5 · 0 cites · [code](https://github.com/Neeratyoy/warmstarting_exps) · ~2.4 H100-h_
 8. **[KITE: KV-Invariant Transformer Expansion for Efficient Agentic LLM Scaling](2609.27294-kite-kv-invariant-transformer-expansion-for-efficient-agentic-llm-scal.md)** (2026-09) — KV-Invariant Transformer Expansion (KITE) is introduced, a scaling paradigm that trains the model from a smaller size to a larger size (i.e., saving training costs via upcycling), while places newly added parameters in …  
    _score 0.0 · 0 cites_
 
@@ -32,6 +32,7 @@ Sorted cheapest first by the *smallest* compute figure found in the paper. Range
 | Paper | Min H100-h | Max H100-h | GPU seen | Evidence |
 | --- | ---: | ---: | --- | --- |
 | [BidirLM: From Text to Omnimodal Bidirectional Encoders by Adapting and Composing](2604.02045-bidirlm-from-text-to-omnimodal-bidirectional-encoders-by-adapting-and.md) | 0.01 | 92 | MI250 | We merge them at a 50% ratio 8 We provide a detailed analysis for merge ratios \in\{0,0.25,0.5,0.75,1\} in §​ F.3 (cos sim: 0.97) and perform 500 fine-tuning st… |
+| [When is Warmstarting Effective for Scaling Language Models?](2605.13405-when-is-warmstarting-effective-for-scaling-language-models.md) | 2.4 | 2.4 | H200 | The language-model experiments were run primarily on NVIDIA L40S GPUs with 48GB VRAM using CUDA 12.7, with the 1.2B runs executed on H200 GPUs.… |
 
 ## Full ranking
 
@@ -43,7 +44,7 @@ Sorted cheapest first by the *smallest* compute figure found in the paper. Range
 | 4 | [Growing Transformers: Modular Composition and Layer-wise Expansion on a Frozen Substrate](2507.07129-growing-transformers-modular-composition-and-layer-wise-expansion-on-a.md) | 2026-05-02 | 2.63 | 1 | 3 |  | [✓](https://github.com/AVBochkov/PGT) | The evidence supports a narrow claim: useful continued learning can proceed above a frozen minimal interface under a bounded active trainable-parameter budget, … |
 | 5 | [Progressive Depth Up-scaling via Optimal Transport](2508.08011-progressive-depth-up-scaling-via-optimal-transport.md) | 2025-08-11 | 1.88 | 3 | 0 |  |  | Optimal Transport Depth Up-Scaling achieves better overall performance and offers improved training efficiency than existing methods for continual pre-training … |
 | 6 | [Retrofitting Recurrent Depth into a Pretrained Language Model: Installation, Extrapolation, Transfer, and Rete](2608.11233-retrofitting-recurrent-depth-into-a-pretrained-language-model-installa.md) | 2026-07-31 | 1.58 | 1 | 0 |  | [✓](https://github.com/mshapiro123/recurrent-qwen-svgd) | An iterative transformer can perform deeper reasoning in latent space faster than comparable or larger models fine-tuned on the same task, in a system-level … |
-| 7 | [When is Warmstarting Effective for Scaling Language Models?](2605.13405-when-is-warmstarting-effective-for-scaling-language-models.md) | 2026-05-13 | 0.0 | 0 | 0 |  |  | It is shown that preserving the base model's initial post-growth performance is not necessary for strong final performance, and that simple, … |
+| 7 | [When is Warmstarting Effective for Scaling Language Models?](2605.13405-when-is-warmstarting-effective-for-scaling-language-models.md) | 2026-05-13 | 0.5 | 0 | 0 |  | [✓](https://github.com/Neeratyoy/warmstarting_exps) | It is shown that preserving the base model's initial post-growth performance is not necessary for strong final performance, and that simple, … |
 | 8 | [KITE: KV-Invariant Transformer Expansion for Efficient Agentic LLM Scaling](2609.27294-kite-kv-invariant-transformer-expansion-for-efficient-agentic-llm-scal.md) | 2026-09-23 | 0.0 | 0 | 0 |  |  | KV-Invariant Transformer Expansion (KITE) is introduced, a scaling paradigm that trains the model from a smaller size to a larger size (i.e., saving training … |
 
 ## Also relevant (primary category elsewhere)

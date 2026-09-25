@@ -21,7 +21,7 @@ LoRA/DoRA/QLoRA variants, adapters, PEFT for LLMs, serving many LoRAs.
 6. **[On the Scaling of PEFT: Towards Million Personal Models of Trillion Parameters](2606.02437-on-the-scaling-of-peft-towards-million-personal-models-of-trillion-par.md)** (2026-06) — The results suggest that PEFT can be a compact substrate for persistent personal models rather than only a budget substitute for full fine-tuning.  
    _score 7.81 · 3 cites · 145▲ HF_
 7. **[LoRA meets Riemannion: Muon Optimizer for Parametrization-independent Low-Rank Adapters](2507.12142-lora-meets-riemannion-muon-optimizer-for-parametrization-independent-l.md)** (2025-10) — This work presents a novel, fully Riemannian framework for Low-Rank Adaptation (LoRA) that geometrically treats low-rank adapters by optimizing them directly on the fixed-rank manifold, eliminating the parametrization …  
-   _score 7.69 · 12 cites · 36▲ HF_
+   _score 7.69 · 12 cites · 36▲ HF · ~2.0k H100-h_
 8. **[Text-to-LoRA: Instant Transformer Adaption](2506.06105-text-to-lora-instant-transformer-adaption.md)** (2025-06) — Text-to-LoRA (T2L), a model capable of adapting large language models (LLMs) on the fly solely based on a natural language description of the target task, and enables language-based adaptation with minimal compute …  
    _score 7.51 · Accepted at ICML 2025 · 49 cites · [code](https://github.com/SakanaAI/text-to-lora)_
 9. **[LoRA-One: One-Step Full Gradient Could Suffice for Fine-Tuning Large Language Models, Provably and Efficiently](2502.01235-lora-one-one-step-full-gradient-could-suffice-for-fine-tuning-large-la.md)** (2025-06) — This paper rigorously proves that, under gradient descent, LoRA adapters align with specific singular subspaces of the one-step full fine-tuning gradient, and suggests that, by properly initializing the adapters using …  
@@ -49,6 +49,7 @@ Sorted cheapest first by the *smallest* compute figure found in the paper. Range
 | Paper | Min H100-h | Max H100-h | GPU seen | Evidence |
 | --- | ---: | ---: | --- | --- |
 | [Drag-and-Drop LLMs: Zero-Shot Prompt-to-Weights](2506.16406-drag-and-drop-llms-zero-shot-prompt-to-weights.md) | 31 | 31 | A100 | While LoRA allows to maintain the number of trainable parameters and storage overhead small by keeping the model frozen, the wall-clock cost remains very high: … |
+| [LoRA meets Riemannion: Muon Optimizer for Parametrization-independent Low-Rank A](2507.12142-lora-meets-riemannion-muon-optimizer-for-parametrization-independent-l.md) | 2.0k | 2.0k | unspecified | We ran all the experiments within \sim 2000 GPU hours.… |
 
 ## Full ranking
 

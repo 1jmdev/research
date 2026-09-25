@@ -6,10 +6,49 @@ Fixed-point (Jacobi) iteration decoding, lookahead decoding, consistency LLMs, J
 
 📖 Written overview of this area: [../../../overviews/decoding.md](../../../overviews/decoding.md)
 
+## 🔬 Analyst notes: hand ranking and verdict
+
+_Written after reading the abstracts, and the full text where available, of this category's papers. The hand ranking weighs technical merit and usefulness for a runtime or model builder, not just citations. The automatic impact ranking follows below._
+
+**Verdict.** Parallel decoding *inside* an AR model now has three practical forms.
+
+1. **Jacobi / consistency-trained decoding.** Jacobi Forcing is the 2025 state of the art. It uses progressive
+   distillation on the model's own Jacobi trajectories with a noise schedule. The model stays **causal**, so exact KV
+   reuse is kept (unlike dLLMs). It adds rejection-recycling and multi-block decoding: **up to 3.8× speedup** on code
+   and math at near-AR quality.
+2. **Masked-token prediction in an AR model.** Set Block Decoding (Meta) samples several *non-consecutive* future
+   tokens in parallel with discrete-diffusion solvers. There are no architecture changes and KV caching stays exact
+   (3–5× fewer forward passes).
+3. **Semantic / structural parallelism.** The model decides to fork independent branches:
+   * Multiverse: MapReduce-style reasoning with Multiverse Attention;
+   * PASTA: learned asynchronous decoding;
+   * ASPD, parallel reasoning within one sequence;
+   * intra-prompt parallel QA (IPPD, HPD).
+
+Before chasing speedups, read [How much parallelism is "free"?](2605.30851-how-much-parallelism-is-free-a-principle-of-near-free-parallelism-for.md). The hardware only offers a bounded number
+of near-free positions per forward, set by memory-bound slack and kernel granularity.
+
+| # | Paper | Kind | Key idea | Result |
+| ---: | --- | --- | --- | --- |
+| 1 | [Jacobi Forcing](2512.14681-fast-and-accurate-causal-parallel-decoding-using-jacobi-forcing.md) | Causal parallel decoder | Progressive distillation on the model's own Jacobi trajectories (noise-aware, packed sequences) + rejection recycling + multi-block decoding | Up to **3.8×** with AR-level quality; beats AR→dLLM conversions on speed/quality |
+| 2 | [Set Block Decoding](2509.04185-set-block-decoding-is-a-language-model-inference-accelerator.md) (Meta) | NTP + masked prediction | Fine-tune to fill **sets of future tokens** in parallel; use diffusion solvers (EB-sampler); exact KV cache | 3–5× fewer forward passes at equal accuracy (Llama-3.1-8B, Qwen-3-8B) |
+| 3 | [Multiverse](2506.09991-multiverse-your-language-models-secretly-decide-how-to-parallelize-and.md) (NeurIPS'25) | Native parallel reasoning | Map → parallel Process → Reduce inside the model; Multiverse Attention + an engine; converts AR models with ~1K examples | Parallel reasoning with real wall-clock speedup at AR-level accuracy |
+| 4 | [PASTA](2502.11517-learning-to-keep-a-promise-scaling-language-model-decoding-parallelism.md) (ICML'25) | Learned async decoding | The model annotates independent chunks (PASTA-LANG); an interpreter decodes them in parallel | Pareto-better speed/quality than heuristic parallel decoding |
+| 5 | [One-step text generation](2505.21189-exploring-the-hidden-capacity-of-llms-for-one-step-text-generation.md) (EMNLP'25) | Analysis | Frozen LLMs can emit **hundreds of tokens in one forward pass** from two learned embeddings | Shows latent multi-token capacity |
+| 6 | [PCCoT](2506.18582-parallel-continuous-chain-of-thought-with-jacobi-iteration.md) (EMNLP'25) | Latent CoT + Jacobi | Jacobi iteration over continuous thought tokens | ~50% less training and inference time for latent CoT |
+| 7 | [Any-subset AR + ASSD](2504.20456-reviving-any-subset-autoregressive-models-with-principled-parallel-sam.md) | Correct parallel sampling | Any-subset AR models can **self-verify** parallel drafts, giving the exact joint distribution | Provable correctness, unlike dLLM parallel sampling |
+| 8 | [ASPD](2508.08895-aspd-unlocking-adaptive-serial-parallel-decoding-by-exploring-intrinsi.md) | Intrinsic parallelism | Extract parallelizable branches from AR outputs; branch-invisible masks with shared position ids | Latency reduction without quality loss |
+| 9 | [Near-Free Parallelism](2605.30851-how-much-parallelism-is-free-a-principle-of-near-free-parallelism-for.md) | Systems | Predicts how many positions per forward are ~free for dense, MoE and attention layers | Sets realistic speedup ceilings |
+
+**Runtime requirements.**
+* Support **multi-position decode steps**: a verify/accept loop with tree or block masks and KV commit/rollback, plus
+  **fork/join of branches sharing a prefix** (Multiverse/PASTA). This is the same machinery speculative decoding needs,
+  so build it once.
+
 ## 🏆 Best of the best by impact score (top 10)
 
 1. **[Multiverse: Your Language Models Secretly Decide How to Parallelize and Merge Generation](2506.09991-multiverse-your-language-models-secretly-decide-how-to-parallelize-and.md)** (2025-06) — This work introduces Multiverse, a new generative model that enables natively parallel generation in sequential generation and open-sourced the entire Multiverse ecosystem, including data, model weights, engine, as well …  
-   _score 11.81 · Neural Information Processing Systems (Neural Inf Process Sy · 35 cites · 55▲ HF · [code](https://github.com/Multiverse4FM/Multiverse)_
+   _score 11.81 · Neural Information Processing Systems (Neural Inf Process Sy · 35 cites · 55▲ HF · [code](https://github.com/Multiverse4FM/Multiverse) · ~53 H100-h_
 2. **[Set Block Decoding is a Language Model Inference Accelerator](2509.04185-set-block-decoding-is-a-language-model-inference-accelerator.md)** (2025-09) — This work introduces Set Block Decoding (SBD), a simple and flexible paradigm that accelerates generation by integrating standard next token prediction (NTP) and masked token prediction (MATP) within a single …  
    _score 8.46 · 19 cites · 54▲ HF_
 3. **[Parallel Continuous Chain-of-Thought with Jacobi Iteration](2506.18582-parallel-continuous-chain-of-thought-with-jacobi-iteration.md)** (2026-02) — This paper proposes Parallel Continuous Chain-of-Thought (PCCoT), which performs Jacobi iteration on the latent thought tokens, updating them iteratively in parallel instead of sequentially and thus improving both …  
@@ -34,6 +73,14 @@ Fixed-point (Jacobi) iteration decoding, lookahead decoding, consistency LLMs, J
 Citations lag, so new work is under-ranked above. These are the most-upvoted or most-cited papers from the last three months.
 
 - **[Gumbel Distillation for Parallel Text Generation](2603.22216-gumbel-distillation-for-parallel-text-generation.md)** (2026-07-23; 0▲, 1 cites) — Gumbel Distillation substantially improves the generation quality of parallel language models, achieving a 30.0% improvement in MAUVE score and 10.5% in generative perplexity over …
+
+## 💻 Compute cost (estimated H100-hours, auto-extracted)
+
+Sorted cheapest first by the *smallest* compute figure found in the paper. Ranges cover all figures the parser found (e.g. per-model-size runs). Verify against the quoted sentence in each paper file.
+
+| Paper | Min H100-h | Max H100-h | GPU seen | Evidence |
+| --- | ---: | ---: | --- | --- |
+| [Multiverse: Your Language Models Secretly Decide How to Parallelize and Merge Ge](2506.09991-multiverse-your-language-models-secretly-decide-how-to-parallelize-and.md) | 53 | 53 | B200 | Fine-tuning took 3 hours on 8 NVIDIA B200 GPUs with PyTorch FSDP.… |
 
 ## Full ranking
 

@@ -6,6 +6,67 @@ Draft-then-verify decoding: draft models, EAGLE/Medusa heads, tree verification,
 
 📖 Written overview of this area: [../../../overviews/decoding.md](../../../overviews/decoding.md)
 
+## 🔬 Analyst notes: hand ranking and verdict
+
+_Written after reading the abstracts, and the full text where available, of this category's papers. The hand ranking weighs technical merit and usefulness for a runtime or model builder, not just citations. The automatic impact ranking follows below._
+
+**Verdict.** This is the largest decoding category (318 papers).
+
+* **Production default (early 2026): EAGLE-3.** It has a feature-fusion drafter trained with "training-time test"
+  and dynamic trees, and is in vLLM, SGLang and TensorRT-LLM.
+* **The 2026 shift: block-diffusion drafters.** DFlash drafts a whole block in one forward pass conditioned on target
+  features. Descendants (DDTree, JetSpec, DSpark, Domino, DFlare, PARD) add trees, semi-AR heads and confidence
+  scheduling to fix suffix decay. This beats EAGLE-3 at larger draft budgets.
+* **Draft training** is moving from KL-SFT to **acceptance-rate objectives** (LK losses) and **on-policy distillation**
+  (Draft-OPD, AdaSPEC).
+* **Lossy verification** (Judge Decoding, reward-guided SD, R2R token routing, Lookahead Reasoning at the step level)
+  breaks the acceptance ceiling for reasoning models.
+
+Production caution:
+* [Correctness forensics](2510.22876-correctness-forensics-for-batch-speculative-decoding-diagnosing-the-ra.md): several batched SD implementations **silently corrupt output** (the
+  ragged-tensor problem).
+* [Speculative Decoding: Performance or Illusion?](2601.11580-speculative-decoding-performance-or-illusion.md): gains shrink at high batch sizes.
+* Benchmark on [SPEED-Bench](2604.09557-speed-bench-a-unified-and-diverse-benchmark-for-speculative-decoding.md) with throughput splits.
+
+### Hand ranking
+
+| # | Paper | Drafter | Key idea | Headline |
+| ---: | --- | --- | --- | --- |
+| 1 | [EAGLE-3](2503.01840-eagle-3-scaling-up-inference-acceleration-of-large-language-models-via.md) (NeurIPS'25) | 1-layer feature drafter | Drop feature regression; **direct token prediction with multi-layer (low/mid/high) feature fusion**; training-time test (simulate multi-step drafting in training); scales with data | Up to ~6.5× latency speedup; ~1.4× throughput at batch 64 in SGLang. The industry baseline |
+| 2 | [DFlash](2602.06036-dflash-block-diffusion-for-flash-speculative-decoding.md) (ICML'26) | **Block diffusion** drafter | Draft a whole block in **one forward pass** conditioned on target hidden features | New state of the art over EAGLE-3 (~6× lossless on Qwen3-8B); cheap drafting at long blocks |
+| 3 | [LK Losses](2602.23881-lk-losses-direct-acceptance-rate-optimization-for-speculative-decoding.md) (ICML'26) | Training objective | Losses that directly maximize **acceptance rate** instead of KL | Consistent gains for 4 drafter types, targets 8B–685B |
+| 4 | [JetSpec](2606.18394-jetspec-breaking-the-scaling-ceiling-of-speculative-decoding-with-para.md) | Parallel tree drafting | One-forward drafting + **path-consistent trees** (fixes diffusion drafters' inconsistent marginals) | Breaks the draft-budget scaling ceiling |
+| 5 | [DSpark](2607.05147-dspark-confidence-scheduled-speculative-decoding-with-semi-autoregress.md) | Semi-AR | Parallel backbone + small sequential head; **confidence- and load-aware verification** | Keeps throughput at high concurrency |
+| 6 | [R2R: Roads to Rome](2505.21600-r2r-efficiently-navigating-divergent-reasoning-paths-with-small-large.md) (NeurIPS'25) | SLM + LLM routing | Route only **path-divergent tokens** to the large model | 1.5B+32B router reaches R1-32B-level accuracy with ~5.6B average active params |
+| 7 | [Reward-Guided SD](2501.19324-reward-guided-speculative-decoding-for-efficient-llm-reasoning.md) (ICML'25) | Lossy | A PRM decides when to call the target; threshold mixture is provably optimal | Up to 4.4× fewer FLOPs on reasoning with *better* accuracy |
+| 8 | [Lookahead Reasoning](2506.19830-scaling-speculative-decoding-with-lookahead-reasoning.md) (NeurIPS'25) | Step-level | Draft several future **reasoning steps**; accept semantically correct ones | Adds step-level parallelism on top of token SD (1.4→2.1×) |
+| 9 | [Judge Decoding](2501.19309-judge-decoding-faster-speculative-sampling-requires-going-beyond-model.md) (ICLR'25) | Lossy verify | A small judge head accepts "valid but different" tokens | Breaks the alignment ceiling of exact SD |
+| 10 | [Draft-OPD](2605.29343-draft-opd-on-policy-distillation-for-speculative-draft-models.md) / [AdaSPEC](2510.19779-adaspec-selective-knowledge-distillation-for-efficient-speculative-dec.md) | Training | On-policy distillation on draft-induced states / filter hard tokens in KD | SFT plateaus; these push acceptance further |
+| 11 | [FR-Spec](2502.14856-fr-spec-accelerating-large-vocabulary-language-models-via-frequency-ra.md) (ACL'25) + [VocabTrim](2506.22694-vocabtrim-vocabulary-pruning-for-efficient-speculative-decoding-in-llm.md) | Large-vocab | Draft over a **frequency-ranked vocabulary subset** | −75% draft LM-head cost for 128K+ vocabularies |
+| 12 | [DDTree](2604.12989-accelerating-speculative-decoding-with-block-diffusion-draft-trees.md) | Diffusion + tree | Best-first draft tree from block-diffusion per-position distributions | Longer acceptance than single-path DFlash |
+| 13 | [QuantSpec](../../kv-cache/quantization/2502.10424-quantspec-self-speculative-decoding-with-hierarchical-quantized-kv-cac.md) / [ML-SpecQD](2503.13565-ml-specqd-multi-level-speculative-decoding-with-quantized-drafts.md) | Self-spec, quantized | The draft = the same model with 4-bit weights and KV | No extra model; good for long context |
+| 14 | [SpecForge](2603.18567-specforge-a-flexible-and-efficient-open-source-training-framework-for.md) (SGLang) | Tooling | Open, scalable training framework for EAGLE-3/DFlash drafters | Train drafters for your model |
+| 15 | [Correctness Forensics for Batch SD](2510.22876-correctness-forensics-for-batch-speculative-decoding-diagnosing-the-ra.md) (EMNLP'26) | Systems | Ragged tensors desynchronize position ids, masks and KV across a batch; EQSPEC/EXSPEC fixes | **Test your implementation** |
+
+Also useful:
+* **MoE targets:** [MoESD](2505.19645-moesd-unveil-speculative-decoding-s-potential-for-accelerating-sparse.md) (SD helps MoE more at medium batch), [MoE-Spec](2602.16052-moe-spec-expert-budgeting-for-efficient-speculative-decoding.md),
+  [Utility-Driven Speculative Decoding for Mixture-of-Experts](2506.20675-utility-driven-speculative-decoding-for-mixture-of-experts.md).
+* **Hybrid/SSM targets:** [STree](2505.14969-stree-speculative-tree-decoding-for-hybrid-state-space-models.md), [Bole](2608.01651-bole-efficient-tree-speculation-for-hybrid-attention-language-models.md), [SpecLA](2607.16673-specla-efficient-speculative-decoding-for-linear-attention-models.md).
+* **Long context:** [LongSpec](2502.17421-longspec-long-context-lossless-speculative-decoding-with-efficient-dra.md), [RAPID](2502.20330-rapid-long-context-inference-with-retrieval-augmented-speculative-deco.md), [OWL](2510.07535-owl-overcoming-window-length-dependence-in-speculative-decoding-for-lo.md).
+* **Model-free (n-gram/retrieval):** [CopySpec](2502.08923-copyspec-accelerating-llms-with-speculative-copy-and-paste-without-com.md), [LogitSpec](2507.01449-logitspec-accelerating-retrieval-based-speculative-decoding-via-next-n.md),
+  [AdaPLD](2606.05742-adapld-adaptive-retrieval-and-reuse-for-efficient-model-free-speculati.md).
+* **Theory:** [Scaling laws for SD](2505.07858-scaling-laws-for-speculative-decoding.md), [Speed-of-light bounds](2512.11718-speculative-decoding-speed-of-light-optimal-lower-bounds-via-branching.md).
+* **Production at scale:** [Llama at scale](2508.08192-efficient-speculative-decoding-for-llama-at-scale-challenges-and-solut.md) (Meta).
+
+**Runtime checklist.**
+1. **Tree verification kernel** (tree attention mask + KV rollback) and **EAGLE-3 drafter support**. Add a **block
+   drafter path** (DFlash-style: one forward, then tree or chain).
+2. **Adaptive speculation length per batch load.** Turn SD off at high batch (DSpark, TETRIS, Nightjar). SD is a
+   latency tool at low batch.
+3. **Exactness test suite.** Greedy equivalence with and without SD, per batch shape. Use FP32 accumulation for the
+   verification logits ([How Lossless Is Lossless Speculative Decoding? The Role of Numerical Precision in Orthrus](2609.15504-how-lossless-is-lossless-speculative-decoding-the-role-of-numerical-pr.md)).
+4. **Model builders.** Ship an MTP head or EAGLE-3/DFlash drafter with the model (Qwen/DeepSeek/GLM already do).
+
 ## 🏆 Best of the best by impact score (top 10)
 
 1. **[DFlash: Block Diffusion for Flash Speculative Decoding](2602.06036-dflash-block-diffusion-for-flash-speculative-decoding.md)** (2026-05) — DFlash is introduced, a speculative decoding framework that employs a lightweight block diffusion model for parallel drafting that enables efficient drafting with high-quality outputs and higher acceptance rates and …  
@@ -19,7 +80,7 @@ Draft-then-verify decoding: draft models, EAGLE/Medusa heads, tree verification,
 5. **[Domino: Decoupling Causal Modeling from Autoregressive Drafting in Speculative Decoding](2605.29707-domino-decoupling-causal-modeling-from-autoregressive-drafting-in-spec.md)** (2026-05) — Domino is proposed, a speculative decoding framework that decouples causal dependency modeling from expensive autoregressive draft execution and introduces a base-anchored training curriculum that first strengthens the …  
    _score 12.09 · 19 cites · 93▲ HF · [code](https://github.com/jianuo-huang/Domino)_
 6. **[R2R: Efficiently Navigating Divergent Reasoning Paths with Small-Large Model Token Routing](2505.21600-r2r-efficiently-navigating-divergent-reasoning-paths-with-small-large.md)** (2025-11) — Roads to Rome (R2R) selectively utilizes large language models for critical reasoning tasks to enhance efficiency and performance in lightweight models.  
-   _score 12.05 · Neural Information Processing Systems (Neural Inf Process Sy · 30 cites · 71▲ HF · [code](https://github.com/thu-nics/R2R)_
+   _score 12.05 · Neural Information Processing Systems (Neural Inf Process Sy · 30 cites · 71▲ HF · [code](https://github.com/thu-nics/R2R) · ~56–448 H100-h_
 7. **[Accelerating Speculative Decoding with Block Diffusion Draft Trees](2604.12989-accelerating-speculative-decoding-with-block-diffusion-draft-trees.md)** (2026-04) — This work introduces DDTree (Diffusion Draft Tree), a method that constructs a draft tree directly from the per-position distributions of a block diffusion drafter, and places it among the leading approaches to …  
    _score 9.46 · 20 cites · 8▲ HF · [code](https://github.com/liranringel/ddtree)_
 8. **[SPEED-Bench: A Unified and Diverse Benchmark for Speculative Decoding](2604.09557-speed-bench-a-unified-and-diverse-benchmark-for-speculative-decoding.md)** (2026-05) — How synthetic inputs overestimate real-world throughput is highlighted by quantifying how synthetic inputs overestimate real-world throughput, identifying batch-size dependent optimal draft lengths and biases in …  
@@ -41,6 +102,14 @@ Citations lag, so new work is under-ranked above. These are the most-upvoted or 
 - **[SpecPV: Improving Self-Speculative Decoding for Long-Context Generation via Partial Verification](2512.02337-specpv-improving-self-speculative-decoding-for-long-context-generation.md)** (2026-08-29; 0▲, 8 cites) — To further accelerate speculative decoding in long-context generation, SpecPV is introduced, a self-speculative decoding approach that performs fast verification using partial …
 - **[How Lossless Is Lossless Speculative Decoding? The Role of Numerical Precision in Orthrus](2609.15504-how-lossless-is-lossless-speculative-decoding-the-role-of-numerical-pr.md)** (2026-09-14; 23▲, 0 cites) — The results show that the practical losslessness of Orthrus depends on numerical precision and that exact trajectory equivalence should be evaluated separately from downstream …
 - **[Beyond Tokens: Semantic-Aware Speculative Decoding for Efficient Inference by Probing Internal States](2602.03708-beyond-tokens-semantic-aware-speculative-decoding-for-efficient-infere.md)** (2026-08-31; 0▲, 4 cites) — SemanticSpec introduces a semantic probability estimation mechanism that probes the model's internal hidden states to assess the likelihood of generating sequences with specific …
+
+## 💻 Compute cost (estimated H100-hours, auto-extracted)
+
+Sorted cheapest first by the *smallest* compute figure found in the paper. Ranges cover all figures the parser found (e.g. per-model-size runs). Verify against the quoted sentence in each paper file.
+
+| Paper | Min H100-h | Max H100-h | GPU seen | Evidence |
+| --- | ---: | ---: | --- | --- |
+| [R2R: Efficiently Navigating Divergent Reasoning Paths with Small-Large Model Tok](2505.21600-r2r-efficiently-navigating-divergent-reasoning-paths-with-small-large.md) | 56 | 448 | unspecified | The subsequent LLM continuation and verification stages take 7 h (56 GPU hours) and 14 h (112 GPU hours), respectively.… |
 
 ## Full ranking
 

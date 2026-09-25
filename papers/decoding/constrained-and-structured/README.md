@@ -6,6 +6,74 @@ Grammar/JSON-constrained generation, structured output engines (XGrammar-style).
 
 📖 Written overview of this area: [../../../overviews/decoding.md](../../../overviews/decoding.md)
 
+## 🔬 Analyst notes: hand ranking and verdict
+
+_Written after reading the abstracts, and the full text where available, of this category's papers. The hand ranking weighs technical merit and usefulness for a runtime or model builder, not just citations. The automatic impact ranking follows below._
+
+**Verdict.** Grammar-constrained decoding (GCD) is now a solved *engineering* problem. XGrammar / llguidance-style engines give
+near-zero-overhead token masks for JSON Schema and CFGs, and [XGrammar-2](2601.04426-xgrammar-2-dynamic-and-efficient-structured-generation-engine-for-agen.md) extends this to *dynamic*, agentic
+structures (tag-triggered tool calls, cross-grammar caching). The open problems are about **quality**, not speed:
+
+* **The constraint/format tax.** Masking + renormalizing pushes the model onto locally valid but semantically wrong paths.
+  Restrictive grammars provably reduce reasoning power ([CRANE](2502.09061-crane-reasoning-with-constrained-llm-generation.md), ICML'25). The fix is always the same shape:
+  **let the model think unconstrained, then constrain** (CRANE's augmented grammar, [In-Writing](2601.07525-thinking-before-constraining-a-unified-decoding-framework-for-large-la.md) trigger
+  tokens, [DCCD](2603.03305-the-hidden-cost-of-structured-generation-in-llms-draft-conditioned-con.md) draft-then-constrain).
+* **Sampling bias.** Myopic per-token masking does not sample from *p(x | constraint)*. SMC with tractable
+  proposals ([Mitigating Bias in Locally Constrained Decoding via Tractable Proposals](2606.01926-mitigating-bias-in-locally-constrained-decoding-via-tractable-proposal.md), ICML'26) and bias-corrected variants fix it where the distribution matters.
+* **Tool suppression.** Enabling JSON Schema *and* tool calling together can make tool-call tokens unreachable under the
+  compiled mask ([Constraint Tax](2606.25605-constraint-tax-in-open-weight-llms-an-empirical-study-of-tool-calling.md)). The engine must compose grammars (tool-call branch ∪ schema branch),
+  not intersect them.
+* **dLLMs need new algorithms.** Left-to-right masks do not apply to parallel/any-order decoding: [DINGO](2505.23061-dingo-constrained-inference-for-diffusion-llms.md)
+  (regular, distribution-preserving DP), [CFG for dLLMs](2508.10111-constrained-decoding-of-diffusion-llms-with-context-free-grammars.md) and [LAVE](2602.00612-lookahead-then-verify-reliable-constrained-decoding-for-diffusion-llms.md) (CFG with lookahead that
+  guarantees extendability).
+
+### Hand ranking
+
+| # | Paper | Kind | Key idea | Result |
+| ---: | --- | --- | --- | --- |
+| 1 | [XGrammar-2](2601.04426-xgrammar-2-dynamic-and-efficient-structured-generation-engine-for-agen.md) | Engine | **TagDispatch** (switch grammar on tags, e.g. `<tool_call>`), **cross-grammar cache** of sub-structures, Earley-based adaptive mask cache, JIT compile, repetition-state compression | >6× faster than prior engines on dynamic agentic workloads. **Reference design for a runtime** |
+| 2 | [CRANE](2502.09061-crane-reasoning-with-constrained-llm-generation.md) (ICML'25) | Theory + method | Proof that constant-depth transformers under a *restrictive* output grammar lose expressivity; **augment the grammar** with a free-reasoning region, then constrain the answer | Up to +10 pts over constrained and unconstrained baselines on GSM-symbolic/FOLIO |
+| 3 | [JSONSchemaBench](2501.10868-jsonschemabench-a-rigorous-benchmark-of-structured-outputs-for-languag.md) | Benchmark | 10K real-world schemas; measures efficiency, declared and empirical coverage, compliance, quality across 6 engines (Guidance, Outlines, llama.cpp, XGrammar, OpenAI, Gemini) | **The standard test for a structured-output engine** |
+| 4 | [Flexible and Efficient GCD](2502.05111-flexible-and-efficient-grammar-constrained-decoding.md) (ICML'25) | Engine algorithm | New tokenizer/lexer alignment for CFGs | **17.71× faster offline preprocessing** with state-of-the-art online masking. Matters for per-request grammars |
+| 5 | [DCCD](2603.03305-the-hidden-cost-of-structured-generation-in-llms-draft-conditioned-con.md) | Training-free | Unconstrained draft → constrained decode **conditioned on the draft**; KL-projection analysis of the "projection tax" | Recovers much of the accuracy lost to masking; costs one extra (unconstrained) draft pass |
+| 6 | [DINGO](2505.23061-dingo-constrained-inference-for-diffusion-llms.md) (NeurIPS'25) | dLLM | Dynamic programming over a DFA for **block-parallel** tokens; provably distribution-preserving | Strict regex/JSON adherence for dLLMs with large accuracy gains over unconstrained |
+| 7 | [Type-constrained code generation](2504.09246-type-constrained-code-generation-with-language-models.md) (PLDI'25) | Semantic constraint | Prefix automata + search over inhabitable types (TypeScript) | **Halves compile errors**; better functional correctness in synthesis, translation, repair |
+| 8 | [Constraint Tax: tool suppression](2606.25605-constraint-tax-in-open-weight-llms-an-empirical-study-of-tool-calling.md) | Failure analysis | Joint tool-calling + JSON-Schema masks make tool-call tokens unreachable | Reproducible in production across model families. **Test your engine for it** |
+| 9 | [Tractable proposals for SMC](2606.01926-mitigating-bias-in-locally-constrained-decoding-via-tractable-proposal.md) (ICML'26) | Unbiased sampling | Tensorize finite automata on GPU → globally constrained proposals + circuit-based potentials for SMC | Removes locally-constrained-decoding bias at practical cost |
+| 10 | [LAVE](2602.00612-lookahead-then-verify-reliable-constrained-decoding-for-diffusion-llms.md) / [CFG for dLLMs](2508.10111-constrained-decoding-of-diffusion-llms-with-context-free-grammars.md) | dLLM | Use the parallel per-position distributions to *look ahead* and verify each accepted token can still complete to a valid sentence | Reliable CFG compliance for LLaDA/Dream-class models |
+| 11 | [In-Writing: think before constraining](2601.07525-thinking-before-constraining-a-unified-decoding-framework-for-large-la.md) | Decoding policy | Free-form reasoning until a trigger token, then structured decoding; prevents premature triggering | Accuracy of free generation + format guarantees in one call |
+| 12 | [SchemaBench + schema RL](2502.18878-learning-to-generate-structured-output-with-schema-reinforcement-learn.md) (ACL'25) / [RL-Struct](2512.00319-rl-struct-a-lightweight-reinforcement-learning-framework-for-reliable.md) | Training | RL with a fine-grained schema validator as reward | Models that emit valid JSON *without* masks (cheap: GRPO on small models) |
+| 13 | [STATIC](2602.22647-vectorizing-the-trie-efficient-constrained-decoding-for-llm-based-gene.md) (KDD'26) | Engine (retrieval) | Flatten the item trie to a **CSR sparse transition matrix** → vectorized constrained decoding on TPU/GPU | Removes trie latency penalty for generative retrieval over millions of IDs |
+| 14 | [Schema-key wording](2604.14862-schema-key-wording-as-an-instruction-channel-in-structured-generation.md) | Prompting | Schema keys are an **instruction channel** (they enter the context) | Changing key names alone moves GSM8K/Math500 substantially |
+| 15 | [ToolPRM](2510.14703-toolprm-fine-grained-inference-scaling-of-structured-outputs-for-funct.md) (ACL'26) | Inference scaling | Fine-grained beam search + process reward over function name/argument decisions | "Explore more, retain less": early JSON errors are unrecoverable |
+
+**Also useful.**
+* Engine speed: [Earley-driven dynamic pruning](2506.01151-earley-driven-dynamic-pruning-for-efficient-structured-decoding.md), [token-space compression](2605.29986-accelerating-constrained-decoding-with-token-space-compression.md),
+  [parser-stack classification](2608.03065-efficient-grammar-constrained-decoding-via-parser-stack-classification.md), [trie automata for large finite sets](2608.12574-trie-automata-for-constrained-decoding-over-large-finite-sets.md),
+  [attention meets reachability](2603.05540-attention-meets-reachability-structural-equivalence-and-efficiency-in.md).
+* Bias/intent preservation: [Efficient and Asymptotically Unbiased Constrained Decoding for Large Language Models](2504.09135-efficient-and-asymptotically-unbiased-constrained-decoding-for-large-l.md), [AdapTrack](2510.17376-adaptrack-constrained-decoding-without-distorting-llm-s-output-intent.md), [(G)I-DLE](2503.18050-g-i-dle-generative-inference-via-distribution-preserving-logit-exclusi.md),
+  [The Parser Already Knows](2608.10137-the-parser-already-knows-lightweight-bias-correction-in-constrained-de.md).
+* Tax measurements: [The Format Tax](2604.03616-the-format-tax.md), [The Constraint Tax](2605.26128-the-constraint-tax-measuring-validity-correctness-tradeoffs-in-structu.md), [Capacity, Not Format](2606.09410-capacity-not-format-rethinking-structured-reasoning-failures.md) (the tax shrinks with
+  spare capacity), [Structured Output Collapses Answer Diversity Across 44 Language Models](2607.18476-structured-output-collapses-answer-diversity-across-44-language-models.md) (JSON collapses answer diversity), [Constrained Decoding Eliminates Structural Failures in Small LLMs but Reveals a Scale-Dependent Semantic Gap](2609.23742-constrained-decoding-eliminates-structural-failures-in-small-llms-but.md).
+* dLLM constrained decoding: [EPIC](2606.00722-epic-efficient-and-parallel-inference-under-cfg-constraints-for-diffus.md), [Constrained Decoding for Diffusion Language Models via Efficient Inference over Finite Automata](2607.07026-constrained-decoding-for-diffusion-language-models-via-efficient-infer.md), [Constrained Code Generation with Discrete Diffusion](2605.16829-constrained-code-generation-with-discrete-diffusion.md), [dynamic infilling anchors](2606.04535-dynamic-infilling-anchors-for-format-constrained-generation-in-diffusi.md),
+  [Constrained Discrete Diffusion](2503.09790-constrained-discrete-diffusion.md) (NeurIPS'25).
+* Systems cross-over: [Copy-as-Decode](2604.18170-copy-as-decode-grammar-constrained-parallel-prefill-for-llm-editing.md) (grammar-constrained *parallel prefill* for edits: copy spans verbatim
+  from the input) and [Parser States Already Know](2608.28276-parser-states-already-know-structure-conditioned-kv-persistence-for-st.md) (structure-conditioned KV persistence).
+* Serialization format: [TOON vs JSON](2603.03306-token-oriented-object-notation-vs-json-a-benchmark-of-plain-and-constr.md).
+
+**For a runtime.**
+1. Integrate an XGrammar-2-class engine: masks computed on CPU **overlapped** with the GPU forward, adaptive token-mask
+   cache, per-request JIT grammar compile with a cross-request cache.
+2. Support **tag-triggered grammars** (free text → `<tool_call>` → JSON args → free text). This is both the agent use case
+   and the practical fix for the reasoning tax. Never compile "tools + response schema" as an intersection.
+3. Make masks compose with **speculative decoding** (mask drafted tokens; roll the grammar state back on reject) and
+   with **jump-forward** decoding: deterministic grammar spans are appended in one prefill step (see Copy-as-Decode).
+4. Expose an optional "draft-then-constrain" mode (DCCD) for high-stakes structured reasoning.
+5. For dLLM backends, ship a DFA/CFG checker that works per block (DINGO/LAVE), not per token.
+
+**For model builders.** Train format adherence in (schema-validator RL is cheap), keep reasoning *outside* the schema,
+and evaluate on JSONSchemaBench + StructEval with the mask **off** and **on** to measure the tax.
+
 ## 🏆 Best of the best by impact score (top 10)
 
 1. **[StructEval: Benchmarking LLMs' Capabilities to Generate Structural Outputs](2505.20139-structeval-benchmarking-llms-capabilities-to-generate-structural-outpu.md)** (2026-04) — StructEval is introduced, a comprehensive benchmark for evaluating LLMs' capabilities in producing both non-renderable (JSON, YAML, CSV) and renderable (HTML, React, SVG) structured formats and finds generation tasks …  

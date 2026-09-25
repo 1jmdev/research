@@ -6,6 +6,54 @@ Training/inference with multiple future-token heads or objectives (DeepSeek-V3 M
 
 📖 Written overview of this area: [../../../overviews/decoding.md](../../../overviews/decoding.md)
 
+## 🔬 Analyst notes: hand ranking and verdict
+
+_Written after reading the abstracts, and the full text where available, of this category's papers. The hand ranking weighs technical merit and usefulness for a runtime or model builder, not just citations. The automatic impact ranking follows below._
+
+**Verdict.** Multi-token prediction (MTP) has two uses.
+
+1. **A pretraining auxiliary loss.** DeepSeek-V3-style sequential MTP modules are now standard in DeepSeek, Qwen3-Next,
+   GLM-4.5, MiMo and others. The quality gains from *exact* future-token MTP are inconsistent at small scale, so softer
+   targets work better:
+   * token order prediction (TOP);
+   * future summaries (FSP);
+   * register tokens (MuToR) for fine-tuning.
+2. **A built-in speculative drafter.** The MTP head drafts and the main model verifies. The main levers:
+   * **self-distillation**: FastMTP lifts 3rd-token acceptance from 2% to 36%, and MTP-D adds 7.5%;
+   * **recursive/shared heads**;
+   * **windowed draft attention** at million-token context ([Windowed-MTP](2607.21535-windowed-mtp-removing-the-full-context-draft-kv-tax-at-million-token-c.md); otherwise the draft's full-KV
+     read dominates).
+
+A third, emerging use is converting a pretrained AR model into a **standalone multi-token generator** with no separate
+verifier (MTP via self-distillation, MARS, K-Forcing). It is a cousin of diffusion conversion (see
+[`model-conversion/ar-to-diffusion`](../../model-conversion/ar-to-diffusion/README.md)).
+
+### Hand ranking
+
+| # | Paper | Use | Key idea | Result / cost |
+| ---: | --- | --- | --- | --- |
+| 1 | [FastMTP](2509.18362-fastmtp-accelerating-llm-inference-with-enhanced-multi-token-predictio.md) | MTP → SD | Fine-tune **one shared-weight MTP head** on self-distilled data for recursive drafting + language-aware vocabulary compression | 2.03× over NTP (+82% vs vanilla MTP); <1 day on one H20 node (~4 H100-h) |
+| 2 | [Your LLM Knows the Future](2507.11851-your-llm-knows-the-future-uncovering-its-multi-token-prediction-potent.md) (Apple) | Retrofit MTP | Mask-token inputs + **gated LoRA** (keeps NTP exact) + learnable sampler head | ~5× speedup on code/math with no quality loss |
+| 3 | [Token Order Prediction (TOP)](2508.19228-predicting-the-order-of-upcoming-tokens-improves-language-modeling.md) | Pretraining aux | Rank upcoming tokens by proximity (learning-to-rank) instead of exact MTP; one extra unembedding | Beats NTP, MTP and DeepSeek-MTP at 340M/1.8B/7B; 7B run ≈ 3K H100-h |
+| 4 | [MuToR: MTP needs registers](2505.10518-multi-token-prediction-needs-registers.md) (NeurIPS'25) | FT / pretrain aux | Interleave **register tokens** that predict future targets; no architecture change | MTP benefits carried to SFT |
+| 5 | [Future Summary Prediction](2510.14751-beyond-multi-token-prediction-pretraining-llms-with-future-summaries.md) (Meta) | Pretraining aux | Predict a **summary** (bag-of-words or learned reverse-LM embedding) of the long-term future | Gains on reasoning/planning at 3B/8B with 1T tokens |
+| 6 | [MTP-D](2603.23911-self-distillation-for-multi-token-prediction.md) | Pretraining + SD | Self-distillation for MTP heads + **looped extension** to 8–16 heads | +7.5% acceptance; +35% speed from head extension |
+| 7 | [MTP via self-distillation](2602.06019-multi-token-prediction-via-self-distillation.md) | Standalone MTP | Online distillation turns an AR model into a multi-token model with the **same implementation**, no verifier | >3× faster, <5% GSM8K drop |
+| 8 | [MARS](2604.07023-mars-enabling-autoregressive-models-multi-token-generation.md) | Standalone MTP | Mask-autoregression fine-tuning on instruction data; no new params; still callable as NTP | Multiple tokens per pass with no NTP degradation |
+| 9 | [ESP: embedding-space probing](2603.17942-efficient-training-free-multi-token-prediction-via-embedding-space-pro.md) (ICML'26) | Training-free MTP | Probe with mask tokens from the embedding space + dynamic tree | Beats training-free baselines (LADE); vs EAGLE-3's 200–300 GPU-h training |
+| 10 | [L-MTP](2505.17505-l-mtp-leap-multi-token-prediction-beyond-adjacent-context-for-large-la.md) (NeurIPS'25) | Leap MTP | Predict **non-adjacent** future tokens + a matching decoding strategy | Better long-range dependency and speed |
+| 11 | [Windowed-MTP](2607.21535-windowed-mtp-removing-the-full-context-draft-kv-tax-at-million-token-c.md) | Serving | Sliding window + sink for the **draft head's** attention only | Keeps MTP speculation profitable at 1M context |
+| 12 | [How transformers learn to plan via MTP](2604.11912-how-transformers-learn-to-plan-via-multi-token-prediction.md) (COLM'26) | Theory | MTP induces reverse reasoning (attend to goal, trace back) via gradient decoupling | Explains the planning benefit |
+
+**For a runtime.**
+* Treat a model's MTP head as an EAGLE-like drafter: chain or tree drafting with the MTP module reusing the main
+  model's KV.
+* Window the draft attention at long context.
+* Choose speculation depth by entropy or load ([EntMTP](2606.27550-entmtp-accelerating-llm-inference-with-entropy-guided-multi-token-pred.md)).
+
+**For model builders.** Train with 1–2 MTP modules (DeepSeek-V3 recipe) or TOP/FSP-style soft auxiliaries. Then
+**self-distill the MTP head** before release (FastMTP) to maximize acceptance.
+
 ## 🏆 Best of the best by impact score (top 10)
 
 1. **[Multi-Token Prediction Needs Registers](2505.10518-multi-token-prediction-needs-registers.md)** (2025-05) — MuToR is proposed, a simple and effective approach to multi-token prediction that interleaves learnable register tokens into the input sequence, each tasked with predicting future targets, making it especially …  

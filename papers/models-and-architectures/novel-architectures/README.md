@@ -27,7 +27,7 @@ New layer types, normalization, residual/skip designs, memory layers, architectu
 9. **[HRM-Text: Efficient Pretraining Beyond Scaling](2605.20613-hrm-text-efficient-pretraining-beyond-scaling.md)** (2026-05) — HRM-Text is introduced, which replaces standard Transformers with a Hierarchical Recurrent Model (HRM) that decouples computation into slow-evolving strategic and fast-evolving execution layers, and demonstrates that …  
    _score 11.31 · 6 cites · 322▲ HF · [code](https://github.com/sapientinc/HRM-Text)_
 10. **[Energy-Based Transformers are Scalable Learners and Thinkers](2507.02092-energy-based-transformers-are-scalable-learners-and-thinkers.md)** (2025-07) — EBTs are a promising new paradigm for scaling both the learning and thinking capabilities of models, and achieve better results than existing models on most downstream tasks given the same or worse pretraining …  
-   _score 11.14 · 37 cites · 71▲ HF · [code](https://github.com/alexiglad/ebt)_
+   _score 11.14 · 37 cites · 71▲ HF · [code](https://github.com/alexiglad/ebt) · ~416 H100-h_
 
 ## 🆕 Recent papers to watch (last 90 days)
 
@@ -41,6 +41,14 @@ Citations lag, so new work is under-ranked above. These are the most-upvoted or 
 - **[Intern-S2-Mobius: Foundation Model with Decoupled Knowledge and Reasoning](2608.14290-intern-s2-mobius-foundation-model-with-decoupled-knowledge-and-reasoni.md)** (2026-08-14; 35▲, 0 cites) — Mobius-v0 separates global memory storage from iterative reasoning modules to improve knowledge compression and inference efficiency, yielding comparable performance with less …
 - **[Negligible in Size, Significant in Effect: On Scale Vectors in Large Language Models](2605.26895-negligible-in-size-significant-in-effect-on-scale-vectors-in-large-lan.md)** (2026-08-28; 18▲, 3 cites) — This work presents a systematic study of scale vectors in LLMs from the perspectives of expressivity, optimization, and architectural structure, and proposes three lightweight and …
 - **[MultiHashFormer: Hash-based Generative Language Models](2606.28057-multihashformer-hash-based-generative-language-models.md)** (2026-08-28; 12▲, 0 cites) — This paper proposes MultiHashFormer, a new framework that allows hash-based autoregression that consistently outperforms standard Transformer LMs across multiple benchmarks and …
+
+## 💻 Compute cost (estimated H100-hours, auto-extracted)
+
+Sorted cheapest first by the *smallest* compute figure found in the paper. Ranges cover all figures the parser found (e.g. per-model-size runs). Verify against the quoted sentence in each paper file.
+
+| Paper | Min H100-h | Max H100-h | GPU seen | Evidence |
+| --- | ---: | ---: | --- | --- |
+| [Energy-Based Transformers are Scalable Learners and Thinkers](2507.02092-energy-based-transformers-are-scalable-learners-and-thinkers.md) | 416 | 416 | A100 | Due to a lack of computational resources, we were unable to train models with more than 10^{21} FLOPs (\approx 1300 A100 GPU Hours).… |
 
 ## Full ranking
 

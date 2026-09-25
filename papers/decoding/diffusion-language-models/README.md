@@ -6,6 +6,63 @@ Masked/discrete/continuous diffusion LMs: LLaDA, Dream, Mercury, Gemini Diffusio
 
 📖 Written overview of this area: [../../../overviews/decoding.md](../../../overviews/decoding.md)
 
+## 🔬 Analyst notes: hand ranking and verdict
+
+_Written after reading the abstracts, and the full text where available, of this category's papers. The hand ranking weighs technical merit and usefulness for a runtime or model builder, not just citations. The automatic impact ranking follows below._
+
+**Verdict.** Diffusion LLMs (dLLMs) went from curiosity to frontier-scale in 18 months.
+
+**Scaling milestones:**
+* **LLaDA 8B** from scratch, on par with Llama-3-8B;
+* **Dream 7B**, AR-initialized from Qwen2.5;
+* **LLaDA-MoE** (~20T tokens) and **LLaDA 2.0**, 100B MoE *converted from an AR model*;
+* **DiffusionGemma**.
+
+**Commercial speed:** Mercury (≈1,100 tok/s on H100), Gemini Diffusion, Seed Diffusion (2,146 tok/s on H20).
+
+**Core architecture choice: block diffusion (BD3-LM).** Autoregressive across blocks, diffusion within a block. It fixes
+the two big dLLM problems: variable length and **KV caching**. Nearly every serious 2026 dLLM is block-wise.
+
+**Open problems:**
+* **Real parallelism.** Fast dLLMs often decode almost left-to-right ([Why Diffusion Language Models Struggle with Truly Parallel (Non-Autoregressive) Decoding?](2602.23225-why-diffusion-language-models-struggle-with-truly-parallel-non-autoreg.md), [The Flexibility Trap](2601.15165-the-flexibility-trap-rethinking-the-value-of-arbitrary-order-in-diffus.md)).
+* **The factorization barrier.** Parallel tokens are sampled independently.
+* **RL post-training** under intractable likelihood: d1/diffu-GRPO, wd1, SPG, TraceRL, d2.
+
+**Where dLLMs genuinely win:** data-constrained pretraining (**"super data learners"**: they beat AR when unique data is
+scarce, by using many more epochs), infilling/editing, and code.
+
+### Hand ranking
+
+| # | Paper | Type | Key idea | Result / compute |
+| ---: | --- | --- | --- | --- |
+| 1 | [LLaDA](2502.09992-large-language-diffusion-models.md) (NeurIPS'25) | From-scratch MDM, 8B | Masked diffusion with Transformer denoiser; pretrain + SFT | On par with Llama-3-8B; beats GPT-4o on reversal poem completion. 2.3T tokens, ~0.13M H800-h |
+| 2 | [Block Diffusion (BD3-LM)](2503.09573-block-diffusion-interpolating-between-autoregressive-and-diffusion-lan.md) (ICLR'25 oral) | Architecture | AR over blocks + diffusion within a block; variance-reduced training; data-driven noise schedules | Arbitrary length, KV cache, state of the art among diffusion LMs. **The design everyone builds on** |
+| 3 | [LLaDA 2.0](2512.15745-llada2-0-scaling-up-diffusion-language-models-to-100b.md) | AR→dLLM at 100B | 3-phase **block-level WSD conversion** (grow block → full-sequence diffusion → shrink block) from Ling MoE; SFT + DPO | 16B and 100B MoE dLLMs; frontier-scale deployment path. See [`ar-to-diffusion`](../../model-conversion/ar-to-diffusion/README.md) |
+| 4 | [Dream 7B](2508.15487-dream-7b-diffusion-large-language-models.md) | AR-init dLLM | Init from Qwen2.5-7B + context-adaptive token-level noise rescheduling | Strongest open dLLM of its time; planning/infilling strengths. ~580B tokens |
+| 5 | [Seed Diffusion Preview](2508.02193-seed-diffusion-a-large-scale-diffusion-language-model-with-high-speed.md) (ByteDance) | Code dLLM | Two-stage curriculum, constrained-order training, on-policy learning for speed | **2,146 tok/s on H20** at competitive code quality |
+| 6 | [Mercury](2506.17298-mercury-ultra-fast-language-models-based-on-diffusion.md) (Inception) | Commercial dLLM | Diffusion Transformer LLM for code | ~1,100 tok/s (H100) at GPT-4o-mini-class code quality |
+| 7 | [dLLMs are Super Data Learners](2511.03276-diffusion-language-models-are-super-data-learners.md) | Scaling | Controlled crossover: with limited unique data, dLLMs beat AR by training many more epochs | 1.7B dLLM on 10B unique Python tokens beats matched AR. Key for data-limited builders |
+| 8 | [DiffuCoder](2506.20639-diffucoder-understanding-and-improving-masked-diffusion-models-for-cod.md) (Apple) | Code + RL | Local/global "AR-ness" metrics; **coupled-GRPO** | 7B code dLLM on 130B tokens; ~1.5K H100-h for the RL stage (64 H100 × 24 h) |
+| 9 | [LLaDA 1.5 / VRPO](2505.19223-llada-1-5-variance-reduced-preference-optimization-for-large-language.md) | Alignment | Variance-reduced ELBO preference optimization (optimal MC allocation, antithetic sampling) | Better math/code/alignment; **~405 H100-h** |
+| 10 | [TraceRL / TraDo](2509.06949-revolutionizing-reinforcement-learning-framework-for-diffusion-large-l.md) | RL | Trajectory-aware RL with a diffusion value model; also adapts block size | TraDo-4B beats 7B AR models on math |
+| 11 | [The Diffusion Duality (Duo)](2506.10892-the-diffusion-duality.md) (ICML'25) | Uniform-state diffusion | Uniform discrete diffusion as argmax of Gaussian diffusion → curriculum + **discrete consistency distillation** | 2× faster training; **two orders of magnitude fewer sampling steps** |
+| 12 | [ReMDM](2503.00307-remasking-discrete-diffusion-models-with-inference-time-scaling.md) (NeurIPS'25) | Sampler | **Remasking** backward process = inference-time scaling for pretrained MDMs | Approaches AR quality with more steps |
+| 13 | [Esoteric LMs](2506.01928-esoteric-language-models-a-family-of-any-order-diffusion-llms.md) (ICML'26) | Hybrid AR/MDM | Causal-attention MDM ⇒ exact likelihood + **KV caching** with parallel generation | Interpolates AR ↔ MDM perplexity |
+| 14 | [Train for the Worst, Plan for the Best](2502.06768-train-for-the-worst-plan-for-the-best-understanding-token-ordering-in.md) (ICML'25 outstanding paper) | Theory | MDMs train on intractable infilling subproblems; **adaptive decoding order** sidesteps them | Sudoku 7%→90% with order planning |
+| 15 | [dLLM framework](2602.22661-dllm-simple-diffusion-language-modeling.md) (ACL'26) | Tooling | Unified training/inference/eval for LLaDA, Dream etc. | Start here to reproduce |
+
+Also important:
+* **Multimodal:** [MMaDA](2505.15809-mmada-multimodal-large-diffusion-language-models.md), [LLaDA-V](2505.16933-llada-v-large-language-diffusion-models-with-visual-instruction-tuning.md), [LaViDa](2505.16839-lavida-a-large-diffusion-language-model-for-multimodal-understanding.md).
+* **Long context:** [LongLLaDA](2506.14429-longllada-unlocking-long-context-capabilities-in-diffusion-llms.md), [UltraLLaDA](2510.10481-ultrallada-scaling-the-context-length-to-128k-for-diffusion-large-lang.md).
+* **Scaling laws:** [Quokka](2510.03280-training-optimal-large-diffusion-language-models.md), [Scaling Behavior of Discrete Diffusion Language Models](2512.10858-scaling-behavior-of-discrete-diffusion-language-models.md).
+* **Continuous and latent diffusion is catching up:** [LangFlow](2604.11748-langflow-continuous-diffusion-rivals-discrete-in-language-modeling.md), [Continuous Latent Diffusion Language Model](2605.06548-continuous-latent-diffusion-language-model.md), [Continuous Diffusion Scales Competitively with Discrete Diffusion for Language](2605.18530-continuous-diffusion-scales-competitively-with-discrete-diffusion-for.md).
+* **Reality checks:** [Bitter lesson for agentic workflows](2601.12979-the-bitter-lesson-of-diffusion-language-models-for-agentic-workflows-a.md), [Why Diffusion Language Models Struggle with Truly Parallel (Non-Autoregressive) Decoding?](2602.23225-why-diffusion-language-models-struggle-with-truly-parallel-non-autoreg.md).
+* **RL for dLLMs:** [d1](2504.12216-d1-scaling-reasoning-in-diffusion-large-language-models-via-reinforcem.md), [wd1](2507.08838-wd1-weighted-policy-optimization-for-reasoning-in-diffusion-language-m.md), [SPG](2510.09541-spg-sandwiched-policy-gradient-for-masked-diffusion-language-models.md).
+
+**For a runtime.** dLLM serving needs a different engine loop: block-wise denoising steps with **approximate or exact KV
+caching** (Fast-dLLM, dKV-Cache, Esoteric/BD3 exact caching), confidence-threshold parallel unmasking, and remasking.
+See [`diffusion-llm-inference`](../diffusion-llm-inference/README.md) for the inference toolbox.
+
 ## 🏆 Best of the best by impact score (top 10)
 
 1. **[Large Language Diffusion Models](2502.09992-large-language-diffusion-models.md)** (2025-10) — This work introduces LLaDA, a diffusion model trained from scratch under the pre-training and supervised fine-tuning (SFT) paradigm, which provides a principled generative approach for probabilistic inference by …  

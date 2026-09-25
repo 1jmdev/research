@@ -49,6 +49,7 @@ Sorted cheapest first by the *smallest* compute figure found in the paper. Range
 | Paper | Min H100-h | Max H100-h | GPU seen | Evidence |
 | --- | ---: | ---: | --- | --- |
 | [CODI: Compressing Chain-of-Thought into Continuous Space via Self-Distillation](2502.21074-codi-compressing-chain-of-thought-into-continuous-space-via-self-disti.md) | 12 | 15 | A100 | Training runs for 40 epochs, taking approximately 36 hours on a single A100 (80GB).… |
+| [LoopCoder-v2: Only Loop Once for Efficient Test-Time Computation Scaling](2606.18023-loopcoder-v2-only-loop-once-for-efficient-test-time-computation-scalin.md) | 1.00M | 1.00M | unspecified | In total, training LoopCoder-v2 of different loops in this work consumed a total of 1M GPU hours.… |
 
 ## Full ranking
 
