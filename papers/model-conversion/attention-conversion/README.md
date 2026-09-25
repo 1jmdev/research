@@ -103,6 +103,7 @@ Sorted cheapest first by the *smallest* compute figure found in the paper. Range
 
 | Paper | Min H100-h | Max H100-h | GPU seen | Evidence |
 | --- | ---: | ---: | --- | --- |
+| [NLL-Guided Full-Attention Layer Selection for Training-Free Sliding-Window Adapt](2606.27791-nll-guided-full-attention-layer-selection-for-training-free-sliding-wi.md) | 1.0 | 1.0 | unspecified | We show the method is practical for deployment: calibration requires only \sim15 minutes on 4 GPUs and amortizes after \sim1,354 inference requests at 24k promp… |
 | [SWAA: Sliding Window Attention Adaptation for Efficient and Quality Preserving L](2512.10411-swaa-sliding-window-attention-adaptation-for-efficient-and-quality-pre.md) | 14 | 36 | H20 | Training of each SWAA configuration takes approximately 12 hours on an 8*H20 GPU server for Qwen3-4B and 30 hours for Qwen3-30B-A3B.… |
 | [X-EcoMLA: Upcycling Pre-Trained Attention into MLA for Efficient and Extreme KV ](2503.11132-x-ecomla-upcycling-pre-trained-attention-into-mla-for-efficient-and-ex.md) | 91 | 140 | MI300X | The experimental results show that our proposed method can effectively compress the KV cache while preserving the performance on the benchmarks; specifically, f… |
 
